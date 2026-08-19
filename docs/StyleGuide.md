@@ -25,11 +25,14 @@ Panduan ini berfungsi sebagai rujukan utama (*Single Source of Truth*) untuk pen
 ## 3. Skema Warna (Color Palette)
 *(Catatan: Kode hex di bawah adalah referensi untuk desain profesional korporat/organisasi. Harap disesuaikan jika PIKI memiliki Brand Guideline spesifik).*
 
-- **Primary:** Warna identitas PIKI (misalnya *Deep Royal Blue* atau *Navy*). Melambangkan profesionalisme dan intelektualitas.
-  - `bg-primary` -> `bg-[#1E3A8A]` (Contoh)
-- **Accent:** Warna aksen (misalnya *Gold/Yellow* atau *Crimson*). Digunakan sangat terbatas untuk menarik perhatian (tombol *Call to Action*, *badge* status *Approval*).
-- **Background (Light Mode):** Jangan gunakan putih murni `#FFFFFF` untuk keseluruhan. Gunakan abu-abu sangat muda `#F8FAFC` (*slate-50*) atau `#FAFAFA` (*zinc-50*) untuk mengurangi kelelahan mata.
-- **Background (Dark Mode):** Gunakan *Deep Charcoal* `#0F172A` (*slate-900*) atau `#121212`, BUKAN hitam murni `#000000`.
+- **Primary:** Warna identitas PIKI (*Deep Royal Blue*).
+  - `bg-primary` -> `bg-[#0b59a1]`
+- **Background (Light Mode):** 
+  - `bg-background` -> `bg-[#f3f3f3]` (Abu-abu sangat muda untuk *body* keseluruhan)
+  - `bg-card` -> `bg-[#ffffff]` (Putih solid untuk kartu/konten utama agar terlihat menonjol)
+- **Background (Dark Mode):** 
+  - `bg-background` -> `bg-[#131414]` (Gelap pekat untuk *body*)
+  - `bg-card` -> `bg-[#171818]` (Lebih terang sedikit untuk komponen seperti kartu)
 
 ### Konvensi Status (Penting untuk Sistem Approval CMS):
 - **Pending/Review:** Kuning/Amber (`text-amber-600 bg-amber-500/10`)
