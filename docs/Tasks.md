@@ -22,10 +22,8 @@ Dokumen ini berisi pemecahan tugas (_micro-tasking_) untuk mempermudah pengerjaa
 ## FASE 2: Inisialisasi & Fondasi (Selesai)
 
 - [x] buat `Hero Section`
-- [ ] buat komponent `landing page ` publik informasi tentang piki
 - [x] Buat komponen `Navbar` publik (Menu, Logo, Tombol Login/Daftar) yang _sticky_ dan efek translusen.
 - [x] Buat komponen `Footer` publik lengkap dengan navigasi sitemap dan _embed_ media sosial.
-- [ ] Buat layout Dashboard (Sidebar Kiri & Topbar Kanan) menggunakan komponen Shadcn `Sidebar`.
 
 ---
 
@@ -37,7 +35,7 @@ _(Fase ini membangun kerangka cangkang aplikasi sebelum masuk ke logika data)_
   - `(public)` untuk halaman depan (Landing, Berita, dll).
   - `(auth)` untuk Login & Register.
   - `(dashboard)` untuk CMS dan Member Area.
-
+- [ ] Buat layout Dashboard (Sidebar Kiri & Topbar Kanan) menggunakan komponen Shadcn `Sidebar`.
 - [ ] Buat komponen `PageHeader` untuk judul setiap halaman CMS dengan _breadcrumbs_.
 
 ---
