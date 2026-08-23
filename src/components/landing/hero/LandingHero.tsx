@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { HeroCardSwap } from "@/components/landing/hero/HeroCardSwap";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function LandingHero() {
@@ -55,12 +56,14 @@ export function LandingHero() {
             Daftar Sekarang
             <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
           </Button>
-          <Button
-            variant="outline"
-            className="px-6 py-5 rounded-lg text-sm font-medium"
-          >
-            Pelajari Lebih Lanjut
-          </Button>
+          <Link href="/organisasi">
+            <Button
+              variant="outline"
+              className="px-6 py-5 rounded-lg text-sm font-medium"
+            >
+              Pelajari Lebih Lanjut
+            </Button>
+          </Link>
         </div>
       </div>
 

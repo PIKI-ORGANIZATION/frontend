@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, Calendar, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef } from "react";
@@ -91,13 +92,15 @@ export function NewsSection() {
             <h3 className="text-2xl md:text-3xl font-bold tracking-tight">
               Artikel Pilihan
             </h3>
-            <Button
-              variant="ghost"
-              className="group hidden md:flex items-center gap-2"
-            >
-              Lihat Semua Berita
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </Button>
+            <Link href="/berita">
+              <Button
+                variant="ghost"
+                className="group hidden md:flex items-center gap-2"
+              >
+                Lihat Semua Berita
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
           </div>
 
           {/* News Grid */}
@@ -142,13 +145,15 @@ export function NewsSection() {
           </div>
 
           {/* Mobile button */}
-          <Button
-            variant="outline"
-            className="w-full mt-10 md:hidden flex items-center justify-center gap-2"
-          >
-            Lihat Semua Berita
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+          <Link href="/berita" className="w-full mt-10 md:hidden block">
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+            >
+              Lihat Semua Berita
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

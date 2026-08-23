@@ -44,19 +44,29 @@ const defaultNavItems: iNavItem[] = [
     subheading: "Kembali ke halaman utama",
   },
   {
-    heading: "Berita",
-    href: "/berita",
-    subheading: "Kabar terbaru PIKI",
-  },
-  {
     heading: "Tentang",
     href: "/organisasi",
     subheading: "Struktur dan informasi pengurus",
   },
   {
+    heading: "Berita",
+    href: "/berita",
+    subheading: "Kabar terbaru PIKI",
+  },
+  {
+    heading: "Jurnal",
+    href: "/jurnal",
+    subheading: "Publikasi jurnal ilmiah",
+  },
+  {
+    heading: "Agenda",
+    href: "/agenda",
+    subheading: "Kalender kegiatan organisasi",
+  },
+  {
     heading: "Galeri",
     href: "/galeri",
-    subheading: "Kumpulan foto dan video kegiatan PIKI",
+    subheading: "Kumpulan foto dan video PIKI",
   },
   {
     heading: "Akses PIKI",
