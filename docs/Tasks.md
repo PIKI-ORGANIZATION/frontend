@@ -21,10 +21,10 @@ Dokumen ini berisi pemecahan tugas (_micro-tasking_) untuk mempermudah pengerjaa
 
 ## FASE 2: Inisialisasi & Fondasi (Selesai)
 
-- [ ] buat `Hero Section`
+- [x] buat `Hero Section`
 - [ ] buat komponent `landing page ` publik informasi tentang piki
-- [ ] Buat komponen `Navbar` publik (Menu, Logo, Tombol Login/Daftar) yang _sticky_ dan efek translusen.
-- [ ] Buat komponen `Footer` publik lengkap dengan navigasi sitemap dan _embed_ media sosial.
+- [x] Buat komponen `Navbar` publik (Menu, Logo, Tombol Login/Daftar) yang _sticky_ dan efek translusen.
+- [x] Buat komponen `Footer` publik lengkap dengan navigasi sitemap dan _embed_ media sosial.
 - [ ] Buat layout Dashboard (Sidebar Kiri & Topbar Kanan) menggunakan komponen Shadcn `Sidebar`.
 
 ---

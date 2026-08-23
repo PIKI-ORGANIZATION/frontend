@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import { LenisProvider } from "@/components/providers/lenis-provider";
+import { Navbar } from "@/components/layout/Navbar";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -35,7 +36,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <LenisProvider>{children}</LenisProvider>
+            <LenisProvider>
+              <Navbar />
+              {children}
+            </LenisProvider>
           </ThemeProvider>
         </ReactQueryProvider>
       </body>
