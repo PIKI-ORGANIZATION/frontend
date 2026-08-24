@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import { LenisProvider } from "@/components/providers/lenis-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
           >
             <LenisProvider>
               {children}
+              <Toaster position="top-center" />
             </LenisProvider>
           </ThemeProvider>
         </ReactQueryProvider>
