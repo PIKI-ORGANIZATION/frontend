@@ -31,24 +31,24 @@ Dokumen ini berisi pemecahan tugas (_micro-tasking_) untuk mempermudah pengerjaa
 
 _(Fase ini membangun kerangka cangkang aplikasi sebelum masuk ke logika data)_
 
-- [ ] Buat skema _routing_ di Next.js:
+- [x] Buat skema _routing_ di Next.js:
   - `(public)` untuk halaman depan (Landing, Berita, dll).
   - `(auth)` untuk Login & Register.
   - `(dashboard)` untuk CMS dan Member Area.
-- [ ] Buat layout Dashboard (Sidebar Kiri & Topbar Kanan) menggunakan komponen Shadcn `Sidebar`.
-- [ ] Buat komponen `PageHeader` untuk judul setiap halaman CMS dengan _breadcrumbs_.
+- [x] Buat layout Dashboard (Sidebar Kiri & Topbar Kanan) menggunakan komponen Shadcn `Sidebar`.
+- [x] Buat komponen `PageHeader` untuk judul setiap halaman CMS dengan _breadcrumbs_.
 
 ---
 
 ## FASE 4: Website Publik & Etalase Informasi
 
-- [ ] **Landing Page:**
+- [x] **Landing Page:**
   - Hero Section dengan animasi GSAP (Judul, CTA ke pendaftaran).
   - Section Visi Misi & Profil Singkat.
   - Section Highlight Berita Terbaru (Card grid).
   - Section Statistik Nasional (Counter angka animasi).
-- [ ] **Halaman Berita & Jurnal:** List artikel dengan filter kategori, paginasi, dan detail artikel (_Rich Text Rendering_).
-- [ ] **Halaman Profil & Struktur:** Visualisasi struktur organisasi berjenjang.
+- [x] **Halaman Berita & Jurnal:** List artikel dengan filter kategori, paginasi, dan detail artikel (_Rich Text Rendering_).
+- [x] **Halaman Profil & Struktur:** Visualisasi struktur organisasi berjenjang.
 
 ---
 

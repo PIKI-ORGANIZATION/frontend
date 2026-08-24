@@ -2,6 +2,7 @@
 
 import { VisionMissionSection } from "@/components/landing/profil/VisionMissionSection";
 import { HistorySection } from "@/components/landing/profil/HistorySection";
+import { StructureSection } from "@/components/landing/profil/StructureSection";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,9 @@ export default function OrganisasiPage() {
 
       {/* Sejarah Section (Reusable) */}
       <HistorySection />
+
+      {/* Struktur Organisasi Section */}
+      <StructureSection />
 
       {/* Contact Section */}
       <section className="w-full py-24 md:py-32 bg-card relative z-20 shadow-[0_-20px_50px_rgba(0,0,0,0.05)] rounded-t-[3rem] md:rounded-t-[5rem]">

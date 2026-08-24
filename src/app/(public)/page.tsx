@@ -5,6 +5,7 @@ import { VisionMissionSection } from "@/components/landing/profil/VisionMissionS
 import { HistorySection } from "@/components/landing/profil/HistorySection";
 import { StructureSection } from "@/components/landing/profil/StructureSection";
 import { ProgramSection } from "@/components/landing/profil/ProgramSection";
+import { StatistikSection } from "@/components/landing/profil/StatistikSection";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
       <div className="relative z-20 bg-background">
         <AboutSection />
         <VisionMissionSection />
+        <StatistikSection />
         <HistorySection />
         <StructureSection />
         <ProgramSection />
