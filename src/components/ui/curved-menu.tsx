@@ -61,7 +61,7 @@ const defaultNavItems: iNavItem[] = [
       { heading: "Galeri Foto", href: "/galeri/foto" },
       { heading: "Galeri Video", href: "/galeri/video" },
       { heading: "Agenda", href: "/agenda" },
-    ]
+    ],
   },
   {
     heading: "Akses PIKI",
@@ -195,7 +195,7 @@ const NavLink: React.FC<iNavLinkProps> = ({
               </motion.span>
             </div>
           </div>
-          
+
           {subItems && subItems.length > 0 && (
             <div className="text-3xl md:text-4xl font-extralight text-muted-foreground mr-4">
               {isOpen ? "-" : "+"}
@@ -203,7 +203,7 @@ const NavLink: React.FC<iNavLinkProps> = ({
           )}
         </Link>
       </motion.div>
-      
+
       <AnimatePresence>
         {isOpen && subItems && (
           <motion.div
@@ -213,10 +213,10 @@ const NavLink: React.FC<iNavLinkProps> = ({
             className="overflow-hidden flex flex-col gap-4 mb-4 md:mb-8 ml-4 md:ml-8"
           >
             {subItems.map((sub, i) => (
-              <Link 
-                key={i} 
-                href={sub.href} 
-                onClick={() => setIsActive(false)} 
+              <Link
+                key={i}
+                href={sub.href}
+                onClick={() => setIsActive(false)}
                 className="block text-xl md:text-2xl font-light hover:text-primary transition-all text-muted-foreground hover:translate-x-2 duration-300"
               >
                 {sub.heading}
@@ -300,9 +300,7 @@ const CurvedNavbar: React.FC<
           </section>
         </div>
       </div>
-      <div className="shrink-0 z-10">
-        {footer}
-      </div>
+      <div className="shrink-0 z-10">{footer}</div>
       <Curve />
     </motion.div>
   );
@@ -315,8 +313,12 @@ const Header: React.FC<iHeaderProps> = ({
   setIsActive: externalSetIsActive,
 }) => {
   const [internalIsActive, setInternalIsActive] = useState(false);
-  const isActive = externalIsActive !== undefined ? externalIsActive : internalIsActive;
-  const setIsActive = externalSetIsActive !== undefined ? externalSetIsActive : setInternalIsActive;
+  const isActive =
+    externalIsActive !== undefined ? externalIsActive : internalIsActive;
+  const setIsActive =
+    externalSetIsActive !== undefined
+      ? externalSetIsActive
+      : setInternalIsActive;
 
   const pathname = usePathname();
 

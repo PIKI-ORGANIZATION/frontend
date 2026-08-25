@@ -16,10 +16,9 @@ import {
   useRegistrasiStore,
   type RegistrasiData,
 } from "@/store/useRegistrasiStore";
-import { ArrowLeft, Loader2, UploadCloud } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useSubmitRegistrasi } from "@/hooks/api/useRegistrasi";
 import { toast } from "sonner";
-import { useState } from "react";
 
 const step4Schema = z.object({
   password: z.string().min(6, "Password minimal 6 karakter"),
@@ -55,8 +54,6 @@ export function Step4Akun({
   const { data, resetData, updateData } = useRegistrasiStore();
   const submitMutation = useSubmitRegistrasi();
 
-  const [ktpFile, setKtpFile] = useState<File | null>(data.ktpFile || null);
-
   const form = useForm<Step4Values>({
     resolver: zodResolver(step4Schema),
     defaultValues: {
@@ -68,18 +65,17 @@ export function Step4Akun({
   });
 
   function onSubmit(values: Step4Values) {
-    if (!ktpFile) {
-      toast.error("Mohon unggah KTP Anda.");
+    if (!data.ktpFile) {
+      toast.error("File KTP tidak ditemukan. Silakan kembali ke langkah awal.");
       return;
     }
 
     // Save to store one last time
     updateData({
       ...values,
-      ktpFile,
     });
 
-    const finalData = { ...data, ...values, ktpFile };
+    const finalData = { ...data, ...values };
 
     submitMutation.mutate(finalData as RegistrasiData, {
       onSuccess: () => {
@@ -104,28 +100,6 @@ export function Step4Akun({
         </div>
 
         <div className="space-y-5">
-          <div>
-            <FormLabel className="mb-2 block">Upload KTP</FormLabel>
-            <div
-              className="border-2 border-dashed border-muted-foreground/30 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition"
-              onClick={() => document.getElementById("ktp-upload")?.click()}
-            >
-              <UploadCloud className="w-8 h-8 text-muted-foreground mb-2" />
-              <p className="text-sm font-medium">
-                {ktpFile ? ktpFile.name : "Klik untuk unggah Foto KTP"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                JPG, PNG max 2MB
-              </p>
-              <input
-                id="ktp-upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => setKtpFile(e.target.files?.[0] || null)}
-              />
-            </div>
-          </div>
 
           <FormField
             control={form.control}
@@ -219,17 +193,11 @@ export function Step4Akun({
             variant="ghost"
             size="lg"
             onClick={onPrev}
-            className="rounded-xl"
             disabled={submitMutation.isPending}
           >
             <ArrowLeft className="mr-2 w-4 h-4" /> Kembali
           </Button>
-          <Button
-            type="submit"
-            size="lg"
-            className="rounded-xl"
-            disabled={submitMutation.isPending}
-          >
+          <Button type="submit" size="lg" disabled={submitMutation.isPending}>
             {submitMutation.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : null}

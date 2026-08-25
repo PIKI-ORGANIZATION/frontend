@@ -13,10 +13,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useRegistrasiStore } from "@/store/useRegistrasiStore";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const step1Schema = z
   .object({
+    nik: z
+      .string()
+      .min(16, "NIK minimal 16 digit")
+      .max(16, "NIK maksimal 16 digit")
+      .regex(/^[0-9]+$/, "NIK harus berupa angka"),
     namaLengkap: z.string().min(3, "Nama lengkap minimal 3 karakter"),
     tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi"),
     noWa: z
@@ -35,12 +40,24 @@ const step1Schema = z
 
 type Step1Values = z.infer<typeof step1Schema>;
 
-export function Step1Identitas({ onNext }: { onNext: () => void }) {
+export function Step1Identitas({
+  onNext,
+  onPrev,
+}: {
+  onNext: () => void;
+  onPrev: () => void;
+}) {
   const { data, updateData } = useRegistrasiStore();
+
+  const isOcrPartial =
+    data.isOcrValid && (!data.nik || !data.namaLengkap || !data.tanggalLahir);
+  const isOcrPerfect =
+    data.isOcrValid && data.nik && !!data.namaLengkap && !!data.tanggalLahir;
 
   const form = useForm<Step1Values>({
     resolver: zodResolver(step1Schema),
     defaultValues: {
+      nik: data.nik || "",
       namaLengkap: data.namaLengkap || "",
       tanggalLahir: data.tanggalLahir || "",
       noWa: data.noWa || "",
@@ -65,7 +82,45 @@ export function Step1Identitas({ onNext }: { onNext: () => void }) {
           </p>
         </div>
 
+        {isOcrPartial && (
+          <div className="p-4 bg-orange-500/10 border border-orange-500/20 text-orange-700 dark:text-orange-400 rounded-lg text-sm flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold mb-1">Gagal Memuat Sebagian Data</p>
+              <p className="leading-relaxed">
+                Silakan lengkapi atau koreksi kolom yang kosong secara manual.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isOcrPerfect && (
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg text-sm flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold mb-1">Scan Berhasil</p>
+              <p className="leading-relaxed">
+                Sebelum melanjutkan, Silahkan periksa kembali apakah semua data
+                sudah akurat
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <FormField
+            control={form.control}
+            name="nik"
+            render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Nomor Induk Kependudukan (NIK)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Masukkan 16 digit NIK" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="namaLengkap"
@@ -149,7 +204,10 @@ export function Step1Identitas({ onNext }: { onNext: () => void }) {
           />
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-between pt-4">
+          <Button type="button" variant="ghost" size="lg" onClick={onPrev}>
+            Kembali
+          </Button>
           <Button type="submit" size="lg">
             Lanjut <ArrowRight className="ml-2 w-4 h-4" />
           </Button>

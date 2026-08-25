@@ -2,6 +2,8 @@ import { create } from 'zustand';
 
 export interface RegistrasiData {
   // Step 1
+  nik: string;
+  isOcrValid: boolean;
   namaLengkap: string;
   tanggalLahir: string;
   email: string;

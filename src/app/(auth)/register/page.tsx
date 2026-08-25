@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Step0ScanKTP } from "@/components/auth/register/Step0ScanKTP";
 import { Step1Identitas } from "@/components/auth/register/Step1Identitas";
 import { Step2Kualifikasi } from "@/components/auth/register/Step2Kualifikasi";
 import { Step3Wilayah } from "@/components/auth/register/Step3Wilayah";
@@ -16,7 +17,7 @@ export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 4));
+  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
   const onSuccess = () => setIsSuccess(true);
 
@@ -27,26 +28,32 @@ export default function RegisterPage() {
   const steps: StepProps[] = [
     {
       step: 1,
-      title: "Identitas Diri",
-      description: "Lengkapi data diri sesuai KTP",
-      content: <Step1Identitas onNext={nextStep} />,
+      title: "Scan KTP",
+      description: "Ambil data KTP otomatis",
+      content: <Step0ScanKTP onNext={nextStep} />,
     },
     {
       step: 2,
+      title: "Identitas Diri",
+      description: "Lengkapi data diri",
+      content: <Step1Identitas onNext={nextStep} onPrev={prevStep} />,
+    },
+    {
+      step: 3,
       title: "Kualifikasi",
       description: "Pendidikan dan Pekerjaan",
       content: <Step2Kualifikasi onNext={nextStep} onPrev={prevStep} />,
     },
     {
-      step: 3,
+      step: 4,
       title: "Pilih Wilayah",
-      description: "Pilih DPC/DPP tempat Anda mendaftar",
+      description: "Pilih DPC/DPP tempat mendaftar",
       content: <Step3Wilayah onNext={nextStep} onPrev={prevStep} />,
     },
     {
-      step: 4,
+      step: 5,
       title: "Keamanan Akun",
-      description: "Buat password dan unggah dokumen",
+      description: "Buat password",
       content: <Step4Akun onSuccess={onSuccess} onPrev={prevStep} />,
     },
   ];
@@ -102,7 +109,7 @@ export default function RegisterPage() {
               steps={steps}
               currentStep={currentStep}
               headerTitle="Formulir Pendaftaran"
-              headerStatus="Step 1-4"
+              headerStatus="Step 1-5"
             />
           </div>
         </div>
