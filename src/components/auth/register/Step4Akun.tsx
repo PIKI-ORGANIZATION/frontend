@@ -44,15 +44,13 @@ const step4Schema = z.object({
 
 type Step4Values = z.infer<typeof step4Schema>;
 
-export function Step4Akun({
-  onSuccess,
-  onPrev,
-}: {
-  onSuccess: () => void;
+interface Props {
   onPrev: () => void;
-}) {
-  const { data, resetData, updateData } = useRegistrasiStore();
-  const submitMutation = useSubmitRegistrasi();
+  onNext: () => void;
+}
+
+export function Step4Akun({ onPrev, onNext }: Props) {
+  const { data, updateData } = useRegistrasiStore();
 
   const form = useForm<Step4Values>({
     resolver: zodResolver(step4Schema),
@@ -65,42 +63,20 @@ export function Step4Akun({
   });
 
   function onSubmit(values: Step4Values) {
-    if (!data.ktpFile) {
-      toast.error("File KTP tidak ditemukan. Silakan kembali ke langkah awal.");
-      return;
-    }
-
-    // Save to store one last time
     updateData({
-      ...values,
+      password: values.password,
+      setujuKebenaranData: values.setujuKebenaranData,
+      setujuPengelolaanData: values.setujuPengelolaanData,
+      setujuKerahasiaanData: values.setujuKerahasiaanData,
     });
 
-    const finalData = { ...data, ...values };
-
-    submitMutation.mutate(finalData as RegistrasiData, {
-      onSuccess: () => {
-        resetData();
-        toast.success("Pendaftaran berhasil dikirim!");
-        onSuccess();
-      },
-      onError: (err) => {
-        toast.error(err.message || "Gagal mengirim pendaftaran");
-      },
-    });
+    onNext();
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Keamanan & Berkas</h2>
-          <p className="text-muted-foreground">
-            Langkah terakhir, buat password dan unggah dokumen pendukung.
-          </p>
-        </div>
-
         <div className="space-y-5">
-
           <FormField
             control={form.control}
             name="password"
@@ -193,15 +169,11 @@ export function Step4Akun({
             variant="ghost"
             size="lg"
             onClick={onPrev}
-            disabled={submitMutation.isPending}
           >
             <ArrowLeft className="mr-2 w-4 h-4" /> Kembali
           </Button>
-          <Button type="submit" size="lg" disabled={submitMutation.isPending}>
-            {submitMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : null}
-            Kirim Pendaftaran
+          <Button type="submit" size="lg" className="px-8">
+            Lanjut ke Pembayaran
           </Button>
         </div>
       </form>

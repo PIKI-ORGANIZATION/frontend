@@ -13,8 +13,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useRegistrasiStore } from "@/store/useRegistrasiStore";
 import { ArrowLeft, ArrowRight, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -78,13 +89,6 @@ export function Step2Kualifikasi({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Kualifikasi & Minat</h2>
-          <p className="text-muted-foreground">
-            Bantu kami mengenal latar belakang dan minat pelayanan Anda.
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <FormField
             control={form.control}
@@ -102,12 +106,12 @@ export function Step2Kualifikasi({
                           aria-expanded={openPendidikan}
                           className={cn(
                             "w-full justify-between h-12 font-normal",
-                            !field.value && "text-muted-foreground"
+                            !field.value && "text-muted-foreground",
                           )}
                         >
                           {field.value
                             ? pendidikanOptions.find(
-                                (opt) => opt.value === field.value
+                                (opt) => opt.value === field.value,
                               )?.label
                             : "Pilih tingkat pendidikan..."}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -115,25 +119,34 @@ export function Step2Kualifikasi({
                       </FormControl>
                     }
                   />
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <PopoverContent
+                    className="w-[--radix-popover-trigger-width] p-0"
+                    align="start"
+                  >
                     <Command>
                       <CommandInput placeholder="Cari pendidikan..." />
                       <CommandList>
-                        <CommandEmpty>Tingkat pendidikan tidak ditemukan.</CommandEmpty>
+                        <CommandEmpty>
+                          Tingkat pendidikan tidak ditemukan.
+                        </CommandEmpty>
                         <CommandGroup>
                           {pendidikanOptions.map((opt) => (
                             <CommandItem
                               key={opt.value}
                               value={opt.label} // use label for search
                               onSelect={() => {
-                                form.setValue("tingkatPendidikan", opt.value, { shouldValidate: true });
+                                form.setValue("tingkatPendidikan", opt.value, {
+                                  shouldValidate: true,
+                                });
                                 setOpenPendidikan(false);
                               }}
                             >
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  field.value === opt.value ? "opacity-100" : "opacity-0"
+                                  field.value === opt.value
+                                    ? "opacity-100"
+                                    : "opacity-0",
                                 )}
                               />
                               {opt.label}
@@ -182,12 +195,12 @@ export function Step2Kualifikasi({
                           aria-expanded={openBidang}
                           className={cn(
                             "w-full justify-between h-12 font-normal",
-                            !field.value && "text-muted-foreground"
+                            !field.value && "text-muted-foreground",
                           )}
                         >
                           {field.value
                             ? minatOptions.find(
-                                (opt) => opt.value === field.value
+                                (opt) => opt.value === field.value,
                               )?.label
                             : "Pilih bidang yang diminati..."}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -195,7 +208,10 @@ export function Step2Kualifikasi({
                       </FormControl>
                     }
                   />
-                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <PopoverContent
+                    className="w-[--radix-popover-trigger-width] p-0"
+                    align="start"
+                  >
                     <Command>
                       <CommandInput placeholder="Cari bidang..." />
                       <CommandList>
@@ -206,14 +222,18 @@ export function Step2Kualifikasi({
                               key={opt.value}
                               value={opt.label} // use label for search
                               onSelect={() => {
-                                form.setValue("minatBidang", opt.value, { shouldValidate: true });
+                                form.setValue("minatBidang", opt.value, {
+                                  shouldValidate: true,
+                                });
                                 setOpenBidang(false);
                               }}
                             >
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  field.value === opt.value ? "opacity-100" : "opacity-0"
+                                  field.value === opt.value
+                                    ? "opacity-100"
+                                    : "opacity-0",
                                 )}
                               />
                               {opt.label}

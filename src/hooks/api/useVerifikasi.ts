@@ -17,6 +17,7 @@ export interface RegistrasiItem {
   } | null;
   created_at: string;
   fileKtpUrl: string;
+  buktiBayarUrl?: string | null;
 }
 
 export function useGetRegistrasiPending() {
@@ -57,6 +58,25 @@ export function useApproveRegistrasi() {
       if (!res.ok) {
         const errorData = await res.json().catch(() => null);
         throw new Error(errorData?.message || "Gagal memproses verifikasi");
+      }
+
+      // Jika disetujui, langsung hit endpoint aktivasi-kta agar akun & KTA dibuat, lalu email dikirim
+      if (status === "APPROVED_DPP") {
+        const aktivasiRes = await fetch(`${API_BASE}/registrasi/${id}/aktivasi-kta`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            actorNama: "SUPER_ADMIN",
+          }),
+        });
+
+        if (!aktivasiRes.ok) {
+          const errorData = await aktivasiRes.json().catch(() => null);
+          throw new Error(`Verifikasi berhasil, tapi Aktivasi KTA gagal: ${errorData?.message || "Server Error"}`);
+        }
       }
 
       return res.json();

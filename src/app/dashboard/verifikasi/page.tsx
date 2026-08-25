@@ -146,6 +146,7 @@ export default function VerifikasiPage() {
         isPending={isPending}
         processingId={processingId}
         onApprove={(id) => handleProcess(id, "APPROVED_DPP")}
+        onReject={(id) => handleProcess(id, "REJECTED")}
       />
     </>
   );

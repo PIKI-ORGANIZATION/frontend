@@ -52,10 +52,12 @@ export function LandingHero() {
 
         {/* CTAs */}
         <div className="hero-animate flex items-center gap-3 flex-wrap">
-          <Button className="gap-2 px-6 py-5 rounded-lg text-sm font-medium">
-            Daftar Sekarang
-            <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
-          </Button>
+          <Link href="/register">
+            <Button className="gap-2 px-6 py-5 rounded-lg text-sm font-medium">
+              Daftar Sekarang
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+            </Button>
+          </Link>
           <Link href="/organisasi">
             <Button
               variant="outline"

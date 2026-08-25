@@ -75,13 +75,6 @@ export function Step1Identitas({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Identitas Pribadi</h2>
-          <p className="text-muted-foreground">
-            Isi data diri Anda sesuai dengan dokumen resmi (KTP).
-          </p>
-        </div>
-
         {isOcrPartial && (
           <div className="p-4 bg-orange-500/10 border border-orange-500/20 text-orange-700 dark:text-orange-400 rounded-lg text-sm flex items-start gap-3">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />

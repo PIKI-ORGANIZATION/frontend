@@ -103,14 +103,6 @@ export function Step3Wilayah({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Pilih Cabang (DPP & DPC)</h2>
-          <p className="text-muted-foreground">
-            Silakan pilih di provinsi dan kabupaten mana Anda akan mendaftar
-            sebagai anggota.
-          </p>
-        </div>
-
         <div className="space-y-5">
           <FormField
             control={form.control}

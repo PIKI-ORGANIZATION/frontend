@@ -7,7 +7,10 @@ import {
   Loader2,
   Image as ImageIcon,
   X,
+  CheckCircle2,
+  Upload,
 } from "lucide-react";
+import Image from "next/image";
 
 export function Step0ScanKTP({ onNext }: { onNext: () => void }) {
   const { data, updateData } = useRegistrasiStore();
@@ -60,12 +63,16 @@ export function Step0ScanKTP({ onNext }: { onNext: () => void }) {
       const result = await res.json();
 
       if (!res.ok) {
-        throw new Error("Sistem kesulitan membaca KTP Anda. Pastikan foto terang dan jelas, atau silakan klik 'Isi Manual' untuk melanjutkan.");
+        throw new Error(
+          "Sistem kesulitan membaca KTP Anda. Pastikan foto terang dan jelas, atau silakan klik 'Isi Manual' untuk melanjutkan.",
+        );
       }
 
       if (result.success && result.data) {
         if (!result.data.isValidKtp) {
-          throw new Error("Gambar tidak terdeteksi sebagai KTP. Pastikan gambar jelas, atau silakan pilih 'Isi Manual'.");
+          throw new Error(
+            "Gambar tidak terdeteksi sebagai KTP. Pastikan gambar jelas, atau silakan pilih 'Isi Manual'.",
+          );
         }
 
         const { nik, namaLengkap, tempatTglLahir } = result.data.extractedData;
@@ -92,9 +99,14 @@ export function Step0ScanKTP({ onNext }: { onNext: () => void }) {
       }
     } catch (error) {
       if (error instanceof Error) {
-        setErrorMsg(error.message || "Gagal memproses gambar. Silakan coba lagi atau pilih 'Isi Manual'.");
+        setErrorMsg(
+          error.message ||
+            "Gagal memproses gambar. Silakan coba lagi atau pilih 'Isi Manual'.",
+        );
       } else {
-        setErrorMsg("Gagal memproses gambar. Silakan coba lagi atau pilih 'Isi Manual'.");
+        setErrorMsg(
+          "Gagal memproses gambar. Silakan coba lagi atau pilih 'Isi Manual'.",
+        );
       }
     } finally {
       setIsScanning(false);
@@ -112,16 +124,19 @@ export function Step0ScanKTP({ onNext }: { onNext: () => void }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Scan KTP</h2>
-        <p className="text-muted-foreground">
-          Unggah foto KTP Anda untuk mempercepat pengisian data pendaftaran.
-          Pastikan foto KTP terlihat jelas dan terang.
-        </p>
-      </div>
+      <p className="text-muted-foreground">
+        Unggah foto KTP Anda untuk mempercepat pengisian data pendaftaran.
+        Pastikan foto KTP terlihat jelas dan terang.
+      </p>
 
       <div className="space-y-4">
-        <div className="border-2 border-dashed border-primary/20 rounded-2xl p-8 flex flex-col items-center justify-center bg-primary/5 relative overflow-hidden transition-all hover:bg-primary/10">
+        <div
+          className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors group ${
+            selectedFile
+              ? "border-green-500/50 bg-green-50/50 dark:bg-green-500/10"
+              : "border-muted-foreground/25 hover:border-primary/50"
+          }`}
+        >
           <input
             type="file"
             accept="image/*"
@@ -131,30 +146,46 @@ export function Step0ScanKTP({ onNext }: { onNext: () => void }) {
           />
 
           {previewUrl ? (
-            <div className="relative w-full max-w-sm aspect-video rounded-xl overflow-hidden shadow-sm border border-border">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewUrl}
-                alt="Preview KTP"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <p className="text-white font-medium flex items-center gap-2">
-                  <UploadCloud className="w-5 h-5" /> Ganti Foto
+            <div className="space-y-5">
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  Foto KTP siap diproses
                 </p>
+                <p className="text-sm text-muted-foreground max-w-[200px] mx-auto truncate" title={selectedFile?.name}>
+                  {selectedFile?.name}
+                </p>
+              </div>
+
+              <div className="mt-4 flex justify-center pointer-events-none">
+                <div className="relative w-64 aspect-[1.58/1] rounded-xl overflow-hidden border shadow-sm">
+                  <Image
+                    src={previewUrl}
+                    alt="Preview KTP"
+                    fill
+                    className="object-cover transition-transform group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-white font-medium flex items-center gap-2">
+                      <UploadCloud className="w-5 h-5" /> Ganti Foto
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center text-center space-y-4">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                <ImageIcon className="w-8 h-8" />
+            <div className="space-y-4 cursor-pointer py-6 pointer-events-none">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
+                <Upload className="w-7 h-7 text-muted-foreground" />
               </div>
-              <div>
-                <p className="font-medium text-lg">
-                  Sentuh untuk mengunggah foto KTP
+              <div className="space-y-2">
+                <p className="font-semibold text-sm">
+                  Klik atau Tarik & Lepas file KTP di sini
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Mendukung format JPG, JPEG, PNG (Maks. 5MB)
+                <p className="text-xs text-muted-foreground max-w-[250px] mx-auto leading-relaxed">
+                  Format yang didukung: JPG atau PNG. Maksimal ukuran file 5MB.
                 </p>
               </div>
             </div>

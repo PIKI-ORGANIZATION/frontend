@@ -29,6 +29,9 @@ export interface RegistrasiData {
   setujuKebenaranData: boolean;
   setujuPengelolaanData: boolean;
   setujuKerahasiaanData: boolean;
+
+  // Step 5 (Pembayaran)
+  buktiBayarFile: File | null;
 }
 
 interface RegistrasiStore {

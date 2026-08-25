@@ -19,6 +19,7 @@ interface ReviewModalProps {
   isPending: boolean;
   processingId: string | null;
   onApprove: (id: string) => void;
+  onReject: (id: string) => void;
 }
 
 export function ReviewModal({
@@ -28,6 +29,7 @@ export function ReviewModal({
   isPending,
   processingId,
   onApprove,
+  onReject,
 }: ReviewModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -115,16 +117,54 @@ export function ReviewModal({
                 </div>
               </>
             )}
+
+            {selectedItem.buktiBayarUrl && (
+              <>
+                <Separator />
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Bukti Pembayaran / Transfer
+                  </span>
+                  <div className="rounded-md border p-3 bg-muted/30">
+                    <a
+                      href={selectedItem.buktiBayarUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Lihat Bukti Transfer
+                    </a>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        <div className="flex gap-2 justify-end mt-4">
+        <div className="flex flex-col sm:flex-row gap-2 justify-end mt-4">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => onOpenChange(false)}
             className="py-4 px-4"
           >
             Batal
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={isPending && processingId === selectedItem?.id}
+            onClick={() => {
+              if (selectedItem) {
+                onReject(selectedItem.id);
+                onOpenChange(false);
+              }
+            }}
+            className="py-4 px-4"
+          >
+            {isPending && processingId === selectedItem?.id ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : null}
+            Tolak
           </Button>
           <Button
             disabled={isPending && processingId === selectedItem?.id}
