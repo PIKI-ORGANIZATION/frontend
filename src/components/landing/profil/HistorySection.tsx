@@ -87,8 +87,8 @@ export function HistorySection() {
       }
 
       // Grayscale/Monochrome Effect for Images
-      const cards = gsap.utils.toArray(".history-card");
-      cards.forEach((card: any) => {
+      const cards = gsap.utils.toArray(".history-card") as HTMLElement[];
+      cards.forEach((card) => {
         const img = card.querySelector(".history-img");
 
         // Starts grayscale, turns color smoothly as it approaches center
@@ -125,8 +125,8 @@ export function HistorySection() {
 
     // Fallback for mobile (Native horizontal scroll)
     mm.add("(max-width: 767px)", () => {
-      const cards = gsap.utils.toArray(".history-card");
-      cards.forEach((card: any) => {
+      const cards = gsap.utils.toArray(".history-card") as HTMLElement[];
+      cards.forEach((card) => {
         const img = card.querySelector(".history-img");
 
         gsap.fromTo(

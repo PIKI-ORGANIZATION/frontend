@@ -28,14 +28,15 @@ export default function VerifikasiPage() {
     setIsReviewOpen(true);
   };
 
-  const handleProcess = (id: string, status: "APPROVED_DPP" | "REJECTED") => {
+  const handleProcess = (id: string, status: "APPROVED_DPP" | "REJECTED", catatanVerifikasi?: string) => {
     setProcessingId(id);
     processVerifikasi(
-      { id, status },
+      { id, status, catatanVerifikasi },
       {
         onSuccess: () => {
           toast.success(`Berhasil memproses pendaftaran.`);
           setProcessingId(null);
+          setIsReviewOpen(false);
         },
         onError: (err) => {
           toast.error(err.message || "Gagal memproses pendaftaran");
@@ -146,7 +147,7 @@ export default function VerifikasiPage() {
         isPending={isPending}
         processingId={processingId}
         onApprove={(id) => handleProcess(id, "APPROVED_DPP")}
-        onReject={(id) => handleProcess(id, "REJECTED")}
+        onReject={(id, reason) => handleProcess(id, "REJECTED", reason)}
       />
     </>
   );

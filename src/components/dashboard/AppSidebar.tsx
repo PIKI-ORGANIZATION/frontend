@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserPayload } from "@/lib/utils";
+import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
 
 // --- Types ---
 export type NavItemData = {
@@ -75,18 +76,18 @@ const adminNavGroups: NavGroupData[] = [
       },
     ],
   },
-  {
-    heading: "Keuangan & Konten",
-    items: [
-      { id: "pembayaran", title: "Iuran & Keuangan", icon: CreditCard }, 
-      {
-        id: "/dashboard/artikel",
-        title: "Artikel & Berita",
-        icon: FileText,
-        url: "/dashboard/artikel",
-      },
-    ],
-  },
+  // {
+  //   heading: "Keuangan & Konten",
+  //   items: [
+  //     { id: "pembayaran", title: "Iuran & Keuangan", icon: CreditCard },
+  //     {
+  //       id: "/dashboard/artikel",
+  //       title: "Artikel & Berita",
+  //       icon: FileText,
+  //       url: "/dashboard/artikel",
+  //     },
+  //   ],
+  // },
 ];
 
 const anggotaNavGroups: NavGroupData[] = [
@@ -118,17 +119,17 @@ const anggotaNavGroups: NavGroupData[] = [
       },
     ],
   },
-  {
-    heading: "Informasi",
-    items: [
-      {
-        id: "/dashboard/artikel",
-        title: "Berita & Info PIKI",
-        icon: FileText,
-        url: "/dashboard/artikel",
-      },
-    ],
-  },
+  // {
+  //   heading: "Informasi",
+  //   items: [
+  //     {
+  //       id: "/dashboard/artikel",
+  //       title: "Berita & Info PIKI",
+  //       icon: FileText,
+  //       url: "/dashboard/artikel",
+  //     },
+  //   ],
+  // },
 ];
 
 const mockBottomItems: NavItemData[] = [
@@ -144,14 +145,14 @@ const mockBottomItems: NavItemData[] = [
 
 // --- Subcomponents ---
 
-function WorkspaceSwitcher({ 
+function WorkspaceSwitcher({
   user,
-  selected, 
-  onSelect 
-}: { 
-  user?: UserPayload | null,
-  selected?: string, 
-  onSelect?: (val: string) => void 
+  selected,
+  onSelect,
+}: {
+  user?: UserPayload | null;
+  selected?: string;
+  onSelect?: (val: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [internalSelected, setInternalSelected] = useState("PIKI Pusat (DPP)");
@@ -328,8 +329,11 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
-  const isAnggota = user?.roles?.[0]?.toLowerCase() === "anggota";
-  const navGroups = isAnggota ? anggotaNavGroups : adminNavGroups;
+  // Gunakan utilitas RBAC untuk mengecek role
+  const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);
+
+  // Jika Admin, tampilkan admin nav. Jika bukan (berarti User/Member), tampilkan anggota nav.
+  const navGroups = isAdmin ? adminNavGroups : anggotaNavGroups;
 
   // Handle Cmd+K for search
   useEffect(() => {

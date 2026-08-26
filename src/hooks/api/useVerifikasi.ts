@@ -41,7 +41,7 @@ export function useApproveRegistrasi() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "APPROVED_DPP" | "REJECTED" }) => {
+    mutationFn: async ({ id, status, catatanVerifikasi }: { id: string; status: "APPROVED_DPP" | "REJECTED", catatanVerifikasi?: string }) => {
       const token = Cookies.get("token");
       const res = await fetch(`${API_BASE}/registrasi/${id}/verifikasi`, {
         method: "PATCH",
@@ -52,6 +52,7 @@ export function useApproveRegistrasi() {
         body: JSON.stringify({
           status,
           actorNama: "SUPER_ADMIN", // Sementara di hardcode untuk role super_admin
+          catatanVerifikasi,
         }),
       });
 
@@ -60,24 +61,7 @@ export function useApproveRegistrasi() {
         throw new Error(errorData?.message || "Gagal memproses verifikasi");
       }
 
-      // Jika disetujui, langsung hit endpoint aktivasi-kta agar akun & KTA dibuat, lalu email dikirim
-      if (status === "APPROVED_DPP") {
-        const aktivasiRes = await fetch(`${API_BASE}/registrasi/${id}/aktivasi-kta`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            actorNama: "SUPER_ADMIN",
-          }),
-        });
 
-        if (!aktivasiRes.ok) {
-          const errorData = await aktivasiRes.json().catch(() => null);
-          throw new Error(`Verifikasi berhasil, tapi Aktivasi KTA gagal: ${errorData?.message || "Server Error"}`);
-        }
-      }
 
       return res.json();
     },

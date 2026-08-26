@@ -9,7 +9,8 @@ import { toast } from "sonner";
 import Cookies from "js-cookie";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, decodeToken } from "@/lib/utils";
+import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
@@ -76,8 +77,18 @@ export default function LoginPage() {
         // Jika remember dicentang, cookie bisa disimpan lebih lama (misal 7 hari), kalau tidak 1 hari
         const expiresIn = values.remember ? 7 : 1;
         Cookies.set("token", data.accessToken, { expires: expiresIn });
+        
         toast.success("Login berhasil!");
-        router.push("/dashboard");
+
+        // Decode token untuk mendapatkan role
+        const user = decodeToken(data.accessToken);
+        const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);
+
+        if (isAdmin) {
+          router.push("/dashboard/verifikasi");
+        } else {
+          router.push("/dashboard/anggota");
+        }
       } else {
         throw new Error("Token tidak ditemukan di response");
       }
