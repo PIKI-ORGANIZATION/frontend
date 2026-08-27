@@ -5,11 +5,22 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
-import { CreditCard, UserCheck, LogOut, Menu, X } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { MinimalFooter } from "@/components/ui/minimal-footer";
+import { ThemeToggle } from "@/components/theme-toggle";
+
+import {
+  Navbar,
+  NavBody,
+  NavItems,
+  MobileNav,
+  MobileNavHeader,
+  MobileNavMenu,
+  MobileNavToggle,
+} from "@/components/ui/resizable-navbar";
 
 export default function PortalLayout({
   children,
@@ -22,8 +33,8 @@ export default function PortalLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { name: "KTA Digital", path: "/portal", icon: CreditCard },
-    { name: "Profil Saya", path: "/portal/pengaturan", icon: UserCheck },
+    { name: "KTA Digital", link: "/portal" },
+    { name: "Profil Saya", link: "/portal/pengaturan" },
   ];
 
   const handleLogout = () => {
@@ -32,12 +43,17 @@ export default function PortalLayout({
     router.push("/login");
   };
 
+  const handleNavigation = (path: string) => {
+    setIsMobileMenuOpen(false);
+    router.push(path);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 w-full bg-background backdrop-blur-md border-b border-border/50 shadow-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <Navbar>
+        {/* Desktop Navigation */}
+        <NavBody>
+          <div className="flex items-center gap-2 relative z-50">
             <Image
               src="/logo1.png"
               width={25}
@@ -45,31 +61,13 @@ export default function PortalLayout({
               alt="Logo PIKI"
               style={{ width: "auto", height: "auto" }}
             />
-            <span className="font-semibold text-lg tracking-tight hidden sm:block text-foreground">
-              PIKI Member
-            </span>
           </div>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => {
-              const isActive = pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  className={`flex items-center gap-2 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.name}
-                </Link>
-              );
-            })}
-            <div className="w-px h-4 bg-border mx-2"></div>
+          <NavItems
+            items={navItems}
+            onItemClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="flex items-center gap-4 relative z-50">
+            <ThemeToggle variant="dropdown" />
             <Button
               variant="ghost"
               size="sm"
@@ -79,60 +77,78 @@ export default function PortalLayout({
               <LogOut className="w-4 h-4 mr-2" />
               Keluar
             </Button>
-          </nav>
+          </div>
+        </NavBody>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            className="md:hidden p-2 text-muted-foreground"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        {/* Mobile Navigation */}
+        <MobileNav>
+          <MobileNavHeader>
+            <div className="flex items-center gap-2">
+              <Image
+                src="/logo1.png"
+                width={25}
+                height={25}
+                alt="Logo PIKI"
+                style={{ width: "auto", height: "auto" }}
+              />
+              <span className="font-semibold text-lg tracking-tight text-foreground">
+                PIKI Member
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle variant="dropdown" />
+              <MobileNavToggle
+                isOpen={isMobileMenuOpen}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              />
+            </div>
+          </MobileNavHeader>
+
+          <MobileNavMenu
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
           >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* Mobile Nav Dropdown */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-b border-border/50 bg-card animate-in slide-in-from-top-2">
-          <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
-            {navItems.map((item) => {
-              const isActive = pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
-                </Link>
-              );
-            })}
+            <div className="flex flex-col gap-2 w-full">
+              {navItems.map((item, idx) => {
+                const isActive = pathname === item.link;
+                return (
+                  <a
+                    key={`mobile-link-${idx}`}
+                    href={item.link}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation(item.link);
+                    }}
+                    className={`relative text-neutral-600 dark:text-neutral-300 w-full text-left py-2 px-3 rounded-md transition-colors ${
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "hover:bg-muted"
+                    }`}
+                  >
+                    <span className="block text-lg font-medium">
+                      {item.name}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+            <div className="w-full h-px bg-border my-2" />
             <button
               onClick={() => {
                 setIsMobileMenuOpen(false);
                 setShowLogoutDialog(true);
               }}
-              className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors mt-2"
+              className="flex items-center gap-3 py-2 px-3 w-full text-left text-lg font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors"
             >
               <LogOut className="w-5 h-5" />
               Keluar
             </button>
-          </nav>
-        </div>
-      )}
+          </MobileNavMenu>
+        </MobileNav>
+      </Navbar>
 
       {/* Main Content Area */}
-      <main className="flex-1 container mx-auto px-4 py-6 md:py-10">
+      <main className="flex-1 container mx-auto px-4 pt-32 pb-6 md:pb-20">
         {children}
       </main>
 
