@@ -19,17 +19,48 @@ interface Props {
   onSuccess: () => void;
 }
 
-export function Step5Pembayaran({ onPrev, onSuccess }: Props) {
+export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
   const { data, updateData } = useRegistrasiStore();
   const [file, setFile] = useState<File | null>(data.buktiBayarFile || null);
   const [preview, setPreview] = useState<string | null>(
     data.buktiBayarFile ? URL.createObjectURL(data.buktiBayarFile) : null,
   );
+  const [ktpFile, setKtpFile] = useState<File | null>(data.ktpFile || null);
+  const [ktpPreview, setKtpPreview] = useState<string | null>(
+    data.ktpFile ? URL.createObjectURL(data.ktpFile) : null,
+  );
+  const [isKtpDragging, setIsKtpDragging] = useState(false);
+  const ktpFileInputRef = useRef<HTMLInputElement>(null);
+
   const [isDragging, setIsDragging] = useState(false);
   const [agreed1, setAgreed1] = useState(false);
   const [agreed2, setAgreed2] = useState(false);
   const [agreed3, setAgreed3] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleKtpFile = (selectedFile: File) => {
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 5MB");
+      return;
+    }
+
+    if (
+      !selectedFile.type.startsWith("image/") &&
+      selectedFile.type !== "application/pdf"
+    ) {
+      toast.error("Format file harus berupa gambar atau PDF");
+      return;
+    }
+
+    setKtpFile(selectedFile);
+    updateData({ ktpFile: selectedFile });
+
+    if (selectedFile.type.startsWith("image/")) {
+      setKtpPreview(URL.createObjectURL(selectedFile));
+    } else {
+      setKtpPreview(null);
+    }
+  };
 
   const handleFile = (selectedFile: File) => {
     if (selectedFile.size > 5 * 1024 * 1024) {
@@ -64,8 +95,8 @@ export function Step5Pembayaran({ onPrev, onSuccess }: Props) {
       return;
     }
     
-    if (!data.ktpFile) {
-      toast.error("Dokumen KTP tidak ditemukan. Harap unggah ulang KTP di Step 1.");
+    if (!ktpFile) {
+      toast.error("Silakan unggah dokumen KTP terlebih dahulu");
       return;
     }
 
@@ -80,7 +111,7 @@ export function Step5Pembayaran({ onPrev, onSuccess }: Props) {
 
       // 1. Upload KTP
       const ktpFormData = new FormData();
-      ktpFormData.append("file", data.ktpFile);
+      ktpFormData.append("file", ktpFile);
       const ktpRes = await fetch(`${baseUrl}/upload/bukti-transfer`, {
         method: "POST",
         body: ktpFormData,
@@ -211,6 +242,112 @@ export function Step5Pembayaran({ onPrev, onSuccess }: Props) {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-semibold">
+            Unggah KTP <span className="text-red-500">*</span>
+          </label>
+        </div>
+
+        <div
+          className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+            isKtpDragging
+              ? "border-primary bg-primary/5"
+              : ktpFile
+                ? "border-green-500/50 bg-green-50/50 dark:bg-green-500/10"
+                : "border-muted-foreground/25 hover:border-primary/50"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsKtpDragging(true);
+          }}
+          onDragLeave={() => setIsKtpDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsKtpDragging(false);
+            if (e.dataTransfer.files?.[0]) {
+              handleKtpFile(e.dataTransfer.files[0]);
+            }
+          }}
+          onClick={() => !ktpFile && ktpFileInputRef.current?.click()}
+        >
+          <input
+            type="file"
+            ref={ktpFileInputRef}
+            className="hidden"
+            accept="image/*,application/pdf"
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                handleKtpFile(e.target.files[0]);
+              }
+            }}
+          />
+
+          {ktpFile ? (
+            <div className="space-y-5">
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  KTP berhasil diunggah
+                </p>
+                <p
+                  className="text-sm text-muted-foreground max-w-[200px] mx-auto truncate"
+                  title={ktpFile.name}
+                >
+                  {ktpFile.name}
+                </p>
+              </div>
+
+              {ktpPreview && (
+                <div className="mt-4 flex justify-center">
+                  <div className="relative w-40 h-52 rounded-xl overflow-hidden border shadow-sm group">
+                    <Image
+                      src={ktpPreview}
+                      alt="Preview KTP"
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-4 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setKtpFile(null);
+                  setKtpPreview(null);
+                  updateData({ ktpFile: null });
+                  if (ktpFileInputRef.current) ktpFileInputRef.current.value = "";
+                }}
+              >
+                Ganti Dokumen
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 cursor-pointer py-6">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
+                <Upload className="w-7 h-7 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-semibold text-sm">
+                  Klik atau Tarik & Lepas KTP di sini
+                </p>
+                <p className="text-xs text-muted-foreground max-w-[250px] mx-auto leading-relaxed">
+                  Format yang didukung: JPG, PNG, atau PDF. Maksimal ukuran file
+                  5MB.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -382,7 +519,7 @@ export function Step5Pembayaran({ onPrev, onSuccess }: Props) {
         </Button>
         <Button
           onClick={handleNext}
-          disabled={!file || isSubmitting}
+          disabled={!file || !ktpFile || isSubmitting}
           className="gap-2 px-8"
         >
           {isSubmitting ? (

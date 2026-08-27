@@ -74,7 +74,8 @@ export function DigitalKTA({
     setCurrentIndex((prev) => (prev - 1 + TEMPLATES.length) % TEMPLATES.length);
   };
 
-  const qrUrl = `https://portal.piki.id/verify/${uuid}`;
+  // const qrUrl = `https://portal.piki.id/verify/${uuid}`;
+  const qrUrl = `https://dpp-piki.org`;
 
   const handleDownload = async () => {
     try {
