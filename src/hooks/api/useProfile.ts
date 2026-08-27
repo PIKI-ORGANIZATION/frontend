@@ -9,6 +9,7 @@ export interface ProfileResponse {
   email: string;
   username: string;
   statusAkun: string;
+  noKta?: string | null;
   namaLengkap?: string;
   namaPanggil?: string;
   profileImg?: string;

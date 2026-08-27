@@ -127,9 +127,10 @@ export function AnggotaDashboardView() {
               ) : (
                 <DigitalKTA
                   namaLengkap={profile?.namaLengkap}
-                  nomorAnggota={profile?.uuid?.substring(0, 12).toUpperCase()} // Example NIA mapping, adjust to actual field when backend ready
+                  nomorAnggota={profile?.noKta || "BELUM ADA NIA"}
                   cabang={profile?.cabang?.namaCabang}
                   profileImg={profile?.profileImg}
+                  uuid={profile?.uuid}
                 />
               )}
             </div>
