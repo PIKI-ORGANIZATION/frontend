@@ -4,7 +4,19 @@ import Image from "next/image";
 import { QrCode, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function DigitalKTA() {
+interface DigitalKTAProps {
+  namaLengkap?: string;
+  nomorAnggota?: string;
+  cabang?: string;
+  profileImg?: string;
+}
+
+export function DigitalKTA({
+  namaLengkap = "Anggota PIKI",
+  nomorAnggota = "Belum Ada",
+  cabang = "Belum Terdaftar",
+  profileImg,
+}: DigitalKTAProps) {
   return (
     <div className="flex flex-col items-center gap-6">
       {/* KTA Card - Premium Design */}
@@ -45,21 +57,30 @@ export function DigitalKTA() {
           <div className="flex-1 mt-4 flex gap-5">
             {/* Photo Section */}
             <div className="w-24 h-[120px] shrink-0 bg-white/10 rounded-lg border border-white/20 overflow-hidden relative shadow-inner">
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-10 h-10 mb-2"
-                >
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              </div>
+              {profileImg ? (
+                <Image
+                  src={profileImg}
+                  alt={namaLengkap}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 bg-white/5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-10 h-10 mb-2"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+              )}
             </div>
 
             {/* Data Section */}
@@ -67,15 +88,15 @@ export function DigitalKTA() {
               <div className="space-y-2.5">
                 <div>
                   <p className="text-[9px] uppercase tracking-wider text-white/50 mb-0.5">Nama Lengkap</p>
-                  <p className="text-sm font-bold tracking-wide uppercase">Christian Doe</p>
+                  <p className="text-sm font-bold tracking-wide uppercase line-clamp-1">{namaLengkap}</p>
                 </div>
                 <div>
                   <p className="text-[9px] uppercase tracking-wider text-white/50 mb-0.5">Nomor Anggota (NIA)</p>
-                  <p className="text-sm font-mono tracking-wider font-semibold">1029 3847 5612</p>
+                  <p className="text-sm font-mono tracking-wider font-semibold">{nomorAnggota}</p>
                 </div>
                 <div>
                   <p className="text-[9px] uppercase tracking-wider text-white/50 mb-0.5">DPC / Cabang</p>
-                  <p className="text-xs font-semibold uppercase">DKI Jakarta - Jakarta Selatan</p>
+                  <p className="text-xs font-semibold uppercase line-clamp-2">{cabang}</p>
                 </div>
               </div>
             </div>
@@ -87,7 +108,7 @@ export function DigitalKTA() {
               </div>
               <div className="text-right w-full mt-2">
                 <p className="text-[8px] uppercase tracking-widest text-white/50">Berlaku S.d</p>
-                <p className="text-[10px] font-bold text-white tracking-widest">12 / 2028</p>
+                <p className="text-[10px] font-bold text-white tracking-widest">Seumur Hidup</p>
               </div>
             </div>
           </div>
