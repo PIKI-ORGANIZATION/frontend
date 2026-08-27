@@ -75,6 +75,8 @@ frontend/
 2. **Glassmorphism & Depth:** Gunakan efek translusen (kaca), _blur_, bayangan (_shadows_) yang lembut untuk memisahkan lapisan konten (_layering_).
 3. **Fluid Motion:** Segala bentuk interaksi (hover tombol, buka modal, pindah halaman) harus memiliki transisi animasi (_micro-interactions_).
 4. **Data-Driven Clarity:** Untuk bagian Dashboard & CMS, utamakan keterbacaan (_readability_). Tabel dan statistik tidak boleh terlihat menumpuk. Gunakan _whitespace_ dengan berani.
+5. **Desain Responsif:** Pastikan desain responsif dan dapat diakses di berbagai perangkat (mobile, tablet, desktop).
+6. **Penulisan Code:** Hindari penggunaan monolithic code,pecah komponen menjadi komponen-komponen kecil dan reusable
 
 ---
 
