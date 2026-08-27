@@ -9,6 +9,7 @@ import { CreditCard, UserCheck, LogOut, Menu, X } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { MinimalFooter } from "@/components/ui/minimal-footer";
 
 export default function PortalLayout({
   children,
@@ -32,9 +33,9 @@ export default function PortalLayout({
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-border/50 shadow-sm">
+      <header className="sticky top-0 z-40 w-full bg-background backdrop-blur-md border-b border-border/50 shadow-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Image
@@ -134,6 +135,8 @@ export default function PortalLayout({
       <main className="flex-1 container mx-auto px-4 py-6 md:py-10">
         {children}
       </main>
+
+      <MinimalFooter />
 
       <ConfirmDialog
         open={showLogoutDialog}
