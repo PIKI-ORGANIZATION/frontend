@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { CreditCard, UserCheck, LogOut, Menu, X } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export default function PortalLayout({
   children,
@@ -35,10 +36,14 @@ export default function PortalLayout({
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 w-full bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-border/50 shadow-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-sm">
-              PK
-            </div>
+          <div className="flex items-center gap-4">
+            <Image
+              src="/logo1.png"
+              width={25}
+              height={25}
+              alt="Logo PIKI"
+              style={{ width: "auto", height: "auto" }}
+            />
             <span className="font-semibold text-lg tracking-tight hidden sm:block text-foreground">
               PIKI Member
             </span>
