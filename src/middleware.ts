@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decodeToken } from "@/lib/utils";
+import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
+  const isPortal = request.nextUrl.pathname.startsWith("/portal");
   const isLogin = request.nextUrl.pathname === "/login";
   const isRoot = request.nextUrl.pathname === "/";
 
-  if (isDashboard && !token) {
-    // Redirect ke login jika mencoba masuk dashboard tanpa token
+  // Jika mencoba masuk ke area terproteksi tanpa token
+  if ((isDashboard || isPortal) && !token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -18,40 +20,32 @@ export function middleware(request: NextRequest) {
     user = decodeToken(token);
   }
 
-  // Cek apakah user adalah admin (mendukung role lama & baru)
-  const userRoles = user?.roles?.map((r: string) => r.toUpperCase()) || [];
-  const isAdmin = ["SUPER_ADMIN", "ADMIN_DPP", "ADMIN_CABANG", "ADMIN_DPC", "KETUA_CABANG"].some(r => userRoles.includes(r));
+  const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);
 
+  // Jika sudah login dan membuka halaman auth/root
   if ((isLogin || isRoot) && token && user) {
-    // Redirect otomatis saat membuka /login atau / jika sudah punya token
     if (isAdmin) {
       return NextResponse.redirect(new URL("/dashboard/verifikasi", request.url));
     } else {
-      return NextResponse.redirect(new URL("/dashboard/anggota", request.url));
+      return NextResponse.redirect(new URL("/portal", request.url));
     }
   }
 
-  // --- Route Protection ---
-  if (isDashboard && user) {
-    const path = request.nextUrl.pathname;
-
-    // Rute yang khusus Admin (bisa ditambah sesuai kebutuhan)
-    const adminOnlyRoutes = ["/dashboard/verifikasi"]; 
-    
-    // Jika User/Member biasa mencoba akses halaman Admin
-    const tryingToAccessAdminRoute = adminOnlyRoutes.some(route => path.startsWith(route));
-    if (!isAdmin && tryingToAccessAdminRoute) {
-      return NextResponse.redirect(new URL("/dashboard/anggota", request.url));
+  // --- Route Protection & Isolation ---
+  if (token && user) {
+    // 1. Block Members from Dashboard (Admin Area)
+    if (isDashboard && !isAdmin) {
+      return NextResponse.redirect(new URL("/portal", request.url));
     }
 
-    // Jika Admin mencoba buka /dashboard secara langsung (tanpa subpath)
-    if (isAdmin && path === "/dashboard") {
+    // 2. Block Admins from Portal (Member Area) (Opsional, tapi praktik yang baik)
+    if (isPortal && isAdmin) {
       return NextResponse.redirect(new URL("/dashboard/verifikasi", request.url));
     }
-    
-    // Jika User biasa mencoba buka /dashboard secara langsung
-    if (!isAdmin && path === "/dashboard") {
-      return NextResponse.redirect(new URL("/dashboard/anggota", request.url));
+
+    // 3. Admin Root Dashboard Redirect
+    if (isAdmin && request.nextUrl.pathname === "/dashboard") {
+      return NextResponse.redirect(new URL("/dashboard/verifikasi", request.url));
     }
   }
 
@@ -59,5 +53,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/"],
+  matcher: ["/dashboard/:path*", "/portal/:path*", "/login", "/"],
 };

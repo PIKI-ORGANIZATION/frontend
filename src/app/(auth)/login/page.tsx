@@ -87,7 +87,7 @@ export default function LoginPage() {
         if (isAdmin) {
           router.push("/dashboard/verifikasi");
         } else {
-          router.push("/dashboard/anggota");
+          router.push("/portal");
         }
       } else {
         throw new Error("Token tidak ditemukan di response");
