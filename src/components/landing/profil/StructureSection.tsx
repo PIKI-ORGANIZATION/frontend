@@ -71,7 +71,7 @@ export function StructureSection() {
 
       // Image Parallax Effect
       const images = gsap.utils.toArray(".structure-img-inner");
-      images.forEach((img: HTMLElement) => {
+      images.forEach((img: any) => {
         gsap.to(img, {
           yPercent: 20,
           ease: "none",
