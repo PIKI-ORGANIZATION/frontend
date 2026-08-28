@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
-import { LogOut } from "lucide-react";
+import { LogOut, Home } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -71,8 +71,17 @@ export default function PortalLayout({
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => router.push("/")}
+              className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors py-4"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Beranda
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowLogoutDialog(true)}
-              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors py-4"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Keluar
@@ -91,9 +100,6 @@ export default function PortalLayout({
                 alt="Logo PIKI"
                 style={{ width: "auto", height: "auto" }}
               />
-              <span className="font-semibold text-lg tracking-tight text-foreground">
-                PIKI Member
-              </span>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle variant="dropdown" />
@@ -133,16 +139,28 @@ export default function PortalLayout({
               })}
             </div>
             <div className="w-full h-px bg-border my-2" />
-            <button
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                setShowLogoutDialog(true);
-              }}
-              className="flex items-center gap-3 py-2 px-3 w-full text-left text-lg font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              Keluar
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  router.push("/");
+                }}
+                className="flex flex-1 items-center justify-center gap-2 text-muted-foreground py-2 px-3 rounded-md transition-colors hover:bg-primary/10 hover:text-primary"
+              >
+                <Home className="w-5 h-5" />
+                <span className="text-lg font-medium">Beranda</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setShowLogoutDialog(true);
+                }}
+                className="flex flex-1 items-center justify-center gap-2 text-muted-foreground py-2 px-3 rounded-md transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="text-lg font-medium">Keluar</span>
+              </button>
+            </div>
           </MobileNavMenu>
         </MobileNav>
       </Navbar>
