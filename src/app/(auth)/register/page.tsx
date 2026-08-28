@@ -46,8 +46,8 @@ export default function RegisterPage() {
     },
     {
       step: 4,
-      title: "Pembayaran & KTP",
-      description: "Selesaikan Iuran Anggota",
+      title: "Upload KTP",
+      description: "Upload Kartu Tanda Penduduk (KTP)",
       content: <Step4Pembayaran onSuccess={onSuccess} onPrev={prevStep} />,
     },
   ];

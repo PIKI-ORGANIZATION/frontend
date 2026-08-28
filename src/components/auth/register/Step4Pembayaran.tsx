@@ -90,10 +90,10 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleNext = async () => {
-    if (!file) {
-      toast.error("Silakan unggah bukti pembayaran terlebih dahulu");
-      return;
-    }
+    // if (!file) {
+    //   toast.error("Silakan unggah bukti pembayaran terlebih dahulu");
+    //   return;
+    // }
     
     if (!ktpFile) {
       toast.error("Silakan unggah dokumen KTP terlebih dahulu");
@@ -120,14 +120,14 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
       if (!ktpRes.ok) throw new Error(ktpUploadData.error || "Gagal mengunggah foto KTP");
       
       // 2. Upload Bukti Transfer
-      const buktiFormData = new FormData();
-      buktiFormData.append("file", file);
-      const buktiRes = await fetch(`${baseUrl}/upload/bukti-transfer`, {
-        method: "POST",
-        body: buktiFormData,
-      });
-      const buktiUploadData = await buktiRes.json();
-      if (!buktiRes.ok) throw new Error(buktiUploadData.error || "Gagal mengunggah bukti pembayaran");
+      // const buktiFormData = new FormData();
+      // buktiFormData.append("file", file);
+      // const buktiRes = await fetch(`${baseUrl}/upload/bukti-transfer`, {
+      //   method: "POST",
+      //   body: buktiFormData,
+      // });
+      // const buktiUploadData = await buktiRes.json();
+      // if (!buktiRes.ok) throw new Error(buktiUploadData.error || "Gagal mengunggah bukti pembayaran");
 
       // 3. Submit Registrasi
       const payload = {
@@ -150,7 +150,7 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
         setujuPengelolaanData: agreed2,
         setujuKerahasiaanData: agreed3,
         fileKtpUrl: ktpUploadData.url,
-        buktiBayarUrl: buktiUploadData.url,
+        // buktiBayarUrl: buktiUploadData.url,
       };
 
       const submitRes = await fetch(`${baseUrl}/registrasi`, {
@@ -182,15 +182,15 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
       exit={{ opacity: 0, x: -20 }}
       className="space-y-10"
     >
-      <div className="space-y-3">
+      {/* <div className="space-y-3">
         <p className="text-muted-foreground text-base max-w-[65ch]">
           Selesaikan pendaftaran dengan mentransfer Iuran Anggota bulan pertama.
           Setelah pembayaran berhasil, KTA Anda akan langsung diterbitkan.
         </p>
-      </div>
+      </div> */}
 
       {/* Invoice / Tagihan Card */}
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
+      {/* <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
         <div className="bg-muted/50 px-6 py-4 flex items-center justify-between border-b">
           <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
             Detail Tagihan
@@ -243,7 +243,7 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -351,7 +351,7 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
         </div>
       </div>
 
-      <div className="space-y-4">
+      {/* <div className="space-y-4">
         <div className="flex items-center justify-between">
           <label className="text-sm font-semibold">
             Unggah Bukti Transfer <span className="text-red-500">*</span>
@@ -455,7 +455,7 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
             </div>
           )}
         </div>
-      </div>
+      </div> */}
 
       {/* Persetujuan Syarat & Ketentuan */}
       <div className="space-y-4 pt-6 border-t mt-8">
@@ -519,7 +519,8 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
         </Button>
         <Button
           onClick={handleNext}
-          disabled={!file || !ktpFile || isSubmitting}
+          // disabled={!file || !ktpFile || isSubmitting}
+          disabled={!ktpFile || isSubmitting}
           className="gap-2 px-8"
         >
           {isSubmitting ? (
