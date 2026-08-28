@@ -124,7 +124,7 @@ export function StructureSection() {
                 </div>
                 {/* Vignette overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-80" />
-
+                
                 {/* Role Badge */}
                 <div className="absolute top-4 left-4 bg-primary/90 backdrop-blur text-primary-foreground text-xs font-bold uppercase tracking-wider py-1.5 px-3 rounded-full translate-y-[-20px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
                   {person.role}
