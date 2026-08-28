@@ -8,7 +8,7 @@ import Image from "next/image";
 const STRUCTURE_DATA = [
   {
     role: "Sekretaris Jenderal",
-    name: "BENYAMIN PATONDOK,",
+    name: "BENYAMIN PATONDOK",
     desc: "Mengelola administrasi, operasional harian, dan kerja-kerja rumah tangga organisasi.",
     image: "/footage/pimpinan/sekjen.png",
   },
