@@ -7,22 +7,22 @@ import Image from "next/image";
 
 const STRUCTURE_DATA = [
   {
-    role: "Ketua Umum",
-    name: "Dr. Baktinendra Panggabean",
-    desc: "Memimpin arah strategis nasional organisasi.",
-    image: "/footage/image3.jpg",
+    role: "Sekretaris Jenderal",
+    name: "Benyamin Patondok,",
+    desc: "Mengelola administrasi dan operasional harian.",
+    image: "/footage/pimpinan/sekjen.png",
   },
   {
-    role: "Sekretaris Jenderal",
-    name: "Audy WMR Wuisang, S.Th, M.Si",
-    desc: "Mengelola administrasi dan operasional harian.",
-    image: "/footage/image1.webp",
+    role: "Ketua Umum",
+    name: "Maruarar Sirait",
+    desc: "Memimpin arah strategis nasional organisasi.",
+    image: "/footage/pimpinan/ketum.jpg",
   },
   {
     role: "Bendahara Umum",
-    name: "Lukman Pandjaitan",
+    name: "Dr. JUNIVER GIRSANG S.H., MBA., M.H.",
     desc: "Mengelola dan mengawasi keuangan organisasi.",
-    image: "/footage/image2.jpeg",
+    image: "/footage/pimpinan/bendahara.jpg",
   },
 ];
 
@@ -48,7 +48,7 @@ export function StructureSection() {
             trigger: headingRef.current,
             start: "top 85%",
           },
-        }
+        },
       );
 
       // Staggered Grid Reveal
@@ -66,7 +66,7 @@ export function StructureSection() {
             trigger: ".structure-grid",
             start: "top 80%",
           },
-        }
+        },
       );
 
       // Image Parallax Effect
@@ -92,16 +92,24 @@ export function StructureSection() {
     <section ref={containerRef} className="relative w-full py-32 bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div ref={headingRef} className="text-center max-w-3xl mx-auto mb-20">
-          <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">Kepengurusan</p>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">Dewan Pimpinan Pusat</h2>
+          <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">
+            Kepengurusan
+          </p>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            Dewan Pimpinan Pusat
+          </h2>
           <p className="text-lg text-muted-foreground">
-            Sinergi kepemimpinan untuk menggerakkan roda organisasi dan mewujudkan visi misi PIKI di seluruh Indonesia.
+            Sinergi kepemimpinan untuk menggerakkan roda organisasi dan
+            mewujudkan visi misi PIKI di seluruh Indonesia.
           </p>
         </div>
 
         <div className="structure-grid grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 lg:gap-10">
           {STRUCTURE_DATA.map((person, i) => (
-            <div key={i} className="structure-card flex flex-col group cursor-pointer">
+            <div
+              key={i}
+              className="structure-card flex flex-col group cursor-pointer"
+            >
               {/* Image Container with Parallax inner */}
               <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden mb-6 bg-muted">
                 {/* Parallax inner wrapper, scaled up so it has room to move */}
@@ -116,7 +124,7 @@ export function StructureSection() {
                 </div>
                 {/* Vignette overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-80" />
-                
+
                 {/* Role Badge */}
                 <div className="absolute top-4 left-4 bg-primary/90 backdrop-blur text-primary-foreground text-xs font-bold uppercase tracking-wider py-1.5 px-3 rounded-full translate-y-[-20px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
                   {person.role}
