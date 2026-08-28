@@ -158,7 +158,7 @@ export function DigitalKTA({
                   Berlaku Hingga
                 </p>
                 <p className="text-white text-[14px] font-sans uppercase font-bold tracking-widest mt-1">
-                  31 DESEMBER 2026
+                  31 DESEMBER 2031
                 </p>
               </div>
             </div>
@@ -221,7 +221,7 @@ export function DigitalKTA({
                 Berlaku Hingga
               </p>
               <p className="text-white text-[9px] uppercase font-bold tracking-widest">
-                31 DESEMBER 2026
+                31 DESEMBER 2031
               </p>
             </div>
 

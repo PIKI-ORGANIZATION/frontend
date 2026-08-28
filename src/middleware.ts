@@ -22,8 +22,8 @@ export function middleware(request: NextRequest) {
 
   const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);
 
-  // Jika sudah login dan membuka halaman auth/root
-  if ((isLogin || isRoot) && token && user) {
+  // Jika sudah login dan membuka halaman auth
+  if (isLogin && token && user) {
     if (isAdmin) {
       return NextResponse.redirect(new URL("/dashboard/verifikasi", request.url));
     } else {
