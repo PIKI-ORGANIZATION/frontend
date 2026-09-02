@@ -171,8 +171,8 @@ export function HistorySection() {
     >
       {/* Absolute Header */}
       <div className="absolute top-12 md:top-16 left-6 md:left-16 z-20 pointer-events-none">
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary">
-          Jejak Langkah PIKI
+        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary">
+          Sejarah PIKI
         </h2>
       </div>
 
@@ -180,14 +180,14 @@ export function HistorySection() {
       <div className="w-full h-full overflow-x-auto md:overflow-hidden no-scrollbar snap-x snap-mandatory">
         <div
           ref={wrapperRef}
-          className="flex gap-8 md:gap-24 w-max h-full items-start px-6 md:px-[10vw] pt-32 md:pt-48 pb-16 md:pb-0"
+          className="flex gap-6 md:gap-24 w-max h-full items-start px-6 md:px-[10vw] pt-28 md:pt-48 pb-12 md:pb-0"
         >
           {HISTORY_TIMELINE.map((item, i) => (
             <div
               key={i}
               className="history-card w-[85vw] md:w-[60vw] lg:w-[45vw] flex flex-col justify-start snap-center shrink-0 group"
             >
-              <div className="relative w-full aspect-[16/10] md:aspect-video rounded-3xl overflow-hidden mb-8 shadow-2xl">
+              <div className="relative w-full aspect-[16/10] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden mb-6 md:mb-8 shadow-2xl">
                 <Image
                   src={item.image}
                   alt={item.title}
@@ -200,8 +200,8 @@ export function HistorySection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
 
                 {/* Overlay Year Text */}
-                <div className="absolute bottom-0 left-0 p-8 w-full flex items-end justify-between">
-                  <span className="text-6xl md:text-8xl font-black text-white/90 tracking-tighter drop-shadow-lg leading-none">
+                <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full flex items-end justify-between">
+                  <span className="text-5xl sm:text-6xl md:text-8xl font-black text-white/90 tracking-tighter drop-shadow-lg leading-none">
                     {item.year}
                   </span>
 
@@ -213,11 +213,11 @@ export function HistorySection() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4 max-w-2xl px-2">
-                <h3 className="text-3xl md:text-4xl font-bold text-foreground">
+              <div className="flex flex-col gap-2 md:gap-4 max-w-2xl px-2">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
                   {item.title}
                 </h3>
-                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-light">
+                <p className="text-base md:text-xl text-muted-foreground leading-relaxed font-light">
                   {item.desc}
                 </p>
               </div>

@@ -33,6 +33,7 @@ export function HeroCardSwap() {
       delay={3000}
       pauseOnHover={true}
       easing="elastic"
+      className="translate-x-[35%] translate-y-[10%] max-lg:translate-x-[25%] max-lg:translate-y-[15%] max-lg:scale-[0.6] max-md:translate-x-[15%] max-md:translate-y-[10%] max-md:scale-[0.45] max-sm:translate-x-[5%] max-sm:scale-[0.35]"
     >
       {HERO_CARDS.map((card, i) => (
         <Card

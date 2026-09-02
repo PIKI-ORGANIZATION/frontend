@@ -70,8 +70,8 @@ export function StructureSection() {
       );
 
       // Image Parallax Effect
-      const images = gsap.utils.toArray(".structure-img-inner");
-      images.forEach((img: any) => {
+      const images = gsap.utils.toArray(".structure-img-inner") as HTMLElement[];
+      images.forEach((img) => {
         gsap.to(img, {
           yPercent: 20,
           ease: "none",
@@ -89,16 +89,16 @@ export function StructureSection() {
   }, []);
 
   return (
-    <section ref={containerRef} className="relative w-full py-32 bg-background">
+    <section ref={containerRef} className="relative w-full py-16 md:py-32 bg-background">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
-        <div ref={headingRef} className="text-center max-w-3xl mx-auto mb-20">
-          <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">
+        <div ref={headingRef} className="text-center max-w-3xl mx-auto mb-12 md:mb-20">
+          <p className="text-xs md:text-sm font-semibold tracking-widest uppercase text-primary mb-3 md:mb-4">
             Kepengurusan
           </p>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 md:mb-6">
             Dewan Pimpinan Pusat
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base md:text-lg text-muted-foreground">
             Sinergi kepemimpinan untuk menggerakkan roda organisasi dan
             mewujudkan visi misi PIKI di seluruh Indonesia.
           </p>

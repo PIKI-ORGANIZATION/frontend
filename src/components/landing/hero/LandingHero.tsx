@@ -26,34 +26,40 @@ export function LandingHero() {
   }, []);
 
   return (
-    <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] items-center">
+    <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] items-center relative">
+      {/* Decorative background for mobile */}
+      <div className="absolute inset-0 z-0 overflow-hidden lg:hidden pointer-events-none">
+        <div className="absolute top-[10%] -left-[20%] w-[70%] h-[50%] rounded-full bg-primary/10 blur-[100px]" />
+        <div className="absolute bottom-[10%] -right-[20%] w-[80%] h-[60%] rounded-full bg-primary/10 blur-[120px]" />
+      </div>
+
       {/* Kiri: Teks */}
       <div
         ref={textRef}
-        className="flex flex-col gap-7 py-24 lg:py-0 px-6 md:px-10 lg:pl-16 xl:pl-24"
+        className="flex flex-col gap-5 sm:gap-7 pt-24 pb-8 sm:py-16 md:py-24 lg:py-0 px-6 sm:px-8 md:px-10 lg:pl-16 xl:pl-24 z-10 items-center text-center lg:items-start lg:text-left"
       >
         {/* Eyebrow */}
-        <p className="hero-animate text-[11px] font-semibold tracking-[0.22em] uppercase text-muted-foreground">
+        <p className="hero-animate text-[10px] sm:text-[11px] font-semibold tracking-[0.22em] uppercase text-muted-foreground">
           Persatuan Intelegensia Kristen Indonesia
         </p>
 
         {/* Heading */}
-        <h1 className="hero-animate text-5xl md:text-6xl lg:text-[4.5rem] font-bold tracking-tight leading-[1.05]">
+        <h1 className="hero-animate text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-bold tracking-tight leading-[1.1] lg:leading-[1.05]">
           Sistem Informasi
           <br />
           <span className="text-primary">KTA Digital</span>
         </h1>
 
         {/* Sub */}
-        <p className="hero-animate text-base text-muted-foreground max-w-sm leading-relaxed">
+        <p className="hero-animate text-sm sm:text-base text-muted-foreground max-w-xs sm:max-w-md lg:max-w-sm leading-relaxed mx-auto lg:mx-0">
           Platform keanggotaan terpadu — pendataan, verifikasi, dan administrasi
           organisasi secara digital.
         </p>
 
         {/* CTAs */}
-        <div className="hero-animate flex items-center gap-3 flex-wrap">
+        <div className="hero-animate flex items-center justify-center lg:justify-start gap-3 flex-wrap">
           <Link href="/register">
-            <Button className="gap-2 px-6 py-5 rounded-lg text-sm font-medium">
+            <Button className="gap-2 px-5 py-4 sm:px-6 sm:py-5 rounded-lg text-xs sm:text-sm font-medium">
               Daftar Sekarang
               <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
             </Button>
@@ -61,7 +67,7 @@ export function LandingHero() {
           <Link href="/organisasi">
             <Button
               variant="outline"
-              className="px-6 py-5 rounded-lg text-sm font-medium"
+              className="px-5 py-4 sm:px-6 sm:py-5 rounded-lg text-xs sm:text-sm font-medium"
             >
               Pelajari Lebih Lanjut
             </Button>
@@ -70,7 +76,7 @@ export function LandingHero() {
       </div>
 
       {/* Kanan: CardSwap */}
-      <div className="relative h-10 lg:h-[100dvh] overflow-visible">
+      <div className="hidden lg:block relative w-full lg:h-[100dvh] overflow-visible">
         <HeroCardSwap />
       </div>
     </div>

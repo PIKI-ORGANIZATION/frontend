@@ -69,14 +69,14 @@ export function ProgramSection() {
   }, []);
 
   return (
-    <section ref={containerRef} className="relative w-full py-32 bg-card">
+    <section ref={containerRef} className="relative w-full py-16 md:py-32 bg-card">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20 program-item">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 mb-12 md:mb-20 program-item">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-4">Agenda Strategis</p>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">Program Kerja Utama</h2>
+            <p className="text-xs md:text-sm font-semibold tracking-widest uppercase text-primary mb-3 md:mb-4">Agenda Strategis</p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">Program Kerja Utama</h2>
           </div>
-          <p className="text-lg text-muted-foreground max-w-md font-light leading-relaxed">
+          <p className="text-base md:text-lg text-muted-foreground max-w-md font-light leading-relaxed">
             Langkah konkrit yang kami lakukan untuk memberikan dampak positif secara berkesinambungan.
           </p>
         </div>
@@ -85,25 +85,25 @@ export function ProgramSection() {
           {PROGRAMS.map((program, i) => (
             <div
               key={program.id}
-              className="program-item group relative border-b border-border/50 py-10 md:py-14 flex flex-col md:flex-row md:items-center justify-between gap-8 cursor-pointer"
+              className="program-item group relative border-b border-border/50 py-8 md:py-14 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 cursor-pointer"
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
               {/* Background Hover Effect */}
               <div className="absolute inset-0 bg-muted/30 scale-y-0 origin-bottom group-hover:scale-y-100 transition-transform duration-500 ease-out -z-10" />
 
-              <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-12 md:w-1/2 z-10">
+              <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-12 md:w-1/2 z-10">
                 <span className="text-2xl font-mono text-muted-foreground font-light hidden md:block">0{i + 1}</span>
                 <div>
-                  <h3 className="text-3xl md:text-4xl font-bold mb-3 group-hover:text-primary transition-colors">{program.title}</h3>
-                  <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full uppercase tracking-wider">
+                  <h3 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 group-hover:text-primary transition-colors">{program.title}</h3>
+                  <span className="inline-block text-[10px] md:text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full uppercase tracking-wider mt-1 md:mt-0">
                     {program.category}
                   </span>
                 </div>
               </div>
 
               <div className="md:w-1/3 z-10">
-                <p className="text-muted-foreground leading-relaxed font-light">{program.desc}</p>
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-light">{program.desc}</p>
               </div>
 
               <div className="hidden md:flex items-center justify-center w-16 h-16 rounded-full border border-border group-hover:border-primary group-hover:bg-primary transition-colors duration-500 z-10 shrink-0">

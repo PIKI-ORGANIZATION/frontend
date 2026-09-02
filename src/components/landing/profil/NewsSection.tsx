@@ -66,16 +66,16 @@ export function NewsSection() {
       {/* Header Section (Native Sticky) */}
       <div
         ref={headerRef}
-        className="w-full sticky top-24 flex flex-col items-center justify-center bg-card z-0 py-20 px-6"
+        className="w-full sticky top-24 flex flex-col items-center justify-center bg-card z-0 py-12 md:py-20 px-6"
       >
-        <div className="max-w-3xl flex flex-col items-center text-center gap-4">
-          <p className="text-sm font-semibold tracking-widest uppercase text-primary">
+        <div className="max-w-3xl flex flex-col items-center text-center gap-3 md:gap-4">
+          <p className="text-xs md:text-sm font-semibold tracking-widest uppercase text-primary">
             Kabar Terbaru
           </p>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
             Berita & Informasi PIKI
           </h2>
-          <p className="text-lg text-muted-foreground leading-relaxed font-light mt-2">
+          <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-light mt-1 md:mt-2">
             Ikuti perkembangan terkini mengenai kegiatan, advokasi, dan
             kontribusi nyata pergerakan organisasi di seluruh Indonesia.
           </p>
@@ -85,10 +85,10 @@ export function NewsSection() {
       {/* Content Section (Scrolls over Header) */}
       <div
         ref={contentRef}
-        className="w-full bg-background relative z-10 rounded-t-[3rem] md:rounded-t-[4rem] pt-16 md:pt-24 pb-32"
+        className="w-full bg-background relative z-10 rounded-t-[2.5rem] md:rounded-t-[4rem] pt-12 md:pt-24 pb-16 md:pb-32"
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col items-center w-full">
-          <div className="w-full flex justify-between items-end mb-12">
+          <div className="w-full flex justify-between items-end mb-8 md:mb-12">
             <h3 className="text-2xl md:text-3xl font-bold tracking-tight">
               Artikel Pilihan
             </h3>
