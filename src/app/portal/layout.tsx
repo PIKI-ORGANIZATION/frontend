@@ -131,7 +131,7 @@ export default function PortalLayout({
                         : "hover:bg-muted"
                     }`}
                   >
-                    <span className="block text-lg font-medium">
+                    <span className="block text-base sm:text-lg font-medium">
                       {item.name}
                     </span>
                   </a>
@@ -147,8 +147,8 @@ export default function PortalLayout({
                 }}
                 className="flex flex-1 items-center justify-center gap-2 text-muted-foreground py-2 px-3 rounded-md transition-colors hover:bg-primary/10 hover:text-primary"
               >
-                <Home className="w-5 h-5" />
-                <span className="text-lg font-medium">Beranda</span>
+                <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-base sm:text-lg font-medium">Beranda</span>
               </button>
               <button
                 onClick={() => {
@@ -157,8 +157,8 @@ export default function PortalLayout({
                 }}
                 className="flex flex-1 items-center justify-center gap-2 text-muted-foreground py-2 px-3 rounded-md transition-colors hover:bg-destructive/10 hover:text-destructive"
               >
-                <LogOut className="w-5 h-5" />
-                <span className="text-lg font-medium">Keluar</span>
+                <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-base sm:text-lg font-medium">Keluar</span>
               </button>
             </div>
           </MobileNavMenu>
@@ -166,7 +166,7 @@ export default function PortalLayout({
       </Navbar>
 
       {/* Main Content Area */}
-      <main className="flex-1 container mx-auto px-4 pt-32 pb-6 md:pb-20">
+      <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-28 lg:pt-32 pb-8 md:pb-16 lg:pb-20">
         {children}
       </main>
 

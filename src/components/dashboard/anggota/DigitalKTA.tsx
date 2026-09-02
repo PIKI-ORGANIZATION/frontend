@@ -50,7 +50,7 @@ const TEMPLATES = [
   },
 ];
 
-export function DigitalKTA({
+export default function DigitalKTA({
   namaLengkap = "Anggota PIKI",
   nomorAnggota = "Belum Ada",
   cabang = "Belum Terdaftar",
@@ -123,9 +123,9 @@ export function DigitalKTA({
   const renderDynamicContent = () => {
     if (activeTemplate.layout === "vertical") {
       return (
-        <div className="absolute inset-0 top-[24%] flex flex-col items-center z-10 w-full px-6 pb-6">
+        <div className="absolute inset-0 top-[20%] sm:top-[22%] md:top-[24%] flex flex-col items-center z-10 w-full px-5 sm:px-6 pb-4 sm:pb-6">
           {/* Photo */}
-          <div className="w-[135px] h-[155px] rounded-lg overflow-hidden relative shrink-0 mx-auto">
+          <div className="w-[100px] h-[120px] sm:w-[120px] sm:h-[140px] md:w-[135px] md:h-[155px] rounded-lg overflow-hidden relative shrink-0 mx-auto">
             {profileImg ? (
               <Image
                 src={profileImg}
@@ -139,51 +139,53 @@ export function DigitalKTA({
           </div>
 
           {/* Data */}
-          <div className="w-full flex flex-col justify-end text-left mt-8">
-            <h3 className="text-white text-2xl font-semibold ppercase tracking-wide leading-tight text-center mb-4 line-clamp-2">
+          <div className="w-full flex flex-col justify-end text-left mt-4 sm:mt-6 md:mt-8">
+            <h3 className="text-white text-lg sm:text-xl md:text-2xl font-semibold uppercase tracking-wide leading-tight text-center mb-3 sm:mb-4 line-clamp-2">
               {namaLengkap}
             </h3>
 
-            <div className="flex justify-between w-full px-4 mt-2">
+            <div className="flex justify-between w-full px-2 sm:px-4 mt-1 sm:mt-2">
               <div className="flex flex-col">
-                <p className="text-[#f6efb0] text-[12px] font-sans tracking-widest mb-1 uppercase">
+                <p className="text-[#f6efb0] text-[9px] sm:text-[10px] md:text-[12px] font-sans tracking-widest mb-0.5 sm:mb-1 uppercase">
                   Nomor Anggota
                 </p>
-                <p className="text-white text-[14px] font-sans font-bold tracking-widest">
+                <p className="text-white text-[11px] sm:text-[12px] md:text-[14px] font-sans font-bold tracking-widest">
                   {nomorAnggota}
                 </p>
               </div>
               <div className="flex flex-col text-right">
-                <p className="text-[#f6efb0] text-[12px] font-sans tracking-widest mb-1 uppercase">
+                <p className="text-[#f6efb0] text-[9px] sm:text-[10px] md:text-[12px] font-sans tracking-widest mb-0.5 sm:mb-1 uppercase">
                   Berlaku Hingga
                 </p>
-                <p className="text-white text-[14px] font-sans uppercase font-bold tracking-widest mt-1">
+                <p className="text-white text-[11px] sm:text-[12px] md:text-[14px] font-sans uppercase font-bold tracking-widest mt-0.5 sm:mt-1">
                   31 DESEMBER 2031
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col mt-3 px-4">
-              <p className="text-[#f6efb0] text-[12px] font-sans tracking-widest mb-1 uppercase">
+            <div className="flex flex-col mt-2 sm:mt-3 px-2 sm:px-4">
+              <p className="text-[#f6efb0] text-[9px] sm:text-[10px] md:text-[12px] font-sans tracking-widest mb-0.5 sm:mb-1 uppercase">
                 Wilayah
               </p>
-              <p className="text-white text-[14px] uppercase font-sans font-bold tracking-wide line-clamp-1">
+              <p className="text-white text-[11px] sm:text-[12px] md:text-[14px] uppercase font-sans font-bold tracking-wide line-clamp-1">
                 {cabang}
               </p>
             </div>
           </div>
 
           {/* QR */}
-          <div className="absolute bottom-25 left-1/2 -translate-x-1/2 bg-white p-1 rounded-md shadow-md">
-            <QRCodeSVG value={qrUrl} size={100} />
+          <div className="absolute bottom-16 sm:bottom-20 md:bottom-24 left-1/2 -translate-x-1/2 bg-white p-1 rounded-sm md:rounded-md shadow-md">
+            <div className="w-[70px] h-[70px] sm:w-[85px] sm:h-[85px] md:w-[100px] md:h-[100px]">
+              <QRCodeSVG value={qrUrl} width="100%" height="100%" />
+            </div>
           </div>
         </div>
       );
     } else {
       return (
-        <div className="absolute inset-0 flex items-center justify-between px-10 pt-8 z-10">
+        <div className="absolute inset-0 flex items-center justify-between px-5 sm:px-8 md:px-10 pt-5 sm:pt-6 md:pt-8 z-10">
           {/* Photo */}
-          <div className="w-[100px] h-[130px] ml-4 shrink-0 rounded-lg relative overflow-hidden">
+          <div className="w-[75px] h-[100px] sm:w-[90px] sm:h-[115px] md:w-[100px] md:h-[130px] ml-1 sm:ml-2 md:ml-4 shrink-0 rounded-md sm:rounded-lg relative overflow-hidden">
             {profileImg ? (
               <Image
                 src={profileImg}
@@ -197,37 +199,39 @@ export function DigitalKTA({
           </div>
 
           {/* Data & QR */}
-          <div className="flex-1  ml-8 h-32.5">
-            <div className="flex-1">
-              <h3 className="text-white text-lg font-semibold uppercase tracking-wide mb-4">
+          <div className="flex-1 ml-4 sm:ml-6 md:ml-8 flex flex-col justify-center h-full pb-2">
+            <div className="flex-1 flex flex-col justify-center">
+              <h3 className="text-white text-sm sm:text-base md:text-lg font-semibold uppercase tracking-wide mb-2 sm:mb-3 md:mb-4 line-clamp-2 leading-tight">
                 {namaLengkap}
               </h3>
 
-              <p className="text-[#f6efb0] text-[7px] uppercase tracking-widest mb-0.5">
+              <p className="text-[#f6efb0] text-[5px] sm:text-[6px] md:text-[7px] uppercase tracking-widest mb-0.5">
                 Nomor Anggota
               </p>
-              <p className="text-white text-[9px] font-mono tracking-widest font-bold mb-3">
+              <p className="text-white text-[7px] sm:text-[8px] md:text-[9px] font-mono tracking-widest font-bold mb-1.5 sm:mb-2 md:mb-3">
                 {nomorAnggota}
               </p>
 
-              <p className="text-[#f6efb0] text-[7px] uppercase tracking-widest mb-0.5">
+              <p className="text-[#f6efb0] text-[5px] sm:text-[6px] md:text-[7px] uppercase tracking-widest mb-0.5">
                 Wilayah
               </p>
-              <p className="text-white text-[9px] uppercase font-bold line-clamp-1 mb-3">
+              <p className="text-white text-[7px] sm:text-[8px] md:text-[9px] uppercase font-bold line-clamp-1 mb-1.5 sm:mb-2 md:mb-3">
                 {cabang}
               </p>
 
-              <p className="text-[#f6efb0] text-[7px] uppercase tracking-widest mb-0.5">
+              <p className="text-[#f6efb0] text-[5px] sm:text-[6px] md:text-[7px] uppercase tracking-widest mb-0.5">
                 Berlaku Hingga
               </p>
-              <p className="text-white text-[9px] uppercase font-bold tracking-widest">
+              <p className="text-white text-[7px] sm:text-[8px] md:text-[9px] uppercase font-bold tracking-widest">
                 31 DESEMBER 2031
               </p>
             </div>
 
-            <div className="absolute bottom-4 right-6 shrink-0 self-end mb-2">
-              <div className="bg-white p-1 rounded-md shadow-sm">
-                <QRCodeSVG value={qrUrl} size={60} />
+            <div className="absolute bottom-3 sm:bottom-4 md:bottom-4 right-4 sm:right-5 md:right-6 shrink-0 self-end">
+              <div className="bg-white p-0.5 sm:p-1 rounded-sm md:rounded-md shadow-sm">
+                <div className="w-9 h-9 sm:w-12 sm:h-12 md:w-[60px] md:h-[60px]">
+                  <QRCodeSVG value={qrUrl} width="100%" height="100%" />
+                </div>
               </div>
             </div>
           </div>
@@ -302,18 +306,23 @@ export function DigitalKTA({
             {isFlipped && (
               <div
                 className={cn(
-                  "absolute bg-white p-1.5 rounded-lg shadow-xl z-10 flex flex-col items-center justify-center",
+                  "absolute bg-white p-1 sm:p-1.5 rounded-md sm:rounded-lg shadow-xl z-10 flex flex-col items-center justify-center",
                   activeTemplate.layout === "vertical"
-                    ? "bottom-[130px] left-1/2 -translate-x-1/2"
+                    ? "bottom-[100px] sm:bottom-[115px] md:bottom-[130px] left-1/2 -translate-x-1/2"
                     : activeTemplate.id === 3
-                      ? "bottom-6 left-6"
-                      : "bottom-6 right-6",
+                      ? "bottom-4 sm:bottom-5 md:bottom-6 left-4 sm:left-5 md:left-6"
+                      : "bottom-4 sm:bottom-5 md:bottom-6 right-4 sm:right-5 md:right-6",
                 )}
               >
-                <QRCodeSVG
-                  value={qrUrl}
-                  size={activeTemplate.layout === "vertical" ? 110 : 70}
-                />
+                <div
+                  className={cn(
+                    activeTemplate.layout === "vertical"
+                      ? "w-[80px] h-[80px] sm:w-[95px] sm:h-[95px] md:w-[110px] md:h-[110px]"
+                      : "w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] md:w-[70px] md:h-[70px]"
+                  )}
+                >
+                  <QRCodeSVG value={qrUrl} width="100%" height="100%" />
+                </div>
               </div>
             )}
 

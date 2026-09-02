@@ -1,14 +1,30 @@
 "use client";
 
 import React from "react";
-import { User, Building, Loader2 } from "lucide-react";
+import { User, Building, Loader2, CalendarIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DropdownNavProps, DropdownProps } from "react-day-picker";
 import {
   Form,
   FormControl,
@@ -154,16 +170,103 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                 </FormItem>
               )}
             />
-
             <FormField
               control={profileForm.control}
               name="tanggalLahir"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Tanggal Lahir</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
+                  <Popover modal={false}>
+                    <FormControl>
+                      <PopoverTrigger
+                        render={
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 py-5 text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
+                          />
+                        }
+                      >
+                        {field.value ? (
+                          format(new Date(field.value), "PPP")
+                        ) : (
+                          <span>Pilih tanggal</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </PopoverTrigger>
+                    </FormControl>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          field.value ? new Date(field.value) : undefined
+                        }
+                        onSelect={(date) =>
+                          field.onChange(date ? format(date, "yyyy-MM-dd") : "")
+                        }
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        captionLayout="dropdown-years"
+                        defaultMonth={
+                          field.value
+                            ? new Date(field.value)
+                            : new Date(2000, 0)
+                        }
+                        startMonth={new Date(1940, 0)}
+                        endMonth={new Date()}
+                        components={{
+                          DropdownNav: (props: DropdownNavProps) => {
+                            return (
+                              <div className="flex w-full items-center justify-center gap-3 [&>span]:text-sm [&>span]:font-medium">
+                                {props.children}
+                              </div>
+                            );
+                          },
+                          YearsDropdown: (props: DropdownProps) => {
+                            return (
+                              <Select
+                                modal={false}
+                                value={String(props.value)}
+                                onValueChange={(value) => {
+                                  if (props.onChange) {
+                                    const _event = {
+                                      target: {
+                                        value: String(value),
+                                      },
+                                    } as React.ChangeEvent<HTMLSelectElement>;
+                                    props.onChange(_event);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="h-8 w-fit font-medium">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent
+                                  alignItemWithTrigger={false}
+                                  align="start"
+                                  className="max-h-[250px] overflow-y-auto overscroll-contain"
+                                  onWheel={(e) => e.stopPropagation()}
+                                >
+                                  {props.options?.map((option) => (
+                                    <SelectItem
+                                      key={option.value}
+                                      value={String(option.value)}
+                                      disabled={option.disabled}
+                                    >
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            );
+                          },
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

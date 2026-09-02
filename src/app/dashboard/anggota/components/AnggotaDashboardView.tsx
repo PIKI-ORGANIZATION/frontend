@@ -1,11 +1,11 @@
 "use client";
 
-import { DigitalKTA } from "@/components/dashboard/anggota/DigitalKTA";
 import { AlertTriangle, ChevronRight, User, RefreshCcw } from "lucide-react";
 import { buttonVariants, Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useGetProfile, ProfileResponse } from "@/hooks/api/useProfile";
 import { Skeleton } from "@/components/ui/skeleton";
+import DigitalKTA from "@/components/dashboard/anggota/DigitalKTA";
 
 function calculateProfileCompletion(
   profile: ProfileResponse | undefined,

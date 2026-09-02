@@ -26,17 +26,17 @@ export default function PengaturanPortalPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">Profil Saya</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Profil Saya</h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-1">
           Perbarui informasi pribadi dan keamanan akun Anda.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Kolom Kiri: Card Upload Foto (Sticky) */}
-        <div className="lg:col-span-4 sticky top-24">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        {/* Kolom Kiri: Card Upload Foto (Sticky on lg) */}
+        <div className="lg:col-span-4 lg:sticky lg:top-24">
           <PhotoUploadCard
             currentImageUrl={profile.profileImg}
             namaLengkap={profile.namaLengkap || profile.username}
