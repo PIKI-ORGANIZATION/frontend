@@ -111,7 +111,7 @@ export function AnggotaDashboardView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column - KTA */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-          <div className="bg-card border rounded-xl p-6 md:p-8 shadow-sm">
+          <div className="bg-card border rounded-xl p-6 md:p-8">
             <div className="mb-6">
               <h2 className="text-lg font-bold">KTA Digital</h2>
               <p className="text-sm text-muted-foreground">
@@ -139,7 +139,7 @@ export function AnggotaDashboardView() {
 
         {/* Right Column - Quick Actions / Summary */}
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-          <div className="bg-card border rounded-xl p-6 shadow-sm">
+          <div className="bg-card border rounded-xl p-6">
             <h2 className="text-lg font-bold mb-4">Ringkasan Keanggotaan</h2>
 
             <div className="space-y-4">
@@ -149,7 +149,7 @@ export function AnggotaDashboardView() {
                   <Skeleton className="h-6 w-16 rounded-full" />
                 ) : (
                   <span
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-full uppercase tracking-wider ${
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-full uppercase tracking-wider  ${
                       profile?.statusAkun === "VERIFIED"
                         ? "bg-green-500/10 text-green-600 dark:text-green-400"
                         : "bg-orange-500/10 text-orange-600 dark:text-orange-400"
@@ -184,7 +184,7 @@ export function AnggotaDashboardView() {
             </div>
           </div>
 
-          <div className="bg-card border rounded-xl p-6 shadow-sm">
+          <div className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-bold mb-4">Aksi Cepat</h2>
             <div className="grid gap-2">
               <Link
@@ -192,10 +192,10 @@ export function AnggotaDashboardView() {
                 className={buttonVariants({
                   variant: "secondary",
                   className:
-                    "w-full justify-start text-left font-normal transition-colors",
+                    "w-full p-4.5 px-4 justify-start text-left font-normal transition-colors",
                 })}
               >
-                <User className="w-4 h-4 mr-2 text-muted-foreground" /> Edit
+                <User className="w-4 h-4 mr-2  text-muted-foreground" /> Edit
                 Data Profil
               </Link>
             </div>
