@@ -75,11 +75,14 @@ export default function RegisterPage() {
               headerTitle="Formulir Pendaftaran"
               headerStatus="Step 1-4"
             />
-            
+
             <div className="mt-8 text-center">
               <p className="text-sm text-muted-foreground">
                 Sudah punya akun?{" "}
-                <Link href="/login" className="font-semibold text-primary hover:underline">
+                <Link
+                  href="/login"
+                  className="font-semibold text-primary hover:underline"
+                >
                   Masuk sekarang
                 </Link>
               </p>

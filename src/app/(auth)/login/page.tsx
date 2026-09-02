@@ -103,9 +103,9 @@ export default function LoginPage() {
 
   return (
     <section className="min-h-[calc(100vh-140px)] bg-white p-3 text-black antialiased [font-synthesis:none] dark:bg-[#050505] dark:text-white">
-      <div className="grid min-h-[calc(100vh-1.5rem)] gap-6 lg:grid-cols-[0.94fr_1.06fr]">
+      <div className="grid min-h-[calc(100vh-1.5rem)] gap-4 sm:gap-6 lg:grid-cols-[0.94fr_1.06fr]">
         {/* Left Side - Login Form */}
-        <div className="flex min-h-[760px] items-center justify-center rounded-md border border-black/10 bg-white px-6 py-12 dark:border-white/5 dark:bg-[#0a0a0c] lg:min-h-0 lg:px-14 lg:py-20 xl:px-20">
+        <div className="flex min-h-[60vh] sm:min-h-[500px] lg:min-h-0 items-center justify-center rounded-2xl lg:rounded-md border border-black/10 bg-white px-6 py-10 sm:px-10 sm:py-16 lg:px-14 lg:py-20 xl:px-20 dark:border-white/5 dark:bg-[#0a0a0c]">
           <div className="mx-auto w-full max-w-[460px]">
             <div>
               <h1 className="text-3xl font-medium tracking-tight sm:text-4xl text-black dark:text-white">
@@ -232,7 +232,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right Side - Marketing Testimonial and Mockup */}
-        <div className="relative flex min-h-[720px] flex-col overflow-hidden rounded-md bg-linear-to-b from-black to-white p-8 text-white dark:to-[#050505] sm:p-12 lg:min-h-0 lg:p-16">
+        <div className="relative flex min-h-[450px] sm:min-h-[550px] lg:min-h-0 flex-col overflow-hidden rounded-2xl lg:rounded-md bg-linear-to-b from-black to-white p-8 text-white dark:to-[#050505] sm:p-10 md:p-12 lg:p-16">
           {/* Background Shader */}
           <div className="absolute inset-0 z-0 pointer-events-none">
             <FlutedGlass
@@ -265,15 +265,15 @@ export default function LoginPage() {
                 whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 viewport={{ once: true, margin: "-10%" }}
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="flex items-center gap-4"
+                className="flex items-center gap-3 sm:gap-4"
               >
                 <img
                   src="/logo1.png"
                   alt="Member"
-                  className="size-12 shrink-0 object-contain"
+                  className="size-10 sm:size-12 shrink-0 object-contain"
                 />
                 <div>
-                  <div className="font-semibold leading-tight text-white">
+                  <div className="text-sm sm:text-base font-semibold leading-tight text-white">
                     Persatuan Inteligensia Kristen Indonesia
                   </div>
                   <div className="mt-0.5 text-xs text-white/60">
@@ -290,17 +290,17 @@ export default function LoginPage() {
                   delay: 0.12,
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                className="mt-7 text-2xl font-light leading-tight tracking-[-0.035em] text-white/90 sm:text-3xl lg:text-[34px]"
+                className="mt-6 sm:mt-7 text-2xl font-light leading-tight tracking-[-0.035em] text-white/90 sm:text-3xl lg:text-[34px]"
               >
                 &quot;Ad Caritas Et Veritas.&quot;
                 <br />
-                <span className="text-lg sm:text-xl mt-2 block opacity-80">
+                <span className="text-base sm:text-xl mt-2 block opacity-80">
                   Demi kasih dan kebenaran
                 </span>
               </motion.blockquote>
             </div>
 
-            <div className="mt-10 w-full h-150 translate-y-[15%] overflow-hidden rounded-2xl border border-white/15 bg-black/70 p-2 shadow-[0_30px_90px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:translate-y-[10%] lg:absolute lg:left-[10%] lg:-bottom-24 lg:mt-0 lg:w-[80%] lg:max-w-none lg:origin-bottom-left lg:translate-y-0 lg:-rotate-3 xl:left-[13%] xl:-bottom-[800px] xl:w-[95%] 2xl:-bottom-[100px] 2xl:w-[95%]">
+            <div className="mt-10 sm:mt-12 w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-150 translate-y-[15%] sm:translate-y-[10%] overflow-hidden rounded-2xl border border-white/15 bg-black/70 p-2 shadow-[0_30px_90px_rgba(0,0,0,0.5)] backdrop-blur-xl lg:absolute lg:left-[10%] lg:-bottom-24 lg:mt-0 lg:w-[80%] lg:max-w-none lg:origin-bottom-left lg:translate-y-0 lg:-rotate-3 xl:left-[13%] xl:-bottom-[800px] xl:w-[95%] 2xl:-bottom-[100px] 2xl:w-[95%]">
               <motion.div
                 initial={{ opacity: 0, y: 72, filter: "blur(10px)" }}
                 whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
