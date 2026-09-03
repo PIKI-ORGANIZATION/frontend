@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { motion, useMotionValue, AnimatePresence, Variants } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  AnimatePresence,
+  Variants,
+} from "framer-motion";
 import Link from "next/link";
 import { FaInstagram, FaFacebook, FaYoutube } from "react-icons/fa";
 import { usePathname } from "next/navigation";
@@ -58,8 +63,8 @@ const defaultNavItems: iNavItem[] = [
     subItems: [
       { heading: "Berita", href: "/berita" },
       { heading: "Jurnal Ilmiah", href: "/jurnal" },
-      { heading: "Galeri Foto", href: "/galeri/foto" },
-      { heading: "Galeri Video", href: "/galeri/video" },
+      { heading: "Galeri Foto", href: "/galeri" },
+      { heading: "Galeri Video", href: "/galeri" },
       { heading: "Agenda", href: "/agenda" },
     ],
   },

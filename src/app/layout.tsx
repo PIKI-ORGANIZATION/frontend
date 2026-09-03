@@ -13,8 +13,52 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PIKI - Persatuan Intelegensia Kristen Indonesia",
-  description: "Website Resmi dan Sistem Informasi PIKI",
+  metadataBase: new URL("https://dpp-piki.org/"),
+  title: {
+    default: "PIKI - Persatuan Intelegensia Kristen Indonesia",
+    template: "%s | PIKI",
+  },
+  description:
+    "Website Resmi dan Sistem Informasi Persatuan Intelegensia Kristen Indonesia (PIKI). Pendaftaran anggota dan informasi organisasi.",
+  applicationName: "PIKI",
+  authors: [{ name: "DPP PIKI", url: "https://dpp-piki.org/" }],
+  creator: "PIKI",
+  publisher: "PIKI",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: "https://dpp-piki.org/",
+    title: "PIKI - Persatuan Intelegensia Kristen Indonesia",
+    description: "Website Resmi dan Sistem Informasi Persatuan Intelegensia Kristen Indonesia (PIKI). Pendaftaran anggota dan informasi organisasi.",
+    siteName: "PIKI",
+    images: [
+      {
+        url: "/logo1.png",
+        width: 800,
+        height: 800,
+        alt: "Logo PIKI",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PIKI - Persatuan Intelegensia Kristen Indonesia",
+    description: "Website Resmi dan Sistem Informasi Persatuan Intelegensia Kristen Indonesia (PIKI). Pendaftaran anggota dan informasi organisasi.",
+    images: ["/logo1.png"],
+    creator: "@dpp_piki",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/logo1.png",
+    other: {
+      rel: "apple-touch-icon-precomposed",
+      url: "/logo1.png",
+    },
+  },
 };
 
 export default function RootLayout({
