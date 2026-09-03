@@ -6,9 +6,14 @@ export function useDpp() {
   return useQuery({
     queryKey: ["dpp"],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/master-wilayah/dpp`);
-      if (!res.ok) throw new Error("Gagal mengambil data Provinsi (DPP)");
-      return res.json();
+      const res = await fetch(`${API_BASE}/master-wilayah/dpd`);
+      if (!res.ok) throw new Error("Gagal mengambil data Provinsi (DPD)");
+      const json = await res.json();
+      if (json.data) {
+        // Map dpd back to dpp for frontend state compatibility
+        json.data = json.data.map((item: { dpd: string; [key: string]: unknown }) => ({ ...item, dpp: item.dpd }));
+      }
+      return json;
     },
   });
 }
@@ -18,7 +23,7 @@ export function useDpc(dppName: string | undefined) {
     queryKey: ["dpc", dppName],
     queryFn: async () => {
       const res = await fetch(
-        `${API_BASE}/master-wilayah/dpc?dpp=${encodeURIComponent(dppName!)}`,
+        `${API_BASE}/master-wilayah/dpc?dpd=${encodeURIComponent(dppName!)}`,
       );
       if (!res.ok) throw new Error("Gagal mengambil data Kabupaten/Kota (DPC)");
       return res.json();

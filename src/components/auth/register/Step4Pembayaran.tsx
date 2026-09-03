@@ -142,7 +142,7 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
         pekerjaan: data.pekerjaan,
         minatBidang: data.minatBidang,
         motivasiBergabung: data.motivasiBergabung,
-        dpp: data.dpp,
+        dpd: data.dpp,
         dpc: data.dpc,
         kode_provinsi: data.kode_provinsi,
         kode_kabupaten: data.kode_kabupaten,

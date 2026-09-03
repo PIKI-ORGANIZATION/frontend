@@ -68,12 +68,12 @@ const adminNavGroups: NavGroupData[] = [
         url: "/dashboard/verifikasi",
         badge: "New",
       },
-      // {
-      //   id: "/dashboard/anggota",
-      //   title: "Daftar Anggota",
-      //   icon: Users,
-      //   url: "/dashboard/anggota",
-      // },
+      {
+        id: "/dashboard/anggota",
+        title: "Daftar Anggota",
+        icon: Users,
+        url: "/dashboard/anggota",
+      },
     ],
   },
   // {
