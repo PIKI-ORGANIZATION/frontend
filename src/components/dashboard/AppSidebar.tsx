@@ -137,7 +137,6 @@ const mockBottomItems: NavItemData[] = [
     id: "/dashboard/pengaturan",
     title: "Pengaturan",
     icon: Settings,
-    url: "/dashboard/pengaturan",
   },
   { id: "hak-akses", title: "Hak Akses", icon: ShieldAlert }, // Placeholder
   { id: "/login", title: "Log out", icon: LogOut, url: "/login" },
@@ -458,7 +457,7 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
         onConfirm={() => {
           Cookies.remove("token");
           toast.success("Berhasil Log Out");
-          router.push("/login");
+          window.location.href = "/login";
         }}
       />
     </Sidebar>

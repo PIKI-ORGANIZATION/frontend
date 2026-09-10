@@ -392,7 +392,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
             <div className="space-y-2">
               <FormLabel>Asal DPC / Cabang</FormLabel>
               <Input
-                defaultValue={profile.cabang?.namaCabang || "Belum ada DPC"}
+                defaultValue={profile.cabang?.namaCabang || profile.dpc || profile.dpd || "Belum ada DPC"}
                 readOnly
                 className="bg-muted/50 cursor-not-allowed"
               />

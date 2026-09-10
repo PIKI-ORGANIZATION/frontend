@@ -25,6 +25,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { AuthBreadcrumb } from "@/components/auth/AuthBreadcrumb";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
@@ -77,7 +78,7 @@ export default function LoginPage() {
         // Jika remember dicentang, cookie bisa disimpan lebih lama (misal 7 hari), kalau tidak 1 hari
         const expiresIn = values.remember ? 7 : 1;
         Cookies.set("token", data.accessToken, { expires: expiresIn });
-        
+
         toast.success("Login berhasil!");
 
         // Decode token untuk mendapatkan role
@@ -107,6 +108,10 @@ export default function LoginPage() {
         {/* Left Side - Login Form */}
         <div className="flex min-h-[60vh] sm:min-h-[500px] lg:min-h-0 items-center justify-center rounded-2xl lg:rounded-md border border-black/10 bg-white px-6 py-10 sm:px-10 sm:py-16 lg:px-14 lg:py-20 xl:px-20 dark:border-white/5 dark:bg-[#0a0a0c]">
           <div className="mx-auto w-full max-w-[460px]">
+            <AuthBreadcrumb
+              crumbs={[{ label: "Login" }]}
+              className="absolute top-20"
+            />
             <div>
               <h1 className="text-3xl font-medium tracking-tight sm:text-4xl text-black dark:text-white">
                 Selamat Datang

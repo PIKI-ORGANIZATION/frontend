@@ -56,3 +56,20 @@ export function useGetDaftarAnggota(params?: {
     },
   });
 }
+
+export function useGetAnggotaDetail(uuid: string | null) {
+  return useQuery({
+    queryKey: ["anggota", "detail", uuid],
+    queryFn: async () => {
+      const token = Cookies.get("token");
+      const res = await fetch(`${API_BASE}/anggotas/${uuid}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Gagal mengambil detail anggota");
+      return res.json();
+    },
+    enabled: !!uuid,
+  });
+}

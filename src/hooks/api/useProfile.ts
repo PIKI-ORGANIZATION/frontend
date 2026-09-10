@@ -32,6 +32,8 @@ export interface ProfileResponse {
     uuid: string;
     namaCabang: string;
   };
+  dpd?: string;
+  dpc?: string;
   anggotaUuid?: string | null; // UUID Anggota untuk QR Code
 }
 

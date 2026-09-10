@@ -175,11 +175,6 @@ export function PublicAnggotaProfileView({ anggota }: Props) {
                 {initials}
               </div>
             )}
-            {isVerified && (
-              <div className="absolute -bottom-1 -right-1 bg-card rounded-full p-0.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              </div>
-            )}
           </div>
 
           {/* Name + badges */}
@@ -201,16 +196,6 @@ export function PublicAnggotaProfileView({ anggota }: Props) {
                 )}
                 {membership.label}
               </span>
-              {verifikasiStatus && (
-                <span
-                  className={cn(
-                    "inline-flex items-center text-[11px] font-medium px-2.5 py-0.5 rounded-full",
-                    verifikasiInfo.color,
-                  )}
-                >
-                  {verifikasiInfo.label}
-                </span>
-              )}
             </div>
           </div>
 

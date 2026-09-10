@@ -12,6 +12,7 @@ import {
   RegistrationStepper,
   StepProps,
 } from "@/components/ui/registration-stepper";
+import { AuthBreadcrumb } from "@/components/auth/AuthBreadcrumb";
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -69,6 +70,13 @@ export default function RegisterPage() {
           </div>
 
           <div className="flex-1">
+            <AuthBreadcrumb
+              crumbs={[
+                { label: "Login", href: "/login" },
+                { label: "Register" },
+              ]}
+              className="mb-6"
+            />
             <RegistrationStepper
               steps={steps}
               currentStep={currentStep}

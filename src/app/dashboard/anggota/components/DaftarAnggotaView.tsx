@@ -10,10 +10,14 @@ import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useRouter } from "next/navigation";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { AnggotaDetailModal } from "./AnggotaDetailModal";
 
 export function DaftarAnggotaView() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAnggotaUuid, setSelectedAnggotaUuid] = useState<string | null>(
+    null,
+  );
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -74,7 +78,7 @@ export function DaftarAnggotaView() {
             <div className="flex min-h-100 items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : anggotaList.length === 0 ? (
+          ) : anggotaList.length === 0 && !isFetching && !isLoading ? (
             <div className="text-center py-20 text-muted-foreground flex flex-col items-center">
               <span className="text-4xl mb-4">👥</span>
               <p>Belum ada data anggota yang ditemukan.</p>
@@ -117,10 +121,8 @@ export function DaftarAnggotaView() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() =>
-                          router.push(`/dashboard/anggota/${item.uuid}`)
-                        }
-                        className="flex-1 md:flex-none py-4 "
+                        onClick={() => setSelectedAnggotaUuid(item.uuid)}
+                        className="flex-1 md:flex-none py-4"
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         Detail
@@ -146,6 +148,11 @@ export function DaftarAnggotaView() {
           )}
         </div>
       </div>
+
+      <AnggotaDetailModal
+        uuid={selectedAnggotaUuid}
+        onClose={() => setSelectedAnggotaUuid(null)}
+      />
     </section>
   );
 }

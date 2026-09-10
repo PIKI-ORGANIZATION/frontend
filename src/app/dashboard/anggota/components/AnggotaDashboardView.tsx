@@ -128,7 +128,7 @@ export function AnggotaDashboardView() {
                 <DigitalKTA
                   namaLengkap={profile?.namaLengkap}
                   nomorAnggota={profile?.noKta || "BELUM ADA NIA"}
-                  cabang={profile?.cabang?.namaCabang}
+                  cabang={profile?.cabang?.namaCabang || profile?.kotaDomisili || profile?.dpc || profile?.dpd}
                   profileImg={profile?.profileImg}
                   uuid={profile?.anggotaUuid ?? undefined}
                 />

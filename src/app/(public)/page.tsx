@@ -11,7 +11,8 @@ import { StatistikSection } from "@/components/landing/profil/StatistikSection";
 
 export const metadata: Metadata = {
   title: "Beranda | PIKI - Persatuan Intelegensia Kristen Indonesia",
-  description: "Selamat datang di website resmi Persatuan Intelegensia Kristen Indonesia. Daftarkan diri Anda dan jadilah bagian dari PIKI.",
+  description:
+    "Selamat datang di website resmi Persatuan Intelegensia Kristen Indonesia. Daftarkan diri Anda dan jadilah bagian dari PIKI.",
 };
 
 export default function Home() {
@@ -22,7 +23,8 @@ export default function Home() {
     alternateName: "PIKI",
     url: "https://dpp-piki.org/",
     logo: "https://dpp-piki.org/logo1.png",
-    description: "Website Resmi dan Sistem Informasi Persatuan Intelegensia Kristen Indonesia (PIKI).",
+    description:
+      "Website Resmi dan Sistem Informasi Persatuan Intelegensia Kristen Indonesia (PIKI).",
   };
 
   return (
