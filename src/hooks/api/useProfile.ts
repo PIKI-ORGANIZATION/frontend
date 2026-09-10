@@ -32,6 +32,7 @@ export interface ProfileResponse {
     uuid: string;
     namaCabang: string;
   };
+  anggotaUuid?: string | null; // UUID Anggota untuk QR Code
 }
 
 // 1. Fetch Data Profil (GET /auth/me)

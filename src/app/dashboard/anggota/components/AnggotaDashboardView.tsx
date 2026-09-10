@@ -130,7 +130,7 @@ export function AnggotaDashboardView() {
                   nomorAnggota={profile?.noKta || "BELUM ADA NIA"}
                   cabang={profile?.cabang?.namaCabang}
                   profileImg={profile?.profileImg}
-                  uuid={profile?.uuid}
+                  uuid={profile?.anggotaUuid ?? undefined}
                 />
               )}
             </div>

@@ -74,8 +74,7 @@ export default function DigitalKTA({
     setCurrentIndex((prev) => (prev - 1 + TEMPLATES.length) % TEMPLATES.length);
   };
 
-  // const qrUrl = `https://portal.piki.id/verify/${uuid}`;
-  const qrUrl = `https://dpp-piki.org`;
+  const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/anggota/${uuid}`;
 
   const handleDownload = async () => {
     try {
@@ -318,7 +317,7 @@ export default function DigitalKTA({
                   className={cn(
                     activeTemplate.layout === "vertical"
                       ? "w-[80px] h-[80px] sm:w-[95px] sm:h-[95px] md:w-[110px] md:h-[110px]"
-                      : "w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] md:w-[70px] md:h-[70px]"
+                      : "w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] md:w-[70px] md:h-[70px]",
                   )}
                 >
                   <QRCodeSVG value={qrUrl} width="100%" height="100%" />
