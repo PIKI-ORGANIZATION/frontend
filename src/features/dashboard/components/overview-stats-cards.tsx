@@ -44,12 +44,14 @@ export function OverviewStatsCards({
     {
       title: "Antrean Verifikasi DPP",
       value: pendingVerifikasi.toLocaleString("id-ID"),
-      description: pendingVerifikasi > 0 ? "Memerlukan peninjauan" : "Semua berkas tuntas",
+      description:
+        pendingVerifikasi > 0 ? "Memerlukan peninjauan" : "Semua berkas tuntas",
       icon: Clock,
       trend: pendingVerifikasi > 0 ? "Perlu Aksi" : "Selesai",
       color: pendingVerifikasi > 0 ? "text-amber-500" : "text-emerald-500",
       bgColor: pendingVerifikasi > 0 ? "bg-amber-500/10" : "bg-emerald-500/10",
-      borderColor: pendingVerifikasi > 0 ? "border-amber-500/20" : "border-emerald-500/20",
+      borderColor:
+        pendingVerifikasi > 0 ? "border-amber-500/20" : "border-emerald-500/20",
     },
     {
       title: "Jaringan DPD & DPC",
@@ -87,7 +89,7 @@ export function OverviewStatsCards({
         return (
           <Card
             key={stat.title}
-            className="relative overflow-hidden rounded-lg border border-border/80 bg-card text-card-foreground transition-all duration-200"
+            className="relative overflow-hidden rounded-lg bg-card text-card-foreground transition-all duration-200"
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">

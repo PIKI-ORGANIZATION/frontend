@@ -157,17 +157,8 @@ export function getBeritaColumns({
         return (
           <div className="flex items-center gap-2">
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-normal border ${config.badgeClass}`}
+              className={`inline-flex items-center gap-1.5 px-4 py-0.5 rounded-md text-[11px] font-normal border ${config.badgeClass}`}
             >
-              <span
-                className={`h-2 w-2 rounded-md ${
-                  statusValue === "PUBLISHED"
-                    ? "bg-emerald-500"
-                    : statusValue === "DRAFT"
-                      ? "bg-amber-500"
-                      : "bg-zinc-400"
-                }`}
-              />
               {statusValue === "PUBLISHED"
                 ? "Tayang"
                 : statusValue === "DRAFT"

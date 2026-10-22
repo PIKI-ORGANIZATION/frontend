@@ -2,7 +2,13 @@
 
 import React from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +24,7 @@ export function RecentRegistrations() {
   const anggotaList = data?.data || [];
 
   return (
-    <Card className="rounded-lg border border-border/80 bg-card text-card-foreground flex flex-col justify-between">
+    <Card className="rounded-lg bg-card text-card-foreground flex flex-col justify-between">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
@@ -89,7 +95,9 @@ export function RecentRegistrations() {
                         {item.namaLengkap}
                       </p>
                       <p className="text-[11px] text-muted-foreground truncate">
-                        {item.cabang?.namaCabang || item.provinsi || "DPP Nasional"}
+                        {item.cabang?.namaCabang ||
+                          item.provinsi ||
+                          "DPP Nasional"}
                       </p>
                     </div>
                   </div>
@@ -121,7 +129,11 @@ export function RecentRegistrations() {
 
         <div className="pt-3 border-t border-border/60 mt-3">
           <Link href="/dashboard/anggota" className="block">
-            <Button variant="outline" size="sm" className="w-full text-xs font-medium justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs font-medium justify-between"
+            >
               <span>Buka Seluruh Database Anggota</span>
               <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
             </Button>

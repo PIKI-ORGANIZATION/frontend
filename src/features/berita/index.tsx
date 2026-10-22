@@ -277,7 +277,7 @@ export function BeritaFeature() {
             size="sm"
             onClick={handleResetData}
             title="Reset data contoh ke bawaan"
-            className="text-xs gap-1.5 rounded-lg border-border/80"
+            className="text-xs py-4"
           >
             <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="hidden sm:inline">Reset Dummy</span>
@@ -286,7 +286,7 @@ export function BeritaFeature() {
           <Button
             size="sm"
             onClick={handleOpenCreate}
-            className="text-xs gap-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            className="text-xs gap-1.5 py-4"
           >
             <Plus className="h-4 w-4" />
             <span>Tambah Berita</span>

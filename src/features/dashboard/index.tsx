@@ -38,7 +38,9 @@ export function DashboardFeature() {
 
   const totalAnggota = stats?.totalAnggota || 0;
   const pendingVerifikasi = stats?.pendingApprovalCount || 0;
-  const totalKtaAktif = activeKtaData?.pagination?.total || Math.max(0, totalAnggota - pendingVerifikasi);
+  const totalKtaAktif =
+    activeKtaData?.pagination?.total ||
+    Math.max(0, totalAnggota - pendingVerifikasi);
 
   return (
     <div className="space-y-6">
@@ -58,7 +60,8 @@ export function DashboardFeature() {
             </Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Pusat analitik eksekutif, sebaran keanggotaan wilayah, dan manajemen KTA digital DPP PIKI.
+            Pusat analitik eksekutif, sebaran keanggotaan wilayah, dan manajemen
+            KTA digital DPP PIKI.
           </p>
         </div>
 
@@ -70,7 +73,9 @@ export function DashboardFeature() {
             disabled={isRefetching}
             className="text-xs gap-1.5 text-muted-foreground hover:text-foreground"
           >
-            <RotateCcw className={`h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`} />
+            <RotateCcw
+              className={`h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`}
+            />
             <span className="hidden sm:inline">Segarkan</span>
           </Button>
           <DataExportDialog />
@@ -90,15 +95,24 @@ export function DashboardFeature() {
       <Tabs defaultValue="overview" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <TabsList className="bg-muted/70 p-1">
-            <TabsTrigger value="overview" className="gap-1.5 text-xs font-semibold">
+            <TabsTrigger
+              value="overview"
+              className="gap-1.5 text-xs font-semibold"
+            >
               <BarChart3 className="h-3.5 w-3.5" />
               <span>Ringkasan & Wilayah</span>
             </TabsTrigger>
-            <TabsTrigger value="demografi" className="gap-1.5 text-xs font-semibold">
+            <TabsTrigger
+              value="demografi"
+              className="gap-1.5 text-xs font-semibold"
+            >
               <Users2 className="h-3.5 w-3.5" />
               <span>Demografi & Profesi</span>
             </TabsTrigger>
-            <TabsTrigger value="insight" className="gap-1.5 text-xs font-semibold">
+            <TabsTrigger
+              value="insight"
+              className="gap-1.5 text-xs font-semibold"
+            >
               <ShieldCheck className="h-3.5 w-3.5" />
               <span>Kepatuhan & KTA</span>
             </TabsTrigger>
@@ -111,8 +125,11 @@ export function DashboardFeature() {
         </div>
 
         {/* Tab 1: Ringkasan & Wilayah */}
-        <TabsContent value="overview" className="space-y-4 focus-visible:outline-none">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <TabsContent
+          value="overview"
+          className="space-y-4 focus-visible:outline-none"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-3 h-full gap-4">
             <div className="lg:col-span-2">
               <WilayahBarChart />
             </div>
@@ -123,12 +140,18 @@ export function DashboardFeature() {
         </TabsContent>
 
         {/* Tab 2: Demografi & Profesi */}
-        <TabsContent value="demografi" className="space-y-4 focus-visible:outline-none">
+        <TabsContent
+          value="demografi"
+          className="space-y-4 focus-visible:outline-none"
+        >
           <DemografiCharts />
         </TabsContent>
 
         {/* Tab 3: Kepatuhan & KTA Insights */}
-        <TabsContent value="insight" className="space-y-4 focus-visible:outline-none">
+        <TabsContent
+          value="insight"
+          className="space-y-4 focus-visible:outline-none"
+        >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="rounded-lg border border-border/80 bg-card text-card-foreground p-5">
               <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
@@ -142,7 +165,8 @@ export function DashboardFeature() {
               <CardContent className="p-0 space-y-2">
                 <div className="text-2xl font-bold text-foreground">94.2%</div>
                 <p className="text-xs text-muted-foreground">
-                  Persentase berkas anggota yang berhasil diverifikasi dan disetujui oleh DPP & DPC.
+                  Persentase berkas anggota yang berhasil diverifikasi dan
+                  disetujui oleh DPP & DPC.
                 </p>
                 <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full w-[94.2%]" />
@@ -160,9 +184,12 @@ export function DashboardFeature() {
                 </div>
               </CardHeader>
               <CardContent className="p-0 space-y-2">
-                <div className="text-2xl font-bold text-foreground">1.8 Hari</div>
+                <div className="text-2xl font-bold text-foreground">
+                  1.8 Hari
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Kecepatan rata-rata proses approval DPP sejak berkas pendaftaran dinyatakan lengkap.
+                  Kecepatan rata-rata proses approval DPP sejak berkas
+                  pendaftaran dinyatakan lengkap.
                 </p>
                 <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500 rounded-full w-[70%]" />
@@ -180,9 +207,12 @@ export function DashboardFeature() {
                 </div>
               </CardHeader>
               <CardContent className="p-0 space-y-2">
-                <div className="text-2xl font-bold text-foreground">100% Otomatis</div>
+                <div className="text-2xl font-bold text-foreground">
+                  100% Otomatis
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Setiap KTA aktif langsung terintegrasi dengan URL publik verifikasi identitas resmi.
+                  Setiap KTA aktif langsung terintegrasi dengan URL publik
+                  verifikasi identitas resmi.
                 </p>
                 <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-indigo-500 rounded-full w-full" />

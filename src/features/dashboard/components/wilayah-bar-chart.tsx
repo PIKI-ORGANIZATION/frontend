@@ -1,13 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import {
   Card,
   CardContent,
@@ -48,7 +42,7 @@ const chartConfig = {
 
 export function WilayahBarChart() {
   return (
-    <Card className="rounded-lg border border-border/80 bg-card text-card-foreground">
+    <Card className="rounded-lg bg-card text-card-foreground">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
@@ -56,7 +50,8 @@ export function WilayahBarChart() {
               Sebaran Anggota per DPD (Provinsi)
             </CardTitle>
             <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              10 Wilayah dengan konsentrasi anggota dan penerbitan KTA terbanyak.
+              10 Wilayah dengan konsentrasi anggota dan penerbitan KTA
+              terbanyak.
             </CardDescription>
           </div>
           <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
