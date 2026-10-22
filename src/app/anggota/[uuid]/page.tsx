@@ -14,6 +14,7 @@ async function getAnggota(uuid: string) {
       next: { revalidate: 300 }, // revalidate setiap 5 menit
     });
     if (!res.ok) return null;
+
     const json = await res.json();
     return json.success ? json.data : null;
   } catch {
@@ -37,7 +38,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `${anggota.namaLengkap} | Anggota PIKI`,
       description: `Profil resmi ${anggota.namaLengkap}, anggota Persatuan Intelegensia Kristen Indonesia.`,
-      images: anggota.foto ? [anggota.foto] : [`${process.env.NEXT_PUBLIC_APP_URL}/logo1.png`],
+      images: anggota.foto
+        ? [anggota.foto]
+        : [`${process.env.NEXT_PUBLIC_APP_URL}/logo1.png`],
     },
   };
 }

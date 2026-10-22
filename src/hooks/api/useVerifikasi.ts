@@ -26,11 +26,14 @@ export function useGetRegistrasiPending() {
     queryFn: async () => {
       const token = Cookies.get("token");
       // Fetch data dengan status PENDING_VERIFIKASI_DPP
-      const res = await fetch(`${API_BASE}/registrasi?statusVerifikasi=PENDING_VERIFIKASI_DPP`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+      const res = await fetch(
+        `${API_BASE}/registrasi?statusVerifikasi=PENDING_VERIFIKASI_DPP`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
       if (!res.ok) throw new Error("Gagal mengambil data registrasi pending");
       return res.json() as Promise<{ data: RegistrasiItem[] }>;
     },
@@ -41,13 +44,21 @@ export function useApproveRegistrasi() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, status, catatanVerifikasi }: { id: string; status: "APPROVED_DPP" | "REJECTED", catatanVerifikasi?: string }) => {
+    mutationFn: async ({
+      id,
+      status,
+      catatanVerifikasi,
+    }: {
+      id: string;
+      status: "APPROVED_DPP" | "REJECTED";
+      catatanVerifikasi?: string;
+    }) => {
       const token = Cookies.get("token");
       const res = await fetch(`${API_BASE}/registrasi/${id}/verifikasi`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           status,
@@ -60,8 +71,6 @@ export function useApproveRegistrasi() {
         const errorData = await res.json().catch(() => null);
         throw new Error(errorData?.message || "Gagal memproses verifikasi");
       }
-
-
 
       return res.json();
     },

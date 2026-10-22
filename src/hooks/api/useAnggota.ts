@@ -10,19 +10,24 @@ export interface AnggotaItem {
   provinsi: string;
   kotaDomisili: string;
   statusKeanggotaan: string;
+  noKta?: string;
+  statusKta?: string;
   akun?: {
     email: string;
   };
   cabang?: {
+    uuid?: string;
     namaCabang: string;
     provinsi: string;
   };
-  created_at: string;
+  created_at?: string;
+  insert_at?: string;
 }
 
 export function useGetDaftarAnggota(params?: {
   search?: string;
   cabangUuid?: string;
+  statusKta?: string;
   currentPage?: number;
   pageSize?: number;
 }) {
@@ -34,9 +39,14 @@ export function useGetDaftarAnggota(params?: {
 
       const queryParams = new URLSearchParams();
       if (params?.search) queryParams.append("search", params.search);
-      if (params?.cabangUuid) queryParams.append("cabangUuid", params.cabangUuid);
-      if (params?.currentPage) queryParams.append("currentPage", params.currentPage.toString());
-      if (params?.pageSize) queryParams.append("pageSize", params.pageSize.toString());
+      if (params?.cabangUuid)
+        queryParams.append("cabangUuid", params.cabangUuid);
+      if (params?.statusKta)
+        queryParams.append("statusKta", params.statusKta);
+      if (params?.currentPage)
+        queryParams.append("currentPage", params.currentPage.toString());
+      if (params?.pageSize)
+        queryParams.append("pageSize", params.pageSize.toString());
 
       const res = await fetch(
         `${API_BASE}/anggotas/?${queryParams.toString()}`,
@@ -46,12 +56,17 @@ export function useGetDaftarAnggota(params?: {
           },
         },
       );
-      
+
       if (!res.ok) throw new Error("Gagal mengambil data daftar anggota");
       return res.json() as Promise<{
         success: boolean;
         data: AnggotaItem[];
-        pagination: { total: number; currentPage: number; pageSize: number; totalPages: number };
+        pagination: {
+          total: number;
+          currentPage: number;
+          pageSize: number;
+          totalPages: number;
+        };
       }>;
     },
   });

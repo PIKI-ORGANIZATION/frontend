@@ -81,8 +81,7 @@ export default function DigitalKTA({
       setIsDownloading(true);
 
       const token = Cookies.get("token");
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
       const res = await fetch(
         `${API_BASE}/kta/download?template=${activeTemplate.id}`,

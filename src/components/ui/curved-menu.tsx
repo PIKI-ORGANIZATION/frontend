@@ -235,10 +235,11 @@ const NavLink: React.FC<iNavLinkProps> = ({
 };
 
 const Curve: React.FC = () => {
-  const [windowHeight, setWindowHeight] = useState(0);
+  const [windowHeight, setWindowHeight] = useState(() =>
+    typeof window !== "undefined" ? window.innerHeight : 0
+  );
 
   useEffect(() => {
-    setWindowHeight(window.innerHeight);
     const handleResize = () => setWindowHeight(window.innerHeight);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);

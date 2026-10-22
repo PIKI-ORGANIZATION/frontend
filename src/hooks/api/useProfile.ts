@@ -65,7 +65,11 @@ export const useGetProfile = () => {
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<{ message: string; data?: ProfileResponse }, Error, Partial<ProfileResponse>>({
+  return useMutation<
+    { message: string; data?: ProfileResponse },
+    Error,
+    Partial<ProfileResponse>
+  >({
     mutationFn: async (payload) => {
       const token = Cookies.get("token");
       if (!token) throw new Error("Tidak ada token otorisasi");
@@ -95,7 +99,11 @@ export const useUpdateProfile = () => {
 
 // 3. Ubah Password (POST /auth/change-password)
 export const useChangePassword = () => {
-  return useMutation<{ message: string }, Error, { oldPassword: string; newPassword: string }>({
+  return useMutation<
+    { message: string },
+    Error,
+    { oldPassword: string; newPassword: string }
+  >({
     mutationFn: async (payload) => {
       const token = Cookies.get("token");
       if (!token) throw new Error("Tidak ada token otorisasi");

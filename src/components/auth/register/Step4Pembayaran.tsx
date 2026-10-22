@@ -94,20 +94,22 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
     //   toast.error("Silakan unggah bukti pembayaran terlebih dahulu");
     //   return;
     // }
-    
+
     if (!ktpFile) {
       toast.error("Silakan unggah dokumen KTP terlebih dahulu");
       return;
     }
 
     if (!agreed1 || !agreed2 || !agreed3) {
-      toast.error("Harap centang semua kotak persetujuan (Kebenaran Data, PDP, Kerahasiaan) di bagian bawah sebelum mendaftar.");
+      toast.error(
+        "Harap centang semua kotak persetujuan (Kebenaran Data, PDP, Kerahasiaan) di bagian bawah sebelum mendaftar.",
+      );
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
       // 1. Upload KTP
       const ktpFormData = new FormData();
@@ -117,8 +119,9 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
         body: ktpFormData,
       });
       const ktpUploadData = await ktpRes.json();
-      if (!ktpRes.ok) throw new Error(ktpUploadData.error || "Gagal mengunggah foto KTP");
-      
+      if (!ktpRes.ok)
+        throw new Error(ktpUploadData.error || "Gagal mengunggah foto KTP");
+
       // 2. Upload Bukti Transfer
       // const buktiFormData = new FormData();
       // buktiFormData.append("file", file);
@@ -162,14 +165,22 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
       });
       const submitData = await submitRes.json();
       if (!submitRes.ok) {
-        throw new Error(submitData.message || submitData.error || "Gagal mengirim data pendaftaran");
+        throw new Error(
+          submitData.message ||
+            submitData.error ||
+            "Gagal mengirim data pendaftaran",
+        );
       }
 
       toast.success("Pendaftaran berhasil disubmit!");
       onSuccess();
     } catch (err) {
       console.error(err);
-      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses pendaftaran");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Terjadi kesalahan saat memproses pendaftaran",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -326,7 +337,8 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
                   setKtpFile(null);
                   setKtpPreview(null);
                   updateData({ ktpFile: null });
-                  if (ktpFileInputRef.current) ktpFileInputRef.current.value = "";
+                  if (ktpFileInputRef.current)
+                    ktpFileInputRef.current.value = "";
                 }}
               >
                 Ganti Dokumen
@@ -469,9 +481,12 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
               onChange={(e) => setAgreed1(e.target.checked)}
             />
             <div className="space-y-1 leading-none">
-              <span className="text-sm font-medium leading-none">Kebenaran Data</span>
+              <span className="text-sm font-medium leading-none">
+                Kebenaran Data
+              </span>
               <p className="text-sm text-muted-foreground mt-1">
-                Saya menyatakan bahwa seluruh data yang diberikan adalah benar dan dapat dipertanggungjawabkan.
+                Saya menyatakan bahwa seluruh data yang diberikan adalah benar
+                dan dapat dipertanggungjawabkan.
               </p>
             </div>
           </label>
@@ -484,9 +499,12 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
               onChange={(e) => setAgreed2(e.target.checked)}
             />
             <div className="space-y-1 leading-none">
-              <span className="text-sm font-medium leading-none">Pengelolaan Data (UU PDP)</span>
+              <span className="text-sm font-medium leading-none">
+                Pengelolaan Data (UU PDP)
+              </span>
               <p className="text-sm text-muted-foreground mt-1">
-                Saya menyetujui data pribadi saya dikelola oleh organisasi sesuai dengan Undang-Undang Pelindungan Data Pribadi (UU PDP).
+                Saya menyetujui data pribadi saya dikelola oleh organisasi
+                sesuai dengan Undang-Undang Pelindungan Data Pribadi (UU PDP).
               </p>
             </div>
           </label>
@@ -499,9 +517,12 @@ export function Step4Pembayaran({ onPrev, onSuccess }: Props) {
               onChange={(e) => setAgreed3(e.target.checked)}
             />
             <div className="space-y-1 leading-none">
-              <span className="text-sm font-medium leading-none">Kerahasiaan Data</span>
+              <span className="text-sm font-medium leading-none">
+                Kerahasiaan Data
+              </span>
               <p className="text-sm text-muted-foreground mt-1">
-                Saya menyetujui jaminan kerahasiaan data yang ditetapkan oleh organisasi.
+                Saya menyetujui jaminan kerahasiaan data yang ditetapkan oleh
+                organisasi.
               </p>
             </div>
           </label>

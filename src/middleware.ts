@@ -8,7 +8,6 @@ export function middleware(request: NextRequest) {
   const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
   const isPortal = request.nextUrl.pathname.startsWith("/portal");
   const isLogin = request.nextUrl.pathname === "/login";
-  const isRoot = request.nextUrl.pathname === "/";
 
   // Jika mencoba masuk ke area terproteksi tanpa token
   if ((isDashboard || isPortal) && !token) {
@@ -25,7 +24,7 @@ export function middleware(request: NextRequest) {
   // Jika sudah login dan membuka halaman auth
   if (isLogin && token && user) {
     if (isAdmin) {
-      return NextResponse.redirect(new URL("/dashboard/verifikasi", request.url));
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     } else {
       return NextResponse.redirect(new URL("/portal", request.url));
     }
@@ -38,14 +37,9 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/portal", request.url));
     }
 
-    // 2. Block Admins from Portal (Member Area) (Opsional, tapi praktik yang baik)
+    // 2. Block Admins from Portal (Member Area)
     if (isPortal && isAdmin) {
-      return NextResponse.redirect(new URL("/dashboard/verifikasi", request.url));
-    }
-
-    // 3. Admin Root Dashboard Redirect
-    if (isAdmin && request.nextUrl.pathname === "/dashboard") {
-      return NextResponse.redirect(new URL("/dashboard/verifikasi", request.url));
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 
