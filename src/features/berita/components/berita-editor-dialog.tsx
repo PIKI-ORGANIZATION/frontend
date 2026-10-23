@@ -225,8 +225,8 @@ Tuliskan pengantar berita di sini...
               variant="outline"
               className={`hidden sm:inline-flex text-xs ${
                 status === "PUBLISHED"
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                  ? "bg-emerald-500/[0.06] text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                  : "bg-amber-500/[0.06] text-amber-700 dark:text-amber-300 border-amber-500/20"
               }`}
             >
               <span

@@ -153,7 +153,7 @@ export function DashboardFeature() {
           className="space-y-4 focus-visible:outline-none"
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="rounded-lg border border-border/80 bg-card text-card-foreground p-5">
+            <Card className="p-5">
               <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Tingkat Verifikasi
@@ -174,7 +174,7 @@ export function DashboardFeature() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-lg border border-border/80 bg-card text-card-foreground p-5">
+            <Card className="p-5">
               <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Rata-Rata SLA Penerbitan
@@ -197,7 +197,7 @@ export function DashboardFeature() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-lg border border-border/80 bg-card text-card-foreground p-5">
+            <Card className="p-5">
               <CardHeader className="p-0 pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Penyimpanan QR Code

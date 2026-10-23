@@ -42,7 +42,7 @@ const chartConfig = {
 
 export function WilayahBarChart() {
   return (
-    <Card className="rounded-lg bg-card text-card-foreground">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
