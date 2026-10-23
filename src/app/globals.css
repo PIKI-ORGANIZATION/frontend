@@ -146,3 +146,149 @@ html.lenis body {
 .lenis.lenis-smooth iframe {
   pointer-events: none;
 }
+
+/* Native select popups on Windows stay light. Dark-mode foreground would
+   paint pale option text on that white list, so options keep dark text. */
+select option,
+select optgroup {
+  background-color: #ffffff;
+  color: #18181b;
+}
+
+.news-body h2,
+.news-body h3,
+.news-body h4 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.news-body h2 { font-size: 1.75rem; }
+.news-body h3 { font-size: 1.4rem; }
+.news-body h4 { font-size: 1.15rem; }
+.news-body p { margin-bottom: 1rem; }
+.news-body strong { font-weight: 650; }
+.news-body a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.news-body ul,
+.news-body ol { margin: 0 0 1rem 1.25rem; }
+.news-body ul { list-style: disc; }
+.news-body ol { list-style: decimal; }
+.news-body li { margin: 0.25rem 0; }
+.news-body blockquote {
+  margin: 1.25rem 0;
+  border-left: 3px solid var(--primary);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+.news-body figure { margin: 1.5rem 0; }
+.news-body img,
+.news-body figure img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 1rem;
+}
+.news-body .image-style-side,
+.news-body .image-style-align-right {
+  float: right;
+  max-width: 50%;
+  margin: 0.25rem 0 1rem 1.25rem;
+}
+.news-body .image-style-align-left {
+  float: left;
+  max-width: 50%;
+  margin: 0.25rem 1.25rem 1rem 0;
+}
+.news-body .image-style-align-center,
+.news-body .image-style-block-align-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+.news-body::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+.news-body figcaption {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+.news-body table {
+  width: 100%;
+  margin: 1.25rem 0;
+  border-collapse: collapse;
+}
+.news-body th,
+.news-body td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.news-editor .ck.ck-editor {
+  --ck-border-radius: 12px;
+  --ck-color-base-background: var(--background);
+  --ck-color-base-foreground: var(--foreground);
+  --ck-color-base-border: var(--border);
+  --ck-color-base-text: var(--foreground);
+  --ck-color-text: var(--foreground);
+  --ck-color-toolbar-background: var(--card);
+  --ck-color-toolbar-border: var(--border);
+  --ck-color-dropdown-panel-background: var(--popover);
+  --ck-color-dropdown-panel-border: var(--border);
+  --ck-color-list-background: var(--popover);
+  --ck-color-list-button-hover-background: var(--accent);
+  --ck-color-list-button-on-background: var(--primary);
+  --ck-color-list-button-on-text: var(--primary-foreground);
+  --ck-color-panel-background: var(--popover);
+  --ck-color-panel-border: var(--border);
+  --ck-color-input-background: var(--background);
+  --ck-color-input-text: var(--foreground);
+  --ck-color-input-border: var(--border);
+  --ck-color-button-default-hover-background: var(--accent);
+  --ck-color-button-default-active-background: var(--accent);
+  --ck-color-button-on-background: var(--primary);
+  --ck-color-button-on-color: var(--primary-foreground);
+  --ck-color-button-on-hover-background: var(--primary);
+  --ck-color-focus-border: var(--ring);
+  --ck-color-widget-hover-border: var(--primary);
+  --ck-color-link-default: var(--primary);
+}
+.news-editor .ck.ck-editor__main > .ck-editor__editable {
+  min-height: 320px;
+  background: var(--background);
+  color: var(--foreground);
+}
+.news-editor .ck.ck-toolbar {
+  border-radius: 12px 12px 0 0;
+}
+.dark .ck.ck-reset_all,
+.dark .ck.ck-body .ck.ck-reset_all {
+  --ck-color-base-background: #171818;
+  --ck-color-base-foreground: #e4e4e7;
+  --ck-color-base-border: #353539;
+  --ck-color-base-text: #e4e4e7;
+  --ck-color-text: #e4e4e7;
+  --ck-color-toolbar-background: #171818;
+  --ck-color-toolbar-border: #353539;
+  --ck-color-dropdown-panel-background: #171818;
+  --ck-color-dropdown-panel-border: #353539;
+  --ck-color-list-background: #171818;
+  --ck-color-list-button-hover-background: #27272a;
+  --ck-color-list-button-on-background: #0b59a1;
+  --ck-color-list-button-on-text: #ffffff;
+  --ck-color-panel-background: #171818;
+  --ck-color-panel-border: #353539;
+  --ck-color-input-background: #131414;
+  --ck-color-input-text: #e4e4e7;
+  --ck-color-input-border: #353539;
+  --ck-color-button-default-background: transparent;
+  --ck-color-button-default-hover-background: #27272a;
+  --ck-color-button-default-active-background: #27272a;
+  --ck-color-button-on-background: #0b59a1;
+  --ck-color-button-on-color: #ffffff;
+  --ck-color-focus-border: #0b59a1;
+  --ck-color-shadow-drop: rgba(0, 0, 0, 0.45);
+}

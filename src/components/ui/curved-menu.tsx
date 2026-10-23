@@ -57,6 +57,11 @@ const defaultNavItems: iNavItem[] = [
     subheading: "Struktur dan informasi pengurus",
   },
   {
+    heading: "Berita",
+    href: "/berita",
+    subheading: "Kabar terkini DPP, DPD, dan DPC",
+  },
+  {
     heading: "Publikasi",
     href: "#",
     subheading: "Kabar, jurnal, dan galeri PIKI",

@@ -10,12 +10,10 @@ import {
   Users,
   Settings,
   LogOut,
-  ChevronDown,
   ChevronRight,
   UserCheck,
   CreditCard,
   FileText,
-  Image as ImageIcon,
   ShieldAlert,
   Command,
   X,
@@ -28,6 +26,7 @@ import {
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserPayload } from "@/lib/utils";
 import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
+import { resolveNewsScope, tingkatLabel } from "@/lib/news";
 
 // --- Types ---
 export type NavItemData = {
@@ -73,6 +72,12 @@ const adminNavGroups: NavGroupData[] = [
         title: "Daftar Anggota",
         icon: Users,
         url: "/dashboard/anggota",
+      },
+      {
+        id: "/dashboard/berita",
+        title: "Berita",
+        icon: FileText,
+        url: "/dashboard/berita",
       },
     ],
   },
@@ -144,37 +149,22 @@ const mockBottomItems: NavItemData[] = [
 
 // --- Subcomponents ---
 
-function WorkspaceSwitcher({
-  user,
-  selected,
-  onSelect,
-}: {
-  user?: UserPayload | null;
-  selected?: string;
-  onSelect?: (val: string) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [internalSelected, setInternalSelected] = useState("PIKI Pusat (DPP)");
-
-  const current = selected || internalSelected;
-  const handleSelect = onSelect || setInternalSelected;
-
-  const displayRole = user?.roles?.[0]?.replace(/_/g, " ") || "Superadmin";
-  const displayInitials = user?.roles?.[0]?.charAt(0)?.toUpperCase() || "PK";
+function WorkspaceSwitcher({ user }: { user?: UserPayload | null }) {
+  const scope = resolveNewsScope(user);
+  const current =
+    scope.cabangName ||
+    (scope.tingkat === "DPP" ? "DPP Pusat" : tingkatLabel(scope.tingkat));
+  const displayRole = user?.roles?.[0]?.replace(/_/g, " ") || tingkatLabel(scope.tingkat);
 
   return (
     <div className="relative">
-      {/* header sidebar */}
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between px-2 py-2 mb-4 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition-colors select-none group"
-      >
+      <div className="flex items-center justify-between px-2 py-2 mb-4 rounded-lg select-none">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-[6px] bg-primary text-primary-foreground flex items-center justify-center font-bold text-[14px] shadow-sm uppercase">
-            {displayInitials}
+          <div className="w-8 h-8 rounded-[6px] bg-primary text-primary-foreground flex items-center justify-center font-bold text-[11px] shadow-sm uppercase">
+            {scope.tingkat}
           </div>
           <div className="flex flex-col overflow-hidden">
-            <span className="text-[13px] font-medium leading-none mb-1 text-foreground truncate max-w-[140px]">
+            <span className="text-[13px] font-medium leading-none mb-1 text-foreground truncate max-w-[150px]">
               {current}
             </span>
             <span className="text-[11px] text-muted-foreground leading-none capitalize">
@@ -182,38 +172,7 @@ function WorkspaceSwitcher({
             </span>
           </div>
         </div>
-        <ChevronDown
-          className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground/70 transition-colors shrink-0"
-          strokeWidth={1.5}
-        />
       </div>
-
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute top-[52px] left-0 w-full bg-card border border-border/50 rounded-lg shadow-xl z-50 py-1 flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100">
-            {["PIKI Pusat (DPP)", "PIKI DPD DKI Jakarta"].map((ws) => (
-              <div
-                key={ws}
-                onClick={() => {
-                  handleSelect(ws);
-                  setIsOpen(false);
-                }}
-                className={`px-3 py-2 mx-1 text-[13px] rounded-md cursor-pointer transition-colors ${
-                  current === ws
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-foreground/80 hover:bg-black/5 dark:hover:bg-white/5"
-                }`}
-              >
-                {ws}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </div>
   );
 }

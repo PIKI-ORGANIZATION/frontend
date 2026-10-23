@@ -55,23 +55,37 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          identifier: values.identifier,
-          password: values.password,
-        }),
-      });
+      const requestLogin = (isFromAdmin: boolean) =>
+        fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            identifier: values.identifier,
+            password: values.password,
+            ...(isFromAdmin ? { isFromAdmin: true } : {}),
+          }),
+        });
 
-      const data = await res.json();
+      let res = await requestLogin(false);
+      let data = await res.json();
 
       if (!res.ok) {
         throw new Error(
           data.message || "Login gagal. Periksa kembali kredensial Anda.",
         );
+      }
+
+      const preview = data.accessToken ? decodeToken(data.accessToken) : null;
+      if (preview && hasRole(preview, ROLE_GROUPS.ADMINS)) {
+        res = await requestLogin(true);
+        data = await res.json();
+        if (!res.ok) {
+          throw new Error(
+            data.message || "Login admin gagal. Periksa kembali kredensial Anda.",
+          );
+        }
       }
 
       if (data.accessToken) {
