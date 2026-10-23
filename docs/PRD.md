@@ -53,3 +53,17 @@ Banyak aktivitas organisasi PIKI yang melibatkan ribuan anggota dan pengurus dar
 - Pembayaran iuran anggota secara *online* terintegrasi (*Payment Gateway*).
 - Tanda Tangan Digital yang tersertifikasi secara hukum oleh Penyelenggara Sertifikasi Elektronik (PSrE) Kominfo (untuk E-Office).
 - Aplikasi Mobile Native terpisah (iOS / Android) di App Store / Play Store.
+
+## 8. Status Progres & Milestone Implementasi (Update Terkini)
+
+| Kode Req | Fitur / Kebutuhan | Prioritas | Status | Keterangan Implementasi |
+| :--- | :--- | :---: | :---: | :--- |
+| **FR-1** | Multi-Step Pendaftaran Anggota | P1 | ✅ **Selesai** | Form 4 langkah (Biodata, Kontak & Domisili DPD/DPC, Pendidikan/Pekerjaan, Upload KTP & Persetujuan UU PDP). |
+| **FR-2** | Approval Workflow Berjenjang | P1 | ✅ **Selesai** | Modul `/dashboard/verifikasi`, review modal, approve DPP/DPC, reject dengan catatan, & auto-bypass SLA 3 hari. |
+| **FR-3** | Generator KTA Digital Dinamis | P1 | ✅ **Selesai** | Nomor KTA otomatis (`PP.KK.UUUU.DDMMYY`), kartu 3D flip, Barcode/QR Code, cetak/unduh, dan halaman profil publik `/anggota/[uuid]`. |
+| **FR-4** | CMS RBAC (DPC, DPD, DPP) | P1 | 🔄 **Sebagian (80%)** | Manajemen role akun backend aktif, tabel daftar anggota `/dashboard/anggota` dengan filter DPD/DPC, modal accordion profil. |
+| **FR-5** | Dashboard Statistik "Satu Data" | P1 | ⏳ **Siap Dikerjakan** | Target Fase 8 (Visualisasi grafik Recharts, sebaran provinsi, demografi profesi/pendidikan). |
+| **FR-6** | Modul Publikasi (Berita, Jurnal, Galeri) | P2 | ⏳ **Siap Dikerjakan** | Tampilan publik selesai, antarmuka CMS CRUD (TipTap editor) masuk ke Fase 7. |
+| **FR-7** | Modul E-Office & Persuratan | P2 | ⏳ **Siap Dikerjakan** | Target Fase 7 (Template surat, nomor surat otomatis, arsip digital). |
+| **FR-8** | Modul Absensi Scan QR Code | P3 | ⏳ **Rencana Lanjutan** | Terintegrasi dengan scan QR KTA saat ada event/kegiatan resmi. |
+

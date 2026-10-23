@@ -5,16 +5,16 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 export interface PublicAnggotaProfile {
   uuid: string;
   namaLengkap: string;
-  noKta: string | null;          // Nomor Anggota
-  profileImg: string | null;     // Foto profil
+  noKta: string | null; // Nomor Anggota
+  profileImg: string | null; // Foto profil
   noWa: string | null;
   provinsi: string | null;
   kotaDomisili: string | null;
-  statusKeanggotaan: string;     // "AKTIF" | "NON_MEMBER" | dll
-  statusKta: string | null;      // "ACTIVE" | "INACTIVE"
+  statusKeanggotaan: string; // "AKTIF" | "NON_MEMBER" | dll
+  statusKta: string | null; // "ACTIVE" | "INACTIVE"
   tglAktivasiKta: string | null; // Tanggal aktivasi (berlaku sejak)
   email: string | null;
-  insert_at: string;             // Bergabung sejak
+  insert_at: string; // Bergabung sejak
   cabang: {
     uuid: string;
     namaCabang: string;

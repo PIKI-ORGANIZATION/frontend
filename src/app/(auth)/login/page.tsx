@@ -100,7 +100,7 @@ export default function LoginPage() {
         const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);
 
         if (isAdmin) {
-          router.push("/dashboard/verifikasi");
+          router.push("/dashboard");
         } else {
           router.push("/portal");
         }

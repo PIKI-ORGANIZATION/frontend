@@ -11,7 +11,12 @@ export function useDpp() {
       const json = await res.json();
       if (json.data) {
         // Map dpd back to dpp for frontend state compatibility
-        json.data = json.data.map((item: { dpd: string; [key: string]: unknown }) => ({ ...item, dpp: item.dpd }));
+        json.data = json.data.map(
+          (item: { dpd: string; [key: string]: unknown }) => ({
+            ...item,
+            dpp: item.dpd,
+          }),
+        );
       }
       return json;
     },
