@@ -24,7 +24,7 @@ export function RecentRegistrations() {
   const anggotaList = data?.data || [];
 
   return (
-    <Card className="rounded-lg bg-card text-card-foreground flex flex-col justify-between">
+    <Card className="flex flex-col justify-between">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>

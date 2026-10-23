@@ -132,7 +132,7 @@ export function getBeritaColumns({
         return (
           <Badge
             variant="outline"
-            className={`gap-1.5 font-normal text-[11px] py-2 px-2 rounded-md ${config.badgeClass}`}
+            className={`gap-1.5 font-normal text-[11px] py-0.5 px-2 rounded-md ${config.badgeClass}`}
           >
             <Icon className="h-3 w-3 shrink-0 opacity-70" />
             <span>{config.label}</span>
@@ -157,8 +157,17 @@ export function getBeritaColumns({
         return (
           <div className="flex items-center gap-2">
             <span
-              className={`inline-flex items-center gap-1.5 px-4 py-0.5 rounded-md text-[11px] font-normal border ${config.badgeClass}`}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${config.badgeClass}`}
             >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  statusValue === "PUBLISHED"
+                    ? "bg-emerald-500"
+                    : statusValue === "DRAFT"
+                      ? "bg-amber-500"
+                      : "bg-muted-foreground/60"
+                }`}
+              />
               {statusValue === "PUBLISHED"
                 ? "Tayang"
                 : statusValue === "DRAFT"

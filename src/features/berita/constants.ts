@@ -20,31 +20,31 @@ export const BERITA_CATEGORIES: {
     value: "ORGANISASI",
     label: "Organisasi",
     icon: Building2,
-    badgeClass: "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20",
+    badgeClass: "bg-sky-500/[0.06] text-sky-700 dark:text-sky-300 border-sky-500/20",
   },
   {
     value: "OPINI",
     label: "Opini",
     icon: FileText,
-    badgeClass: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20",
+    badgeClass: "bg-purple-500/[0.06] text-purple-700 dark:text-purple-300 border-purple-500/20",
   },
   {
     value: "KEBIJAKAN_PUBLIK",
     label: "Kebijakan Publik",
     icon: Scale,
-    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
+    badgeClass: "bg-amber-500/[0.06] text-amber-700 dark:text-amber-300 border-amber-500/20",
   },
   {
     value: "SEMINAR_KAJIAN",
     label: "Seminar & Kajian",
     icon: GraduationCap,
-    badgeClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
+    badgeClass: "bg-emerald-500/[0.06] text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
   },
   {
     value: "WILAYAH",
     label: "Wilayah (DPD/DPC)",
     icon: MapPin,
-    badgeClass: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20",
+    badgeClass: "bg-blue-500/[0.06] text-blue-700 dark:text-blue-300 border-blue-500/20",
   },
 ];
 
@@ -56,21 +56,21 @@ export const BERITA_STATUSES: {
 }[] = [
   {
     value: "PUBLISHED",
-    label: "Tayang (Published)",
+    label: "Tayang",
     icon: CheckCircle2,
-    badgeClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
+    badgeClass: "bg-emerald-500/[0.06] text-emerald-700 dark:text-emerald-300 border-emerald-500/20",
   },
   {
     value: "DRAFT",
-    label: "Konsep (Draft)",
+    label: "Draft",
     icon: FileClock,
-    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
+    badgeClass: "bg-amber-500/[0.06] text-amber-700 dark:text-amber-300 border-amber-500/20",
   },
   {
     value: "ARCHIVED",
-    label: "Diarsipkan",
+    label: "Arsip",
     icon: Archive,
-    badgeClass: "bg-muted text-muted-foreground border-border/60",
+    badgeClass: "bg-muted/50 text-muted-foreground border-border/60",
   },
 ];
 

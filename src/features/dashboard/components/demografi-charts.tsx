@@ -84,7 +84,7 @@ export function DemografiCharts() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {/* 1. Chart Komposisi Pendidikan */}
-      <Card className="rounded-lg border border-border/80 bg-card text-card-foreground">
+      <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export function DemografiCharts() {
       </Card>
 
       {/* 2. Chart Bidang Profesi & Minat */}
-      <Card className="rounded-lg border border-border/80 bg-card text-card-foreground">
+      <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
