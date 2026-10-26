@@ -41,6 +41,7 @@ import {
   slugifyJudul,
   tingkatFromCabangName,
   tingkatLabel,
+  toNewsDatetimeLocal,
 } from "@/lib/news";
 
 export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?: NewsItem }) {
@@ -58,6 +59,9 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
   const [konten, setKonten] = useState(initial?.konten || "");
   const [thumbnail, setThumbnail] = useState(initial?.url_thumbnail_img || "");
   const [status, setStatus] = useState(initial?.statusNewsUtama || "DRAFT");
+  const [publishedAt, setPublishedAt] = useState(
+    toNewsDatetimeLocal(initial?.published_at),
+  );
   const [cabangUuid, setCabangUuid] = useState(initial?.cabangUuid || "");
   const [kategori, setKategori] = useState<string[]>(
     initial?.kategori.map((item) => item.uuid) || [],
@@ -116,6 +120,9 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
     if (kategori.length === 0 || tags.length === 0) {
       return toast.error("Pilih minimal satu kategori dan satu tag");
     }
+    if (status === "PUBLISHED" && publishedAt && Number.isNaN(new Date(publishedAt).getTime())) {
+      return toast.error("Tanggal terbit tidak valid");
+    }
 
     const words = plain.split(/\s+/).filter(Boolean).length;
     const payload = {
@@ -125,6 +132,12 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
       slug,
       url_thumbnail_img: thumbnail.trim() || null,
       statusNewsUtama: status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
+      published_at:
+        status === "PUBLISHED"
+          ? publishedAt
+            ? new Date(publishedAt).toISOString()
+            : new Date().toISOString()
+          : null,
       durasi_baca: Math.max(1, Math.ceil(words / 200)),
       kategori,
       tags,
@@ -181,7 +194,13 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
           <Select
             items={{ DRAFT: "Draf", PUBLISHED: "Terbit", ARCHIVED: "Arsip" }}
             value={status}
-            onValueChange={(value) => value && setStatus(value)}
+            onValueChange={(value) => {
+              if (!value) return;
+              setStatus(value);
+              if (value === "PUBLISHED" && !publishedAt) {
+                setPublishedAt(toNewsDatetimeLocal(new Date().toISOString()));
+              }
+            }}
           >
             <SelectTrigger className="h-12 w-full px-3">
               <SelectValue />
@@ -193,6 +212,19 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
             </SelectContent>
           </Select>
         </Field>
+        {status === "PUBLISHED" && (
+          <Field label="Tanggal terbit" className="md:col-span-2">
+            <Input
+              type="datetime-local"
+              value={publishedAt}
+              onChange={(event) => setPublishedAt(event.target.value)}
+              className="dark:[color-scheme:dark]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Tanggal ini yang tampil di halaman publik. Kosongkan untuk memakai waktu saat berita disimpan.
+            </p>
+          </Field>
+        )}
         <Field label="Ringkasan" className="md:col-span-2">
           <Textarea value={ringkasan} onChange={(event) => setRingkasan(event.target.value)} className="min-h-24" />
         </Field>

@@ -39,6 +39,7 @@ export interface NewsWriteInput {
   slug: string;
   url_thumbnail_img?: string | null;
   statusNewsUtama?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  published_at?: string | null;
   durasi_baca?: number;
   cabangUuid?: string | null;
   kategori?: string[];
