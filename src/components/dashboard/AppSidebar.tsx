@@ -8,11 +8,7 @@ import {
   Users,
   UserCheck,
   ShieldCheck,
-  CheckCircle2,
-  CheckCircle,
   CreditCard,
-  QrCode,
-  FileSignature,
   Globe,
   FileText,
   Calendar,
@@ -138,8 +134,8 @@ const adminNavGroups: NavGroupData[] = [
         items: [
           {
             title: "CMS Landing Page",
+            url: "/dashboard/konten/landing",
             icon: Globe,
-            isUnderDevelopment: true,
           },
           {
             title: "CMS Berita",

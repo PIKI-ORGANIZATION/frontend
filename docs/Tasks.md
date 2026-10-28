@@ -108,8 +108,12 @@
 
 ### 1. Manajemen Konten:
 
-- [ ] **CMS Landing Page (`/dashboard/konten/landing`):**
-  - [ ] Pengaturan konten hero section, banner utama, sambutan ketua umum, dan highlight fitur portal publik.
+- [x] **CMS Landing Page (`/dashboard/konten/landing`):**
+  - [x] Manajemen linimasa sejarah PIKI dengan tabel terstruktur, faceted search, toggle status _Published/Draft_, dan modal editor peristiwa.
+  - [x] Pratinjau kartu publik interaktif (_Live Card Preview_) yang responsif.
+  - [x] Konfigurasi teks Hero Section (eyebrow, title, highlight, deskripsi) dan Call-to-Action (teks & rute link).
+  - [x] Konfigurasi narasi profil Tentang Organisasi, teks Visi, dan butir Misi dinamis (tambah/hapus).
+  - [x] Sinkronisasi penyimpanan lokal (_localStorage_) dan fitur reset default.
 - [x] **CMS Berita (`/dashboard/berita`):**
   - [x] Tabel TanStack data artikel berita (Judul, Kategori, Penulis, Status Publish/Draft, Tanggal).
   - [x] Toolbar filter kategori & status publikasi dengan _faceted filter_ dan _search input_.

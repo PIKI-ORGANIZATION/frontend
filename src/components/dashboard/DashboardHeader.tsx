@@ -106,6 +106,22 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       );
     }
 
+    if (pathname.startsWith("/dashboard/konten/landing")) {
+      return (
+        <>
+          <BreadcrumbItem className="hidden sm:block">
+            <span className="text-muted-foreground">Konten</span>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:block" />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold text-foreground">
+              CMS Landing Page
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </>
+      );
+    }
+
     if (pathname.startsWith("/dashboard/berita")) {
       const isNew = pathname.includes("/baru");
       return (
