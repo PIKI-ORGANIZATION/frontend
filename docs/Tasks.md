@@ -4,7 +4,7 @@
 **Arsitektur Desain:** Modular Monolith dengan standar acuan [satnaing/shadcn-admin](https://github.com/satnaing/shadcn-admin.git)  
 **Prinsip Desain:** Clean, Modern, User-Friendly, Flat & Border-based (`rounded-lg`, Tanpa shadow / `shadow-none` pada card & container), Deep Royal Blue palette, Full Light/Dark Mode precision (Theme-aware CSS Variables), Anti-AI Vibe.
 
-> **Catatan Standar UI Kedepannya:** Seluruh kartu (card), kontainer, panel, dan tabel wajib menggunakan sudut membulat **`rounded-lg`** dan **meniadakan shadow** (`shadow-none`) agar tampilan terlihat flat, sangat bersih (*clean*), dan berkelas.
+> **Catatan Standar UI Kedepannya:** Seluruh kartu (card), kontainer, panel, dan tabel wajib menggunakan sudut membulat **`rounded-lg`** dan **meniadakan shadow** (`shadow-none`) agar tampilan terlihat flat, sangat bersih (_clean_), dan berkelas.
 
 ---
 
@@ -36,20 +36,20 @@
   - `(portal)` untuk Member Area / Portal Anggota.
 - [x] **AppSidebar (Standar `satnaing/shadcn-admin` dengan Collapsible Submenu):**
   - [x] Header Branding resmi PIKI Nasional (Logo & Emblem, bersih tanpa dropdown workspace).
-  - [x] Trigger Pencarian Cepat (*Command Palette* `⌘K`) dengan live search hierarki modul & handler toast pengembangan.
+  - [x] Trigger Pencarian Cepat (_Command Palette_ `⌘K`) dengan live search hierarki modul & handler toast pengembangan.
   - [x] Pengelompokan modul khusus CMS Nasional:
-    - [x] **Overview**: Dashboard Statistik Nasional & Modul Satu Data (`/dashboard`, badge: *Live*).
-    - [x] **Manajemen Keanggotaan**: CMS Data Anggota (`/dashboard/anggota`), Verifikasi Pendaftar (`/dashboard/verifikasi`, badge: *New*), Approval DPP, Approval DPD, Approval DPC, Generator KTA Digital, Generator QR Code, Digital Signature Pengurus.
+    - [x] **Overview**: Dashboard Statistik Nasional & Modul Satu Data (`/dashboard`, badge: _Live_).
+    - [x] **Manajemen Keanggotaan**: CMS Data Anggota (`/dashboard/anggota`), Verifikasi Pendaftar (`/dashboard/verifikasi`, badge: _New_), Approval DPP, Approval DPD, Approval DPC, Generator KTA Digital, Generator QR Code, Digital Signature Pengurus.
     - [x] **CMS Manajemen Konten**: CMS Landing Page, CMS Berita (`/dashboard/berita`), CMS Program Kerja, CMS Jurnal, CMS Galeri, CMS Struktur Organisasi, CMS Data Pengurus.
   - [x] Penghapusan grup "Pengaturan Akun" pada CMS sidebar sesuai arahan terbaru.
-  - [x] Handler toast interaktif (*Sonner* `toast.info`) "Modul [Nama] sedang dalam tahap pengembangan" tanpa redirect rute kosong.
+  - [x] Handler toast interaktif (_Sonner_ `toast.info`) "Modul [Nama] sedang dalam tahap pengembangan" tanpa redirect rute kosong.
   - [x] Anti-truncate label formatting (`truncate-none`, `whitespace-normal`, sidebar width 17.5rem / 280px).
-  - [x] Footer sidebar minimalis (*PIKI CMS v2.4 • Online*).
+  - [x] Footer sidebar minimalis (_PIKI CMS v2.4 • Online_).
 - [x] **DashboardHeader (Standar `satnaing/shadcn-admin`):**
-  - [x] *SidebarTrigger* toggle buka/tutup menu.
-  - [x] *Dynamic Breadcrumbs* mengikuti rute aktif (`Dashboard > Satu Data`, `Dashboard > Manajemen > Daftar Anggota`, dll).
-  - [x] *ThemeToggle* dropdown (Light, Dark, System).
-  - [x] *UserNav Profile Dropdown* (Avatar inisial, role badge, email, tautan profil, dan tombol *Log out* dengan *ConfirmDialog*).
+  - [x] _SidebarTrigger_ toggle buka/tutup menu.
+  - [x] _Dynamic Breadcrumbs_ mengikuti rute aktif (`Dashboard > Satu Data`, `Dashboard > Manajemen > Daftar Anggota`, dll).
+  - [x] _ThemeToggle_ dropdown (Light, Dark, System).
+  - [x] _UserNav Profile Dropdown_ (Avatar inisial, role badge, email, tautan profil, dan tombol _Log out_ dengan _ConfirmDialog_).
 
 ---
 
@@ -86,7 +86,7 @@
 ## FASE 6: CMS & Backoffice (Manajemen Keanggotaan & Verifikasi) - [Selesai]
 
 - [x] **Komponen Reusable Data Table (Standar `shadcn-admin`):**
-  - [x] `DataTableToolbar`: Pencarian nama/KTA, faceted-filter status KTA, tombol reset filter, dan *view-options* pemilih kolom.
+  - [x] `DataTableToolbar`: Pencarian nama/KTA, faceted-filter status KTA, tombol reset filter, dan _view-options_ pemilih kolom.
   - [x] `DataTableColumnHeader`: Sorting kolom asc/desc dengan ikon indikator.
   - [x] `DataTablePagination`: Rows-per-page, info halaman, dan navigasi first/prev/next/last.
   - [x] `DataTableFacetedFilter`: Multi-filter badge dengan hitungan item.
@@ -106,14 +106,31 @@
 
 ## FASE 7: CMS Manajemen Konten & Persuratan (E-Office) - [Next Priority]
 
-- [x] **CMS Manajemen Berita & Publikasi (`/dashboard/berita`):**
+### 1. Manajemen Konten:
+
+- [ ] **CMS Landing Page (`/dashboard/konten/landing`):**
+  - [ ] Pengaturan konten hero section, banner utama, sambutan ketua umum, dan highlight fitur portal publik.
+- [x] **CMS Berita (`/dashboard/berita`):**
   - [x] Tabel TanStack data artikel berita (Judul, Kategori, Penulis, Status Publish/Draft, Tanggal).
-  - [x] Toolbar filter kategori & status publikasi dengan *faceted filter* dan *search input*.
-  - [x] Modal Editor Berita responsif dengan *Markdown Rich Text Editor*, toolbar format, hitung kata/karakter, dan galeri banner gambar.
+  - [x] Toolbar filter kategori & status publikasi dengan _faceted filter_ dan _search input_.
+  - [x] Modal Editor Berita responsif dengan _Markdown Rich Text Editor_, toolbar format, hitung kata/karakter, dan galeri banner gambar.
   - [x] Modal Pratinjau Artikel lengkap dengan rendering naskah, metadata, dan informasi penulis.
-  - [x] CRUD Aksi (Tambah baru, Edit berita, Hapus artikel, Toggle status tayang/draft, serta *Bulk Action* publikasi/hapus massal).
+  - [x] CRUD Aksi (Tambah baru, Edit berita, Hapus artikel, Toggle status tayang/draft, serta _Bulk Action_ publikasi/hapus massal).
+- [ ] **CMS Program Kerja (`/dashboard/konten/program-kerja`):**
+  - [ ] Manajemen agenda & linimasa program kerja strategis organisasi (Nasional & Wilayah).
+  - [ ] Pengaturan status pelaksanaan kegiatan, target capaian, dan dokumentasi laporan.
 - [ ] **CMS Jurnal & Riset Ilmiah (`/dashboard/jurnal`):**
-  - [ ] Manajemen berkas PDF jurnal, metadata abstrak, volume, dan edisi penerbitan.
+  - [ ] Manajemen berkas PDF jurnal, metadata abstrak, volume, nomor edisi penerbitan, dan indeksasi akademis.
+- [ ] **CMS Galeri (`/dashboard/konten/galeri`):**
+  - [ ] Manajemen album dokumentasi foto resolusi tinggi dan upload multi-media.
+  - [ ] Integrasi galeri video, embed YouTube, dan dokumentasi kegiatan resmi organisasi.
+- [ ] **CMS Struktur Organisasi (`/dashboard/konten/struktur`):**
+  - [ ] Visualisasi & editor bagan struktur organisasi kepengurusan PIKI (DPP, DPD, DPC).
+- [ ] **CMS Data Pengurus (`/dashboard/konten/pengurus`):**
+  - [ ] Master data profil fungsionaris pengurus (Nama, Jabatan/Bidang, SK Penetapan, Masa Bakti, dan Foto Resmi).
+
+### 2. Administrasi & Persuratan (E-Office):
+
 - [ ] **Sistem Persuratan & E-Office (`/dashboard/surat`):**
   - [ ] Form pembuatan surat resmi organisasi dengan template otomatis.
   - [ ] Generator nomor surat otomatis berbasis klasifikasi dan tingkatan (DPP/DPD/DPC).
@@ -127,20 +144,20 @@
   - [x] `ChartContainer`, `ChartTooltip`, `ChartTooltipContent`, dan `ChartLegend`.
   - [x] Integrasi Recharts v3 dengan dukungan penuh **Light Mode & Dark Mode** via CSS Variables native (`--chart-1` s/d `--chart-5`, `--border`, `--muted-foreground`).
 - [x] **Halaman Analitik Utama (`/dashboard`):**
-  - [x] 4 Kartu Metrik Utama (*Total Anggota*, *KTA Aktif*, *Antrean Verifikasi DPP*, *Jaringan Wilayah DPD/DPC*).
-  - [x] Tab Navigasi (*Ringkasan & Wilayah*, *Demografi & Profesi*, *Kepatuhan & KTA*).
-  - [x] Tombol Segarkan data (*Live Refetch*).
+  - [x] 4 Kartu Metrik Utama (_Total Anggota_, _KTA Aktif_, _Antrean Verifikasi DPP_, _Jaringan Wilayah DPD/DPC_).
+  - [x] Tab Navigasi (_Ringkasan & Wilayah_, _Demografi & Profesi_, _Kepatuhan & KTA_).
+  - [x] Tombol Segarkan data (_Live Refetch_).
 - [x] **Visualisasi Data Sebaran Wilayah (`WilayahBarChart`):**
-  - [x] Grafik batang komparasi (*Total Pendaftar* vs *KTA Aktif*) untuk 10 DPD terbesar.
+  - [x] Grafik batang komparasi (_Total Pendaftar_ vs _KTA Aktif_) untuk 10 DPD terbesar.
   - [x] Tooltip responsif berlatar popover dengan kontras tinggi di kedua tema.
 - [x] **Visualisasi Demografi & Profesi (`DemografiCharts`):**
-  - [x] Donut Chart komposisi tingkat pendidikan (S1, S2, S3, Diploma, SMA) dengan interaksi segmen *hover*.
+  - [x] Donut Chart komposisi tingkat pendidikan (S1, S2, S3, Diploma, SMA) dengan interaksi segmen _hover_.
   - [x] Horizontal Bar Chart distribusi bidang profesi & kepakaran (Akademisi, Hukum, ASN, Medis, Bisnis, Teknologi).
 - [x] **Kartu Pendaftar & Aktivitas Terkini (`RecentRegistrations`):**
-  - [x] Daftar 5 pendaftar terbaru secara *real-time* dari API dengan pintasan ke verifikasi.
+  - [x] Daftar 5 pendaftar terbaru secara _real-time_ dari API dengan pintasan ke verifikasi.
 - [x] **Fitur Ekspor Satu Data PIKI (`DataExportDialog`):**
-  - [x] Unduh rekapan basis data anggota dalam format **Excel/CSV** (dengan *UTF-8 BOM* `\uFEFF` untuk dukungan karakter penuh di Microsoft Excel/Sheets) dan **JSON Raw**.
-  - [x] Filter lingkup ekspor (*Semua Anggota*, *Hanya KTA Aktif*, atau *Hanya Antrean Verifikasi*).
+  - [x] Unduh rekapan basis data anggota dalam format **Excel/CSV** (dengan _UTF-8 BOM_ `\uFEFF` untuk dukungan karakter penuh di Microsoft Excel/Sheets) dan **JSON Raw**.
+  - [x] Filter lingkup ekspor (_Semua Anggota_, _Hanya KTA Aktif_, atau _Hanya Antrean Verifikasi_).
 
 ---
 
