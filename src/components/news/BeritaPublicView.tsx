@@ -18,7 +18,12 @@ import {
   TingkatOrganisasi,
 } from "@/lib/news";
 
-const TINGKAT: Array<"SEMUA" | TingkatOrganisasi> = ["SEMUA", "DPP", "DPD", "DPC"];
+const TINGKAT: Array<"SEMUA" | TingkatOrganisasi> = [
+  "SEMUA",
+  "DPP",
+  "DPD",
+  "DPC",
+];
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -35,7 +40,11 @@ export function BeritaPublicView() {
     currentPage: page,
     pageSize: 12,
   });
-  const popularQuery = usePublicNews({ sort: "populer", pageSize: 5, currentPage: 1 });
+  const popularQuery = usePublicNews({
+    sort: "populer",
+    pageSize: 5,
+    currentPage: 1,
+  });
   const taxonomy = useNewsTaxonomy();
 
   const items = useMemo(() => {
@@ -53,7 +62,7 @@ export function BeritaPublicView() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <section className="mx-auto w-full max-w-7xl px-6 pb-6 pt-32 md:px-10 md:pt-40">
+      <section className="flex-1 w-full pt-32 pb-8 md:pt-40 md:pb-10 px-5 md:px-10 lg:px-30 mx-auto">
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -76,11 +85,12 @@ export function BeritaPublicView() {
           transition={{ duration: 0.7, delay: 0.16, ease }}
           className="mt-5 max-w-2xl text-base font-light leading-relaxed text-muted-foreground md:text-lg"
         >
-          Kabar dari DPP, DPD, dan DPC. Setiap tulisan menyimpan kategori, slug, dan jumlah pembacanya.
+          Kabar dari DPP, DPD, dan DPC. Setiap tulisan menyimpan kategori, slug,
+          dan jumlah pembacanya.
         </motion.p>
       </section>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-12 px-6 pb-24 md:px-10 lg:grid-cols-12">
+      <section className="mx-auto grid gap-12 pb-24 px-5 md:px-10 lg:px-30 lg:grid-cols-12">
         <div className="lg:col-span-8">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -117,7 +127,13 @@ export function BeritaPublicView() {
               ))}
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
-              <FilterChip active={!kategori} onClick={() => { setKategori(""); setPage(1); }}>
+              <FilterChip
+                active={!kategori}
+                onClick={() => {
+                  setKategori("");
+                  setPage(1);
+                }}
+              >
                 Semua kategori
               </FilterChip>
               {(taxonomy.data?.kategori ?? []).map((item) => (
@@ -190,23 +206,34 @@ export function BeritaPublicView() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
               Pilihan redaksi
             </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight">Berita Terpopuler PIKI</h2>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight">
+              Berita Terpopuler PIKI
+            </h2>
             <ol className="mt-6 flex flex-col">
               {popularQuery.isLoading && (
                 <li className="h-24 animate-pulse rounded-2xl bg-muted" />
               )}
               {!popularQuery.isLoading && popular.length === 0 && (
-                <li className="text-sm text-muted-foreground">Belum ada data pembaca.</li>
+                <li className="text-sm text-muted-foreground">
+                  Belum ada data pembaca.
+                </li>
               )}
               {popular.map((news, index) => (
-                <li key={news.uuid} className="border-t border-border/70 py-4 first:border-t-0 first:pt-0">
-                  <Link href={`/berita/${news.slug}`} className="group grid grid-cols-[auto_1fr] gap-4">
+                <li
+                  key={news.uuid}
+                  className="border-t border-border/70 py-4 first:border-t-0 first:pt-0"
+                >
+                  <Link
+                    href={`/berita/${news.slug}`}
+                    className="group grid grid-cols-[auto_1fr] gap-4"
+                  >
                     <span className="text-2xl font-light text-primary/70 transition-colors duration-300 group-hover:text-primary">
                       {String(index + 1).padStart(2, "0")}
                     </span>
                     <span>
                       <span className="block text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                        {tingkatLabel(tingkatOf(news))} · {formatViewers(news.jumlah_dibaca)} pembaca
+                        {tingkatLabel(tingkatOf(news))} ·{" "}
+                        {formatViewers(news.jumlah_dibaca)} pembaca
                       </span>
                       <span className="mt-1 block text-sm font-medium leading-snug transition-colors duration-300 group-hover:text-primary">
                         {news.judul}
@@ -237,7 +264,9 @@ function FilterChip({
       type="button"
       onClick={onClick}
       className={`shrink-0 rounded-full px-3 py-1 text-xs transition-colors duration-300 ${
-        active ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground ring-1 ring-border hover:text-foreground"
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-card text-muted-foreground ring-1 ring-border hover:text-foreground"
       }`}
     >
       {children}
@@ -265,14 +294,22 @@ function HeroArticle({ news }: { news: NewsItem }) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white md:p-8">
               <div className="mb-3 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
-                <span className="rounded-full bg-primary px-3 py-1 text-primary-foreground">{category}</span>
-                <span className="rounded-full bg-white/15 px-3 py-1 backdrop-blur">{tingkatLabel(tingkatOf(news))}</span>
+                <span className="rounded-full bg-primary px-3 py-1 text-primary-foreground">
+                  {category}
+                </span>
+                <span className="rounded-full bg-white/15 px-3 py-1 backdrop-blur">
+                  {tingkatLabel(tingkatOf(news))}
+                </span>
               </div>
-              <h2 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight md:text-4xl">{news.judul}</h2>
+              <h2 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight md:text-4xl">
+                {news.judul}
+              </h2>
             </div>
           </div>
           <div className="flex flex-col gap-4 p-6 md:p-8">
-            <p className="text-base font-light leading-relaxed text-muted-foreground">{news.ringkasan}</p>
+            <p className="text-base font-light leading-relaxed text-muted-foreground">
+              {news.ringkasan}
+            </p>
             <MetaRow news={news} />
           </div>
         </article>
@@ -307,7 +344,9 @@ function ArticleCard({ news, index }: { news: NewsItem; index: number }) {
             <h3 className="text-xl font-bold leading-snug tracking-tight transition-colors duration-300 group-hover:text-primary">
               {news.judul}
             </h3>
-            <p className="line-clamp-3 text-sm font-light leading-relaxed text-muted-foreground">{news.ringkasan}</p>
+            <p className="line-clamp-3 text-sm font-light leading-relaxed text-muted-foreground">
+              {news.ringkasan}
+            </p>
             <MetaRow news={news} />
           </div>
         </article>

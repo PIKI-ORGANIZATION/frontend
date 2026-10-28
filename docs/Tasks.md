@@ -34,11 +34,16 @@
   - `(auth)` untuk Login & Register.
   - `(dashboard)` untuk CMS Administrator DPP & DPC.
   - `(portal)` untuk Member Area / Portal Anggota.
-- [x] **AppSidebar (Standar `satnaing/shadcn-admin`):**
+- [x] **AppSidebar (Standar `satnaing/shadcn-admin` dengan Collapsible Submenu):**
   - [x] Header Branding resmi PIKI Nasional (Logo & Emblem, bersih tanpa dropdown workspace).
-  - [x] Trigger Pencarian Cepat (*Command Palette* `⌘K`).
-  - [x] Pengelompokan menu terstruktur (*Overview*, *Manajemen Keanggotaan*, *Publikasi*, *Pengaturan*).
-  - [x] Indikator aktif `bg-primary/10 text-primary` dengan badge *Live* / *New*.
+  - [x] Trigger Pencarian Cepat (*Command Palette* `⌘K`) dengan live search hierarki modul & handler toast pengembangan.
+  - [x] Pengelompokan modul khusus CMS Nasional:
+    - [x] **Overview**: Dashboard Statistik Nasional & Modul Satu Data (`/dashboard`, badge: *Live*).
+    - [x] **Manajemen Keanggotaan**: CMS Data Anggota (`/dashboard/anggota`), Verifikasi Pendaftar (`/dashboard/verifikasi`, badge: *New*), Approval DPP, Approval DPD, Approval DPC, Generator KTA Digital, Generator QR Code, Digital Signature Pengurus.
+    - [x] **CMS Manajemen Konten**: CMS Landing Page, CMS Berita (`/dashboard/berita`), CMS Program Kerja, CMS Jurnal, CMS Galeri, CMS Struktur Organisasi, CMS Data Pengurus.
+  - [x] Penghapusan grup "Pengaturan Akun" pada CMS sidebar sesuai arahan terbaru.
+  - [x] Handler toast interaktif (*Sonner* `toast.info`) "Modul [Nama] sedang dalam tahap pengembangan" tanpa redirect rute kosong.
+  - [x] Anti-truncate label formatting (`truncate-none`, `whitespace-normal`, sidebar width 17.5rem / 280px).
   - [x] Footer sidebar minimalis (*PIKI CMS v2.4 • Online*).
 - [x] **DashboardHeader (Standar `satnaing/shadcn-admin`):**
   - [x] *SidebarTrigger* toggle buka/tutup menu.

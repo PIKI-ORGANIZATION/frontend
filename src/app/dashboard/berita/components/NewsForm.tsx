@@ -44,7 +44,13 @@ import {
   toNewsDatetimeLocal,
 } from "@/lib/news";
 
-export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?: NewsItem }) {
+export function NewsForm({
+  mode,
+  initial,
+}: {
+  mode: "create" | "edit";
+  initial?: NewsItem;
+}) {
   const router = useRouter();
   const scope = useNewsScope();
   const taxonomy = useNewsTaxonomy();
@@ -66,7 +72,9 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
   const [kategori, setKategori] = useState<string[]>(
     initial?.kategori.map((item) => item.uuid) || [],
   );
-  const [tags, setTags] = useState<string[]>(initial?.tags.map((item) => item.uuid) || []);
+  const [tags, setTags] = useState<string[]>(
+    initial?.tags.map((item) => item.uuid) || [],
+  );
 
   useEffect(() => {
     if (!slugTouched) setSlug(slugifyJudul(judul));
@@ -81,9 +89,12 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
     const labels: Record<string, string> = {
       __akun__: "Ikuti cabang akun DPP",
     };
-    if (scope?.cabangId) labels[scope.cabangId] = scope.cabangName || "DPP Pusat";
+    if (scope?.cabangId)
+      labels[scope.cabangId] = scope.cabangName || "DPP Pusat";
     if (initial?.cabangUuid && initial.cabang?.namaCabang) {
-      const place = initial.cabang.provinsi ? ` · ${initial.cabang.provinsi}` : "";
+      const place = initial.cabang.provinsi
+        ? ` · ${initial.cabang.provinsi}`
+        : "";
       labels[initial.cabangUuid] = `${initial.cabang.namaCabang}${place}`;
     }
     for (const cabang of cabangQuery.data ?? []) {
@@ -97,16 +108,31 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
   const groupedCabang = useMemo(() => {
     const items = cabangQuery.data ?? [];
     return {
-      DPP: items.filter((item) => tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPP"),
-      DPD: items.filter((item) => tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPD"),
-      DPC: items.filter((item) => tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPC"),
+      DPP: items.filter(
+        (item) =>
+          tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPP",
+      ),
+      DPD: items.filter(
+        (item) =>
+          tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPD",
+      ),
+      DPC: items.filter(
+        (item) =>
+          tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPC",
+      ),
     };
   }, [cabangQuery.data]);
 
   const pending = createNews.isPending || updateNews.isPending;
 
-  const toggle = (list: string[], id: string, setter: (value: string[]) => void) => {
-    setter(list.includes(id) ? list.filter((item) => item !== id) : [...list, id]);
+  const toggle = (
+    list: string[],
+    id: string,
+    setter: (value: string[]) => void,
+  ) => {
+    setter(
+      list.includes(id) ? list.filter((item) => item !== id) : [...list, id],
+    );
   };
 
   const onSubmit = (event: FormEvent) => {
@@ -116,11 +142,16 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
       return toast.error("Slug hanya huruf kecil, angka, dan tanda hubung");
     }
     const plain = plainNewsText(konten);
-    if (plain.length < 10) return toast.error("Isi berita masih terlalu pendek");
+    if (plain.length < 10)
+      return toast.error("Isi berita masih terlalu pendek");
     if (kategori.length === 0 || tags.length === 0) {
       return toast.error("Pilih minimal satu kategori dan satu tag");
     }
-    if (status === "PUBLISHED" && publishedAt && Number.isNaN(new Date(publishedAt).getTime())) {
+    if (
+      status === "PUBLISHED" &&
+      publishedAt &&
+      Number.isNaN(new Date(publishedAt).getTime())
+    ) {
       return toast.error("Tanggal terbit tidak valid");
     }
 
@@ -147,7 +178,9 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
     const action = mode === "create" ? createNews.mutate : updateNews.mutate;
     action(payload, {
       onSuccess: () => {
-        toast.success(mode === "create" ? "Berita tersimpan" : "Berita diperbarui");
+        toast.success(
+          mode === "create" ? "Berita tersimpan" : "Berita diperbarui",
+        );
         router.push("/dashboard/berita");
       },
       onError: (error) => toast.error(error.message),
@@ -155,7 +188,7 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
   };
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto flex max-w-5xl flex-col gap-8">
+    <form onSubmit={onSubmit} className="mx-auto flex max-w-6xl flex-col gap-8">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
@@ -172,14 +205,23 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
                 : `Berita ini terkunci pada cabang ${scope.cabangName || tingkatLabel(scope.tingkat)}. Pilihan cabang lain diabaikan server.`}
           </p>
         </div>
-        <Button type="button" variant="outline" nativeButton={false} render={<Link href="/dashboard/berita" />}>
+        <Button
+          type="button"
+          variant="outline"
+          nativeButton={false}
+          render={<Link href="/dashboard/berita" />}
+        >
           Kembali
         </Button>
       </div>
 
-      <div className="grid gap-6 rounded-3xl bg-card p-6 ring-1 ring-border md:grid-cols-2">
+      <div className="grid gap-6 rounded-xl bg-card p-6 ring-1 ring-border md:grid-cols-2">
         <Field label="Judul" className="md:col-span-2">
-          <Input value={judul} onChange={(event) => setJudul(event.target.value)} placeholder="Judul berita" />
+          <Input
+            value={judul}
+            onChange={(event) => setJudul(event.target.value)}
+            placeholder="Judul berita"
+          />
         </Field>
         <Field label="Slug">
           <Input
@@ -208,7 +250,9 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
             <SelectContent>
               <SelectItem value="DRAFT">Draf</SelectItem>
               <SelectItem value="PUBLISHED">Terbit</SelectItem>
-              {mode === "edit" ? <SelectItem value="ARCHIVED">Arsip</SelectItem> : null}
+              {mode === "edit" ? (
+                <SelectItem value="ARCHIVED">Arsip</SelectItem>
+              ) : null}
             </SelectContent>
           </Select>
         </Field>
@@ -221,12 +265,17 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
               className="dark:[color-scheme:dark]"
             />
             <p className="text-xs text-muted-foreground">
-              Tanggal ini yang tampil di halaman publik. Kosongkan untuk memakai waktu saat berita disimpan.
+              Tanggal ini yang tampil di halaman publik. Kosongkan untuk memakai
+              waktu saat berita disimpan.
             </p>
           </Field>
         )}
         <Field label="Ringkasan" className="md:col-span-2">
-          <Textarea value={ringkasan} onChange={(event) => setRingkasan(event.target.value)} className="min-h-24" />
+          <Textarea
+            value={ringkasan}
+            onChange={(event) => setRingkasan(event.target.value)}
+            className="min-h-24"
+          />
         </Field>
         <Field label="Gambar sampul" className="md:col-span-2">
           <NewsCoverField value={thumbnail} onChange={setThumbnail} />
@@ -236,7 +285,9 @@ export function NewsForm({ mode, initial }: { mode: "create" | "edit"; initial?:
             <Select
               items={cabangItems}
               value={cabangUuid || "__akun__"}
-              onValueChange={(value) => setCabangUuid(!value || value === "__akun__" ? "" : value)}
+              onValueChange={(value) =>
+                setCabangUuid(!value || value === "__akun__" ? "" : value)
+              }
             >
               <SelectTrigger className="h-12 w-full px-3">
                 <SelectValue />
@@ -330,7 +381,9 @@ function ToggleChip({
       type="button"
       onClick={onClick}
       className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-        active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+        active
+          ? "bg-primary text-primary-foreground"
+          : "bg-muted text-foreground"
       }`}
     >
       {children}

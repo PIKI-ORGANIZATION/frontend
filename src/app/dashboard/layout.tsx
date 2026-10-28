@@ -14,7 +14,9 @@ export default async function DashboardLayout({
   const user = token ? decodeToken(token) : null;
 
   return (
-    <SidebarProvider>
+    <SidebarProvider
+      style={{ "--sidebar-width": "17.5rem" } as React.CSSProperties}
+    >
       <AppSidebar user={user} />
       <div className="flex flex-col w-full min-h-screen">
         <DashboardHeader user={user} />

@@ -32,11 +32,16 @@ export function BeritaDetailView({ slug }: { slug: string }) {
     return (
       <main className="min-h-screen bg-background px-6 pt-36">
         <div className="mx-auto max-w-xl rounded-3xl bg-card p-10 text-center ring-1 ring-border">
-          <h1 className="text-3xl font-bold tracking-tight">Berita tidak tersedia</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Berita tidak tersedia
+          </h1>
           <p className="mt-3 text-muted-foreground">
             Tulisan ini belum terbit atau tautannya sudah berubah.
           </p>
-          <Link href="/berita" className="mt-6 inline-flex text-sm font-semibold text-primary">
+          <Link
+            href="/berita"
+            className="mt-6 inline-flex text-sm font-semibold text-primary"
+          >
             Kembali ke daftar berita
           </Link>
         </div>
@@ -48,9 +53,16 @@ export function BeritaDetailView({ slug }: { slug: string }) {
 
   return (
     <main className="min-h-screen bg-background">
-      <article className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28 md:px-10 md:pt-36">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-          <Link href="/berita" className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
+      <article className="mx-auto w-full max-w-7xl pb-24 pt-28 md:pt-36">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+        >
+          <Link
+            href="/berita"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary"
+          >
             <ArrowLeft className="h-4 w-4" />
             Semua berita
           </Link>
@@ -64,12 +76,17 @@ export function BeritaDetailView({ slug }: { slug: string }) {
               transition={{ duration: 0.7, ease }}
             >
               <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.2em]">
-                <span className="rounded-full bg-primary px-3 py-1 text-primary-foreground">{category}</span>
+                <span className="rounded-full bg-primary px-3 py-1 text-primary-foreground">
+                  {category}
+                </span>
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
                   {tingkatLabel(tingkatOf(news))}
                 </span>
                 {news.kategori.slice(1).map((item) => (
-                  <span key={item.uuid} className="rounded-full bg-card px-3 py-1 text-muted-foreground ring-1 ring-border">
+                  <span
+                    key={item.uuid}
+                    className="rounded-full bg-card px-3 py-1 text-muted-foreground ring-1 ring-border"
+                  >
                     {item.nama_kategori}
                   </span>
                 ))}
@@ -78,10 +95,14 @@ export function BeritaDetailView({ slug }: { slug: string }) {
                 {news.judul}
               </h1>
               {news.ringkasan && (
-                <p className="mt-6 max-w-3xl text-lg font-light leading-relaxed text-muted-foreground">{news.ringkasan}</p>
+                <p className="mt-6 max-w-3xl text-lg font-light leading-relaxed text-muted-foreground">
+                  {news.ringkasan}
+                </p>
               )}
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 border-y border-border py-4 text-sm text-muted-foreground">
-                <span>{formatNewsDate(news.published_at || news.insert_at)}</span>
+                <span>
+                  {formatNewsDate(news.published_at || news.insert_at)}
+                </span>
                 <span className="inline-flex items-center gap-1.5">
                   <Eye className="h-4 w-4" />
                   {formatViewers(news.jumlah_dibaca)} pembaca
@@ -106,7 +127,11 @@ export function BeritaDetailView({ slug }: { slug: string }) {
               transition={{ duration: 0.9, delay: 0.12, ease }}
               className="relative mt-8 aspect-[16/9] overflow-hidden rounded-3xl bg-muted"
             >
-              <NewsCover src={news.url_thumbnail_img} alt={news.judul} priority />
+              <NewsCover
+                src={news.url_thumbnail_img}
+                alt={news.judul}
+                priority
+              />
             </motion.div>
 
             <motion.div
@@ -114,13 +139,18 @@ export function BeritaDetailView({ slug }: { slug: string }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease }}
               className="news-body mt-10 max-w-3xl text-[17px] leading-8 text-foreground"
-              dangerouslySetInnerHTML={{ __html: sanitizeNewsHtml(news.konten || "") }}
+              dangerouslySetInnerHTML={{
+                __html: sanitizeNewsHtml(news.konten || ""),
+              }}
             />
 
             {news.tags.length > 0 && (
               <div className="mt-10 flex flex-wrap gap-2">
                 {news.tags.map((tag) => (
-                  <span key={tag.uuid} className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground ring-1 ring-border">
+                  <span
+                    key={tag.uuid}
+                    className="rounded-full bg-card px-3 py-1 text-xs text-muted-foreground ring-1 ring-border"
+                  >
                     #{tag.nama_tag}
                   </span>
                 ))}
@@ -133,7 +163,9 @@ export function BeritaDetailView({ slug }: { slug: string }) {
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
                 Paling banyak dibaca
               </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight">Berita Terpopuler PIKI</h2>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight">
+                Berita Terpopuler PIKI
+              </h2>
               <ol className="mt-6 flex flex-col gap-3">
                 {(popular.data?.items ?? [])
                   .filter((item) => item.slug !== news.slug)
@@ -142,11 +174,19 @@ export function BeritaDetailView({ slug }: { slug: string }) {
                       key={item.uuid}
                       initial={{ opacity: 0, x: 16 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: 0.15 + index * 0.06, ease }}
+                      transition={{
+                        duration: 0.5,
+                        delay: 0.15 + index * 0.06,
+                        ease,
+                      }}
                     >
-                      <Link href={`/berita/${item.slug}`} className="group block rounded-2xl bg-card p-4 ring-1 ring-border transition-colors duration-300 hover:bg-muted/60">
+                      <Link
+                        href={`/berita/${item.slug}`}
+                        className="group block rounded-2xl bg-card p-4 ring-1 ring-border transition-colors duration-300 hover:bg-muted/60"
+                      >
                         <span className="text-[11px] uppercase tracking-[0.16em] text-primary">
-                          {String(index + 1).padStart(2, "0")} · {formatViewers(item.jumlah_dibaca)} pembaca
+                          {String(index + 1).padStart(2, "0")} ·{" "}
+                          {formatViewers(item.jumlah_dibaca)} pembaca
                         </span>
                         <span className="mt-1 block font-medium leading-snug transition-colors duration-300 group-hover:text-primary">
                           {item.judul}

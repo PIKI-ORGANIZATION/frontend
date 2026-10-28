@@ -106,6 +106,23 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       );
     }
 
+    if (pathname.startsWith("/dashboard/berita")) {
+      const isNew = pathname.includes("/baru");
+      return (
+        <>
+          <BreadcrumbItem className="hidden sm:block">
+            <span className="text-muted-foreground">Publikasi</span>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:block" />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold text-foreground">
+              {isNew ? "Tulis Berita Baru" : "Kelola Berita"}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </>
+      );
+    }
+
     if (pathname.includes("pengaturan")) {
       return (
         <>
