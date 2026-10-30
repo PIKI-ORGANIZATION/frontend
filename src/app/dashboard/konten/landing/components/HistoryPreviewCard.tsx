@@ -38,6 +38,10 @@ export function HistoryPreviewCard({ event }: HistoryPreviewCardProps) {
             alt={event.title}
             fill
             sizes="(max-width: 768px) 100vw, 400px"
+            unoptimized={
+              event.image.startsWith("data:") ||
+              event.image.startsWith("blob:")
+            }
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />

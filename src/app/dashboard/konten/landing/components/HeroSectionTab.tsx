@@ -27,7 +27,7 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
 
   const handleChange = <K extends keyof HeroContent>(
     key: K,
-    value: HeroContent[K]
+    value: HeroContent[K],
   ) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
     setIsDirty(true);
@@ -65,14 +65,18 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
                   Teks Utama & Heading Hero
                 </h3>
                 <p className="text-xs md:text-[13px] text-muted-foreground">
-                  Konfigurasikan judul besar dan pengantar yang pertama kali dilihat pengunjung.
+                  Konfigurasikan judul besar dan pengantar yang pertama kali
+                  dilihat pengunjung.
                 </p>
               </div>
             </div>
 
             {/* Eyebrow */}
             <div>
-              <Label htmlFor="hero-eyebrow" className="text-xs md:text-sm font-medium mb-1.5 block">
+              <Label
+                htmlFor="hero-eyebrow"
+                className="text-xs md:text-sm font-medium mb-1.5 block"
+              >
                 Eyebrow Text (Label Atas Kecil)
               </Label>
               <Input
@@ -86,7 +90,10 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
             {/* Title & Highlight */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="hero-title" className="text-xs md:text-sm font-medium mb-1.5 block">
+                <Label
+                  htmlFor="hero-title"
+                  className="text-xs md:text-sm font-medium mb-1.5 block"
+                >
                   Judul Baris Pertama <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -99,8 +106,12 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
               </div>
 
               <div>
-                <Label htmlFor="hero-highlight" className="text-xs md:text-sm font-medium mb-1.5 block">
-                  Aksen Sorotan (Warna Biru) <span className="text-red-500">*</span>
+                <Label
+                  htmlFor="hero-highlight"
+                  className="text-xs md:text-sm font-medium mb-1.5 block"
+                >
+                  Aksen Sorotan (Warna Biru){" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="hero-highlight"
@@ -114,7 +125,10 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
 
             {/* Subtitle */}
             <div>
-              <Label htmlFor="hero-sub" className="text-xs md:text-sm font-medium mb-1.5 block">
+              <Label
+                htmlFor="hero-sub"
+                className="text-xs md:text-sm font-medium mb-1.5 block"
+              >
                 Deskripsi / Sub-headline
               </Label>
               <Textarea
@@ -134,10 +148,11 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
               <LinkIcon className="w-4 h-4 text-primary" />
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Tombol Aksi (Call to Action / CTA)
+                  Tombol Aksi
                 </h3>
                 <p className="text-xs md:text-[13px] text-muted-foreground">
-                  Tautan tombol navigasi utama bagi calon anggota baru dan anggota terdaftar.
+                  Tautan tombol navigasi utama bagi calon anggota baru dan
+                  anggota terdaftar.
                 </p>
               </div>
             </div>
@@ -145,24 +160,34 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
             {/* CTA 1: Utama */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="cta1-text" className="text-xs md:text-sm font-medium mb-1.5 block">
+                <Label
+                  htmlFor="cta1-text"
+                  className="text-xs md:text-sm font-medium mb-1.5 block"
+                >
                   Label Tombol Utama (Primary)
                 </Label>
                 <Input
                   id="cta1-text"
                   value={draft.primaryCtaText}
-                  onChange={(e) => handleChange("primaryCtaText", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("primaryCtaText", e.target.value)
+                  }
                   placeholder="Daftar Anggota"
                 />
               </div>
               <div>
-                <Label htmlFor="cta1-url" className="text-xs md:text-sm font-medium mb-1.5 block">
+                <Label
+                  htmlFor="cta1-url"
+                  className="text-xs md:text-sm font-medium mb-1.5 block"
+                >
                   Target Link Tombol Utama
                 </Label>
                 <Input
                   id="cta1-url"
                   value={draft.primaryCtaUrl}
-                  onChange={(e) => handleChange("primaryCtaUrl", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("primaryCtaUrl", e.target.value)
+                  }
                   placeholder="/register"
                 />
               </div>
@@ -171,24 +196,34 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
             {/* CTA 2: Sekunder */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="cta2-text" className="text-xs md:text-sm font-medium mb-1.5 block">
+                <Label
+                  htmlFor="cta2-text"
+                  className="text-xs md:text-sm font-medium mb-1.5 block"
+                >
                   Label Tombol Sekunder (Outline)
                 </Label>
                 <Input
                   id="cta2-text"
                   value={draft.secondaryCtaText}
-                  onChange={(e) => handleChange("secondaryCtaText", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("secondaryCtaText", e.target.value)
+                  }
                   placeholder="Masuk Portal"
                 />
               </div>
               <div>
-                <Label htmlFor="cta2-url" className="text-xs md:text-sm font-medium mb-1.5 block">
+                <Label
+                  htmlFor="cta2-url"
+                  className="text-xs md:text-sm font-medium mb-1.5 block"
+                >
                   Target Link Tombol Sekunder
                 </Label>
                 <Input
                   id="cta2-url"
                   value={draft.secondaryCtaUrl}
-                  onChange={(e) => handleChange("secondaryCtaUrl", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("secondaryCtaUrl", e.target.value)
+                  }
                   placeholder="/login"
                 />
               </div>
@@ -219,10 +254,7 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
                   Batal
                 </Button>
               )}
-              <Button
-                type="submit"
-                size="sm"
-              >
+              <Button type="submit" size="sm">
                 <Save className="w-3.5 h-3.5" />
                 Simpan Pengaturan Hero
               </Button>
@@ -254,7 +286,9 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
             {/* Simulated Heading */}
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight">
               {draft.title || "Sistem Informasi"} <br />
-              <span className="text-primary">{draft.highlight || "KTA Digital"}</span>
+              <span className="text-primary">
+                {draft.highlight || "KTA Digital"}
+              </span>
             </h2>
 
             {/* Simulated Subtitle */}

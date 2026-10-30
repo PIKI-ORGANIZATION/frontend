@@ -125,7 +125,7 @@ export function NewsAdminList() {
             setStatus(!value || value === "__all__" ? "" : value)
           }
         >
-          <SelectTrigger className="h-12 w-full px-3">
+          <SelectTrigger size="lg">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -152,7 +152,7 @@ export function NewsAdminList() {
               setCabangUuid(!value || value === "__all__" ? "" : value)
             }
           >
-            <SelectTrigger className="h-12 w-full px-3">
+            <SelectTrigger size="lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="max-h-80">

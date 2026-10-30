@@ -3,11 +3,12 @@
 import { VisionMissionSection } from "@/components/landing/profil/VisionMissionSection";
 import { HistorySection } from "@/components/landing/profil/HistorySection";
 import { StructureSection } from "@/components/landing/profil/StructureSection";
+import { ExtendedStructureSection } from "@/components/landing/profil/ExtendedStructureSection";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { PageHeader } from "@/components/ui/page-header";
 
@@ -31,6 +32,9 @@ export default function OrganisasiPage() {
 
       {/* Struktur Organisasi Section */}
       <StructureSection />
+
+      {/* Jajaran Bidang & Dewan Pakar */}
+      <ExtendedStructureSection />
 
       {/* Contact Section */}
       <section className="w-full py-24 md:py-32 bg-card relative z-20 shadow-[0_-20px_50px_rgba(0,0,0,0.05)] rounded-t-[3rem] md:rounded-t-[5rem]">

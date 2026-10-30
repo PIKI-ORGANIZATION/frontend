@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Image from "next/image";
+import Cookies from "js-cookie";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,17 @@ import {
 } from "@/components/ui/select";
 import { HistoryEvent } from "../types";
 import { toast } from "sonner";
-import { Calendar, Image as ImageIcon, MapPin, User, Hash } from "lucide-react";
+import {
+  Calendar,
+  Image as ImageIcon,
+  MapPin,
+  User,
+  Hash,
+  ImagePlus,
+  Trash2,
+  Loader2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface HistoryEditorDialogProps {
   open: boolean;
@@ -32,10 +43,10 @@ interface HistoryEditorDialogProps {
   onSave: (data: HistoryEvent) => void;
 }
 
-const FOOTAGE_OPTIONS = [
-  { label: "Footage 1 (Dokumentasi Perintis)", value: "/footage/image1.webp" },
-  { label: "Footage 2 (Konsolidasi & Sidang)", value: "/footage/image2.jpeg" },
-  { label: "Footage 3 (Aksi Kebangsaan)", value: "/footage/image3.jpg" },
+const FOOTAGE_PRESETS = [
+  { label: "Footage 1 (Perintis)", value: "/footage/image1.webp" },
+  { label: "Footage 2 (Konsolidasi)", value: "/footage/image2.jpeg" },
+  { label: "Footage 3 (Aksi)", value: "/footage/image3.jpg" },
 ];
 
 function HistoryForm({
@@ -52,14 +63,78 @@ function HistoryForm({
   const [year, setYear] = useState(event?.year || "");
   const [title, setTitle] = useState(event?.title || "");
   const [desc, setDesc] = useState(event?.desc || "");
-  const [fullNarrative, setFullNarrative] = useState(event?.fullNarrative || "");
-  const [image, setImage] = useState(event?.image || FOOTAGE_OPTIONS[0].value);
+  const [fullNarrative, setFullNarrative] = useState(
+    event?.fullNarrative || "",
+  );
+  const [image, setImage] = useState(event?.image || FOOTAGE_PRESETS[0].value);
   const [location, setLocation] = useState(event?.location || "");
   const [keyFigure, setKeyFigure] = useState(event?.keyFigure || "");
   const [order, setOrder] = useState<number>(event?.order || 1);
   const [status, setStatus] = useState<"PUBLISHED" | "DRAFT">(
-    event?.status || "PUBLISHED"
+    event?.status || "PUBLISHED",
   );
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (
+      !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(
+        file.type,
+      )
+    ) {
+      toast.error("Format berkas harus JPG, PNG, WebP, atau GIF.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran berkas maksimal 5 MB.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      let uploadedUrl = "";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const token = Cookies.get("token");
+
+      if (apiUrl) {
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const res = await fetch(`${apiUrl}/upload`, {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.url) uploadedUrl = data.url;
+          }
+        } catch {}
+      }
+
+      // Fallback base64 data URL untuk dummy/offline preview
+      if (!uploadedUrl) {
+        uploadedUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error("Gagal membaca berkas"));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      setImage(uploadedUrl);
+      toast.success("Foto dokumentasi berhasil dimuat.");
+    } catch {
+      toast.error("Gagal memproses berkas foto.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +158,7 @@ function HistoryForm({
       title: title.trim(),
       desc: desc.trim(),
       fullNarrative: fullNarrative.trim() || undefined,
-      image,
+      image: image.trim() || FOOTAGE_PRESETS[0].value,
       location: location.trim() || undefined,
       keyFigure: keyFigure.trim() || undefined,
       order: Number(order) || 1,
@@ -97,11 +172,14 @@ function HistoryForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 py-2">
-      {/* Baris 1: Tahun & Status */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <form onSubmit={handleSubmit} className="space-y-5 py-4">
+      {/* 1. Baris Data Pokok: Tahun, Urutan, dan Status */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="hist-year" className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5">
+          <Label
+            htmlFor="hist-year"
+            className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5"
+          >
             <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
             Tahun <span className="text-red-500">*</span>
           </Label>
@@ -116,7 +194,10 @@ function HistoryForm({
         </div>
 
         <div>
-          <Label htmlFor="hist-order" className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5">
+          <Label
+            htmlFor="hist-order"
+            className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5"
+          >
             <Hash className="w-3.5 h-3.5 text-muted-foreground" />
             Urutan Tampil
           </Label>
@@ -130,7 +211,10 @@ function HistoryForm({
         </div>
 
         <div>
-          <Label htmlFor="hist-status" className="text-xs md:text-sm font-medium mb-1.5 block">
+          <Label
+            htmlFor="hist-status"
+            className="text-xs md:text-sm font-medium mb-1.5 block"
+          >
             Status Publikasi
           </Label>
           <Select
@@ -150,9 +234,12 @@ function HistoryForm({
         </div>
       </div>
 
-      {/* Baris 2: Judul Peristiwa */}
+      {/* 2. Judul Peristiwa */}
       <div>
-        <Label htmlFor="hist-title" className="text-xs md:text-sm font-medium mb-1.5 block">
+        <Label
+          htmlFor="hist-title"
+          className="text-xs md:text-sm font-medium mb-1.5 block"
+        >
           Judul Peristiwa <span className="text-red-500">*</span>
         </Label>
         <Input
@@ -164,14 +251,17 @@ function HistoryForm({
         />
       </div>
 
-      {/* Baris 3: Ringkasan Kartu */}
+      {/* 3. Ringkasan Kartu Linimasa */}
       <div>
-        <Label htmlFor="hist-desc" className="text-xs md:text-sm font-medium mb-1.5 block">
+        <Label
+          htmlFor="hist-desc"
+          className="text-xs md:text-sm font-medium mb-1.5 block"
+        >
           Ringkasan Kartu Linimasa <span className="text-red-500">*</span>
         </Label>
         <Textarea
           id="hist-desc"
-          rows={2}
+          rows={3}
           placeholder="Deskripsi singkat yang tampil langsung pada kartu horizontal linimasa..."
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
@@ -180,9 +270,12 @@ function HistoryForm({
         />
       </div>
 
-      {/* Baris 4: Narasi Lengkap (Opsional) */}
+      {/* 4. Narasi Sejarah Mendalam (Opsional) */}
       <div>
-        <Label htmlFor="hist-narrative" className="text-xs md:text-sm font-medium mb-1.5 block">
+        <Label
+          htmlFor="hist-narrative"
+          className="text-xs md:text-sm font-medium mb-1.5 block"
+        >
           Narasi Sejarah Mendalam (Opsional)
         </Label>
         <Textarea
@@ -195,71 +288,139 @@ function HistoryForm({
         />
       </div>
 
-      {/* Baris 5: Lokasi & Tokoh Kunci */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* 5. Lokasi & Tokoh Kunci */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="hist-loc" className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5">
+          <Label
+            htmlFor="hist-loc"
+            className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5"
+          >
             <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
             Lokasi Peristiwa
           </Label>
           <Input
             id="hist-loc"
-            placeholder="Contoh: Gedung Perintis, Jakarta"
+            placeholder="Contoh: Gedung Perintis Kemerdekaan, Jakarta"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           />
         </div>
 
         <div>
-          <Label htmlFor="hist-fig" className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5">
+          <Label
+            htmlFor="hist-fig"
+            className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5"
+          >
             <User className="w-3.5 h-3.5 text-muted-foreground" />
             Tokoh / Fungsionaris
           </Label>
           <Input
             id="hist-fig"
-            placeholder="Contoh: Presidium DPP PIKI"
+            placeholder="Contoh: Presidium DPP PIKI 1963"
             value={keyFigure}
             onChange={(e) => setKeyFigure(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Baris 6: Pilihan Gambar Footage */}
-      <div>
-        <Label className="text-xs md:text-sm font-medium flex items-center gap-1.5 mb-1.5">
+      {/* 6. Foto Dokumentasi / Footage (Bisa via Link & Upload, Layout Clean) */}
+      <div className="space-y-2">
+        <Label className="text-xs md:text-sm font-medium flex items-center gap-1.5">
           <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
           Foto Dokumentasi / Footage
         </Label>
-        <div className="grid grid-cols-3 gap-2">
-          {FOOTAGE_OPTIONS.map((opt) => (
-            <button
-              type="button"
-              key={opt.value}
-              onClick={() => setImage(opt.value)}
-              className={`p-2 rounded-lg border text-left transition-all cursor-pointer text-xs flex flex-col gap-1.5 ${
-                image === opt.value
-                  ? "border-primary bg-primary/5 ring-1 ring-primary font-medium text-foreground"
-                  : "border-border/70 hover:bg-muted/50 text-muted-foreground"
-              }`}
-            >
-              <div className="w-full h-14 rounded-md overflow-hidden bg-muted relative">
-                <Image
-                  src={opt.value}
-                  alt={opt.label}
-                  fill
-                  sizes="160px"
-                  className="object-cover"
-                />
+
+        <div className="grid grid-cols-1 sm:grid-cols-[14rem_1fr] gap-4 items-start">
+          {/* Box Preview Foto */}
+          <div className="relative aspect-[4/3] w-full rounded-sm bg-muted overflow-hidden border border-border/70 group shadow-xs">
+            {image ? (
+              <Image
+                src={image}
+                alt="Pratinjau footage sejarah"
+                fill
+                sizes="240px"
+                unoptimized={
+                  image.startsWith("data:") || image.startsWith("blob:")
+                }
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 gap-1.5 p-3 text-center">
+                <ImageIcon className="w-8 h-8 opacity-40" />
+                <span className="text-xs">Belum ada foto</span>
               </div>
-              <span className="text-[11px] leading-tight truncate w-full">
-                {opt.label.split("(")[0]}
-              </span>
-            </button>
-          ))}
+            )}
+
+            {isUploading && (
+              <div className="absolute inset-0 bg-background/70 backdrop-blur-xs flex items-center justify-center gap-2 text-xs font-medium text-foreground">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <span>Memproses foto...</span>
+              </div>
+            )}
+          </div>
+
+          {/* Input URL & Aksi Upload */}
+          <div className="flex flex-col gap-3 min-w-0">
+            <div className="space-y-1">
+              <Label
+                htmlFor="footage-url"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Tautan Gambar Eksternal
+              </Label>
+              <Input
+                id="footage-url"
+                value={image}
+                onChange={(e) => setImage(e.target.value)}
+                placeholder="https://... atau tempel URL gambar"
+                disabled={isUploading}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isUploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <ImagePlus className="w-3.5 h-3.5 mr-1.5" />
+                Unggah Foto
+              </Button>
+
+              {image && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isUploading}
+                  onClick={() => setImage("")}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                  Hapus
+                </Button>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </div>
+
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Mendukung berkas JPG, PNG, WebP, GIF (maks. 5 MB) atau URL gambar
+              eksternal.
+            </p>
+          </div>
         </div>
       </div>
 
-      <DialogFooter className="pt-3 gap-2 border-t border-border/70">
+      <DialogFooter className="pt-4 gap-2 border-t border-border/70">
         <Button
           type="button"
           variant="outline"
@@ -269,7 +430,7 @@ function HistoryForm({
           Batal
         </Button>
         <Button type="submit" size="sm">
-          {isEditing ? "Perbarui Data" : "Simpan Peristiwa"}
+          {isEditing ? "Perbarui Data" : "Simpan "}
         </Button>
       </DialogFooter>
     </form>
@@ -286,13 +447,14 @@ export function HistoryEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto rounded-lg">
+      <DialogContent className="sm:max-w-3xl max-h-[92vh] overflow-y-auto rounded-sm p-6">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold">
-            {isEditing ? "Edit Tonggak Sejarah" : "Tambah Tonggak Sejarah Baru"}
+          <DialogTitle className="text-xl font-bold tracking-tight">
+            {isEditing ? "Edit Sejarah" : "Tambah Sejarah Baru"}
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Peristiwa sejarah yang ditambahkan akan tampil pada linimasa interaktif beranda publik.
+          <DialogDescription className="text-xs md:text-sm text-muted-foreground mt-1">
+            Peristiwa sejarah yang ditambahkan akan tampil pada linimasa
+            interaktif beranda publik.
           </DialogDescription>
         </DialogHeader>
 

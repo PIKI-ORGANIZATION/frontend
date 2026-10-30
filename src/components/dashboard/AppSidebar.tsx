@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Users,
   UserCheck,
-  ShieldCheck,
   CreditCard,
   Globe,
   FileText,
@@ -26,7 +25,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
@@ -40,6 +38,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn, UserPayload } from "@/lib/utils";
 import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
+import { LottiePlayer } from "@/components/ui/lottie-player";
 
 export type NavSubItem = {
   title: string;
@@ -116,7 +115,7 @@ const adminNavGroups: NavGroupData[] = [
         icon: Users,
         items: [
           {
-            title: "CMS Data Anggota",
+            title: "Daftar Anggota",
             url: "/dashboard/anggota",
             icon: Users,
           },
@@ -129,7 +128,7 @@ const adminNavGroups: NavGroupData[] = [
       },
       {
         id: "manajemen-konten",
-        title: "CMS Manajemen Konten",
+        title: "Manajemen Konten",
         icon: FileText,
         items: [
           {
@@ -141,6 +140,11 @@ const adminNavGroups: NavGroupData[] = [
             title: "CMS Berita",
             url: "/dashboard/berita",
             icon: FileText,
+          },
+          {
+            title: "CMS Data Pengurus",
+            url: "/dashboard/pengurus",
+            icon: UserCog,
           },
           {
             title: "CMS Program Kerja",
@@ -160,11 +164,6 @@ const adminNavGroups: NavGroupData[] = [
           {
             title: "CMS Struktur Organisasi",
             icon: Network,
-            isUnderDevelopment: true,
-          },
-          {
-            title: "CMS Data Pengurus",
-            icon: UserCog,
             isUnderDevelopment: true,
           },
         ],
@@ -251,17 +250,19 @@ function NavCollapsibleItem({ item, pathname }: NavCollapsibleItemProps) {
         onClick={() => setManualOpen(!isOpen)}
         isActive={isChildActive && !isOpen}
         className={cn(
-          "h-9 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all group/collapsible cursor-pointer select-none",
+          "h-9 px-3 rounded-lg text-xs sm:text-sm font-normal transition-all group/collapsible cursor-pointer select-none",
           isChildActive
-            ? "text-primary font-semibold bg-primary/5"
-            : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+            ? "text-primary font-medium bg-primary/5"
+            : "text-zinc-800 dark:text-zinc-200 hover:bg-muted/70 hover:text-foreground",
         )}
       >
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <Icon
             className={cn(
               "h-4 w-4 shrink-0 transition-colors",
-              isChildActive ? "text-primary" : "text-muted-foreground",
+              isChildActive
+                ? "text-primary"
+                : "text-zinc-600 dark:text-zinc-400",
             )}
           />
           <span className="truncate group-data-[collapsible=icon]:hidden">
@@ -277,8 +278,10 @@ function NavCollapsibleItem({ item, pathname }: NavCollapsibleItemProps) {
 
         <ChevronRight
           className={cn(
-            "h-3.5 w-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200 group-data-[collapsible=icon]:hidden",
-            isOpen && "rotate-90 text-foreground",
+            "h-3.5 w-3.5 shrink-0 transition-transform duration-200 group-data-[collapsible=icon]:hidden",
+            isOpen
+              ? "rotate-90 text-foreground"
+              : "text-zinc-500 dark:text-zinc-400",
           )}
         />
       </SidebarMenuButton>
@@ -314,11 +317,11 @@ function NavCollapsibleItem({ item, pathname }: NavCollapsibleItemProps) {
                     }
                     isActive={isSubActive}
                     className={cn(
-                      "min-h-8 h-auto py-1.5 px-2.5 text-xs rounded-md font-medium transition-all group/sub cursor-pointer",
+                      "min-h-8 h-auto py-1.5 px-2.5 text-xs rounded-md font-normal transition-all group/sub cursor-pointer",
                       "[&>span:last-child]:overflow-visible [&>span:last-child]:truncate-none [&>span:last-child]:whitespace-normal",
                       isSubActive
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-zinc-800 dark:text-zinc-200 hover:bg-muted/60 hover:text-foreground",
                     )}
                   >
                     {SubIcon && (
@@ -327,7 +330,7 @@ function NavCollapsibleItem({ item, pathname }: NavCollapsibleItemProps) {
                           "h-3.5 w-3.5 shrink-0 transition-colors mt-0.5",
                           isSubActive
                             ? "text-primary"
-                            : "text-muted-foreground/70 group-hover/sub:text-foreground",
+                            : "text-zinc-600 dark:text-zinc-400 group-hover/sub:text-foreground",
                         )}
                       />
                     )}
@@ -389,17 +392,17 @@ function NavSingleItem({
         tooltip={item.title}
         isActive={isActive}
         className={cn(
-          "h-9 px-3 rounded-lg text-xs sm:text-sm font-medium transition-all cursor-pointer",
+          "h-9 px-3 rounded-lg text-xs sm:text-sm font-normal transition-all cursor-pointer",
           isActive
-            ? "bg-primary/10 text-primary font-semibold shadow-2xs"
-            : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+            ? "bg-primary/10 text-primary font-medium shadow-2xs"
+            : "text-zinc-800 dark:text-zinc-200 hover:bg-muted/70 hover:text-foreground",
         )}
       >
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <Icon
             className={cn(
               "h-4 w-4 shrink-0",
-              isActive ? "text-primary" : "text-muted-foreground",
+              isActive ? "text-primary" : "text-zinc-600 dark:text-zinc-400",
             )}
           />
           <span className="truncate group-data-[collapsible=icon]:hidden">
@@ -497,23 +500,21 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
   }, []);
 
   return (
-    <Sidebar
-      collapsible="icon"
-      className="border-r border-border/80 bg-sidebar font-sans"
-    >
-      {/* 1. Header: Clean PIKI Branding */}
-      <SidebarHeader className="h-14 flex items-center justify-between px-4 border-b border-border/60">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs shadow-2xs group-hover:scale-105 transition-transform shrink-0">
-            <ShieldCheck className="h-4 w-4" />
-          </div>
-          <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-            <span className="text-xs font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
-              PIKI NASIONAL
-            </span>
-            <span className="text-[10px] text-muted-foreground font-medium truncate">
-              CMS & Satu Data PIKI
-            </span>
+    <Sidebar collapsible="icon" className="font-sans">
+      {/* 1. Header: Clean PIKI Branding with Lottie Welcome Animation */}
+      <SidebarHeader className="h-16 py-4">
+        <Link
+          href="/dashboard"
+          className="flex  justify-center w-full overflow-hidden"
+          title="Beranda Dashboard PIKI"
+        >
+          <div className="h-9 w-35  ">
+            <LottiePlayer
+              animationPath="/footage/lottie/welcome.json"
+              loop={true}
+              autoplay={true}
+              className="w-full h-full object-contain"
+            />
           </div>
         </Link>
       </SidebarHeader>
@@ -528,7 +529,7 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
               setSearchQuery("");
               setIsSearchOpen(true);
             }}
-            className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-muted-foreground bg-muted/40 hover:bg-muted/70 hover:text-foreground border border-border/60 rounded-lg transition-colors shadow-2xs cursor-pointer"
+            className="w-full flex items-center justify-between px-2.5 py-2 text-xs text-muted-foreground bg-muted/40 hover:bg-muted/70 hover:text-foreground border border-border/60 rounded-sm transition-colors shadow-2xs cursor-pointer"
           >
             <span className="flex items-center gap-2">
               <Search className="h-3.5 w-3.5" />
@@ -543,7 +544,7 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
         {/* Navigation Groups */}
         {navGroups.map((group) => (
           <SidebarGroup key={group.heading} className="p-0">
-            <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70 px-3 py-1 group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 px-3 py-1 group-data-[collapsible=icon]:hidden">
               {group.heading}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -572,17 +573,6 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
           </SidebarGroup>
         ))}
       </SidebarContent>
-
-      {/* 3. Footer: Minimal System Info */}
-      <SidebarFooter className="p-3 border-t border-border/60">
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 group-data-[collapsible=icon]:hidden">
-          <span className="font-medium">PIKI CMS v2.4</span>
-          <span className="flex items-center gap-1 text-[10px]">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Online
-          </span>
-        </div>
-      </SidebarFooter>
 
       <SidebarRail />
 
@@ -643,10 +633,10 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
                             },
                           );
                         }}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-colors text-foreground font-medium group cursor-pointer text-left"
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-colors text-zinc-800 dark:text-zinc-200 group-hover:text-primary font-normal group cursor-pointer text-left"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <ItemIcon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                          <ItemIcon className="h-3.5 w-3.5 text-zinc-500 group-hover:text-primary transition-colors shrink-0" />
                           <span className="truncate">{item.title}</span>
                         </div>
                         <span className="text-[10px] text-muted-foreground/70 font-normal ml-2 shrink-0">
@@ -661,10 +651,10 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
                       key={item.id}
                       href={item.url!}
                       onClick={() => setIsSearchOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-colors text-foreground font-medium group"
+                      className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-colors text-zinc-800 dark:text-zinc-200 group-hover:text-primary font-normal group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <ItemIcon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        <ItemIcon className="h-3.5 w-3.5 text-zinc-500 group-hover:text-primary transition-colors shrink-0" />
                         <span className="truncate">{item.title}</span>
                       </div>
                       <span className="text-[10px] text-muted-foreground/70 font-normal ml-2 shrink-0">

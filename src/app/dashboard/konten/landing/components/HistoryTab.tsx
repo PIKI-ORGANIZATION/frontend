@@ -207,12 +207,16 @@ export function HistoryTab({ events, setEvents }: HistoryTabProps) {
                   >
                     <div className="flex items-start gap-3 min-w-0 flex-1">
                       {/* Thumbnail Footage */}
-                      <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 border border-border/70 relative">
+                      <div className="w-12 h-12 rounded-sm bg-muted overflow-hidden shrink-0 border border-border/70 relative">
                         <Image
                           src={item.image}
                           alt={item.title}
                           fill
                           sizes="48px"
+                          unoptimized={
+                            item.image.startsWith("data:") ||
+                            item.image.startsWith("blob:")
+                          }
                           className="object-cover"
                         />
                       </div>

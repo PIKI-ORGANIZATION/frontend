@@ -506,7 +506,7 @@ Tuliskan pengantar berita di sini...
                   value={kategori}
                   onValueChange={(val) => setKategori(val as BeritaCategory)}
                 >
-                  <SelectTrigger className="h-9 text-xs">
+                  <SelectTrigger>
                     <SelectValue placeholder="Pilih Kategori" />
                   </SelectTrigger>
                   <SelectContent>
@@ -514,7 +514,6 @@ Tuliskan pengantar berita di sini...
                       <SelectItem
                         key={cat.value}
                         value={cat.value}
-                        className="text-xs"
                       >
                         {cat.label}
                       </SelectItem>
@@ -532,7 +531,7 @@ Tuliskan pengantar berita di sini...
                   value={status}
                   onValueChange={(val) => setStatus(val as BeritaStatus)}
                 >
-                  <SelectTrigger className="h-9 text-xs">
+                  <SelectTrigger>
                     <SelectValue placeholder="Pilih Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -540,7 +539,6 @@ Tuliskan pengantar berita di sini...
                       <SelectItem
                         key={st.value}
                         value={st.value}
-                        className="text-xs"
                       >
                         {st.label}
                       </SelectItem>

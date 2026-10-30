@@ -80,10 +80,11 @@ frontend/
 
 ---
 
-## 2. Tech Stack untuk UI/UX
+## 2. Tech Stack & Referensi UI/UX
 
 - **Styling:** Tailwind CSS (v4)
-- **Komponen Dasar:** Shadcn UI (Radix Primitives) -> **Modifikasi komponen ini** agar terlihat lebih premium (tambahkan _border radius_ atau _shadow_ halus).
+- **Komponen Dasar:** Shadcn UI (Radix / Base UI Primitives) -> **Modifikasi komponen ini** agar terlihat lebih premium (tambahkan _border radius_ `rounded-md` atau _shadow_ halus).
+- **Referensi Arsitektur & Desain Dashboard:** [shadcn-admin (Sat Naing)](https://github.com/satnaing/shadcn-admin.git) sebagai benchmark standar desain dashboard admin modern, clean, minimalis, responsif, dan terstruktur.
 - **Animasi Lanjutan:** GSAP (untuk animasi elemen saat masuk viewport, _staggered lists_).
 - **Smooth Scrolling:** Lenis (efek _scrolling_ sehalus mentega untuk impresi website berkelas).
 - **Icons:** Lucide React (Gunakan ketebalan (_stroke_) `1.5px` untuk kesan elegan).
@@ -96,12 +97,14 @@ _(Catatan: Kode hex di bawah adalah referensi untuk desain profesional korporat/
 
 - **Primary:** Warna identitas PIKI (_Deep Royal Blue_).
   - `bg-primary` -> `bg-[#0b59a1]`
-- **Background (Light Mode):**
-  - `bg-background` -> `bg-[#f3f3f3]` (Abu-abu sangat muda untuk _body_ keseluruhan)
+- **Background & Sidebar (Light Mode):**
+  - `bg-background` -> `bg-[#fbfbfb]` (Abu-abu sangat muda untuk _body_ keseluruhan)
   - `bg-card` -> `bg-[#ffffff]` (Putih solid untuk kartu/konten utama agar terlihat menonjol)
-- **Background (Dark Mode):**
+  - `bg-sidebar` -> `bg-[#ffffff]` (Putih solid untuk sidebar navigasi dashboard modern & clean)
+- **Background & Sidebar (Dark Mode):**
   - `bg-background` -> `bg-[#131414]` (Gelap pekat untuk _body_)
   - `bg-card` -> `bg-[#171818]` (Lebih terang sedikit untuk komponen seperti kartu)
+  - `bg-sidebar` -> `bg-[#131414]` (Gelap pekat senada)
 
 ### Konvensi Status (Penting untuk Sistem Approval CMS):
 
@@ -120,6 +123,192 @@ _(Catatan: Kode hex di bawah adalah referensi untuk desain profesional korporat/
 ---
 
 ## 5. Panduan Komponen (Shadcn Adaptations)
+
+### Aturan Wajib: Clean Children pada Reusable Component Shadcn
+
+> [!IMPORTANT]
+> **DILARANG menambahkan `className` styling redundan pada children/pemanggil komponen reusable Shadcn UI (`Button`, `Input`, `Popover`, `Dialog`, dll.).**
+>
+> 1. Komponen primitif sudah mengenkapsulasi token desain kanonikal: sudut membulat `rounded-md`, padding nyaman `px-4 py-2`, font, border, shadow, dan state focus ring.
+> 2. Hindari menulis kelas ad-hoc penimpa seperti `className="rounded-lg text-xs h-8 shadow-none"` pada saat mengonsumsi komponen.
+> 3. Gunakan prop resmi yang disediakan (misalnya `variant="default" | "outline" | "ghost"`, `size="sm" | "default" | "lg"`).
+> 4. `className` pada children pemanggil **hanya boleh digunakan untuk tata letak / layout container** (seperti `col-span-2`, `w-full`, atau flexbox positioning), bukan untuk styling visual internal.
+
+### Standar Penggunaan Dropdown Select Menggunakan Komponen `<Popover>` (`src/components/ui/popover.tsx`)
+
+Semua komponen dropdown select, filter status, dan combobox di seluruh modul Dashboard, CMS, dan Formulir **wajib menggunakan komponen `<Popover>` (`src/components/ui/popover.tsx`) secara langsung, BUKAN menggunakan komponen `<Select>`.**
+
+#### Alasan & Keunggulan Standarisasi:
+
+1. **Portal Floating & Anti-Clipping:** Komponen `<Popover>` merender popup melalui Portal (`z-50`), sehingga menu dropdown mengambang bebas dan tidak akan terpotong oleh kontainer dengan `overflow-hidden` (seperti di dalam modal `<Dialog>`, drawer, atau kartu tabel).
+2. **Collision-Aware Positioning:** Posisi dropdown otomatis mendeteksi batas layar (_auto top/bottom/align_) sehingga tidak pernah meluap keluar dari viewport.
+3. **Standar Referensi [shadcn-admin](https://github.com/satnaing/shadcn-admin.git):** Menyediakan pola interaksi yang fleksibel, mulai dari pemilihan status sederhana hingga filter faceted tabel dan combobox pencarian data dinamis (`Command`).
+4. **Desain Konsisten:** Selalu menerapkan sudut membulat `rounded-md`, border halus, shadow lembut, dan indikator centang (`Check`) untuk opsi yang sedang aktif.
+
+#### 1. Pola Standar Dropdown Select (Filter Status / Pilihan Sederhana):
+
+```tsx
+import { useState } from "react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Check, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "Semua Status" },
+  { value: "PUBLISHED", label: "Tayang (Published)" },
+  { value: "DRAFT", label: "Draf (Draft)" },
+];
+
+export function StatusFilterDropdown() {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState("ALL");
+
+  const currentLabel = STATUS_OPTIONS.find(
+    (opt) => opt.value === selected,
+  )?.label;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="justify-between"
+          >
+            <span>{currentLabel || "Pilih status..."}</span>
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        }
+      />
+      <PopoverContent className="w-56 p-1" align="start">
+        <div className="flex flex-col gap-0.5">
+          {STATUS_OPTIONS.map((option) => {
+            const isSelected = selected === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  setSelected(option.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2 text-xs rounded-sm transition-colors text-left cursor-pointer",
+                  isSelected
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted text-foreground",
+                )}
+              >
+                <span>{option.label}</span>
+                {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+```
+
+#### 2. Pola Dropdown Combobox dengan Pencarian (`Popover` + `Command`):
+
+Digunakan pada formulir atau filter tabel saat daftar opsi cukup banyak atau memerlukan fitur pencarian (seperti provinsi, bidang keahlian, atau faceted filter):
+
+```tsx
+import { useState } from "react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface SearchableSelectProps {
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+export function SearchableSelect({
+  options,
+  value,
+  onChange,
+  placeholder = "Pilih data...",
+}: SearchableSelectProps) {
+  const [open, setOpen] = useState(false);
+  const currentLabel = options.find((opt) => opt.value === value)?.label;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between"
+          >
+            <span className={cn(!value && "text-muted-foreground")}>
+              {currentLabel || placeholder}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        }
+      />
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] p-0"
+        align="start"
+      >
+        <Command>
+          <CommandInput placeholder="Ketik kata kunci pencarian..." />
+          <CommandList>
+            <CommandEmpty>Data tidak ditemukan.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  onSelect={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+```
 
 ### Card & Panel (Glassmorphism)
 

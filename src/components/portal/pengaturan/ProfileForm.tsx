@@ -241,7 +241,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
                                   }
                                 }}
                               >
-                                <SelectTrigger className="h-8 w-fit font-medium">
+                                <SelectTrigger size="sm" className="w-fit">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent
