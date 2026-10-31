@@ -13,23 +13,30 @@ import {
   CATEGORIES,
   type CategoryFilter,
   MEDIA_FILTERS,
-  GALLERY_DATA,
 } from "./data/galeriData";
+import { useGaleri } from "@/features/galeri/hooks/useGaleri";
 import { GaleriSpotlight } from "./components/GaleriSpotlight";
 import { GaleriCategoryFilter } from "./components/GaleriCategoryFilter";
 import { GaleriMediaCard } from "./components/GaleriMediaCard";
 import { GaleriLightboxModal } from "./components/GaleriLightboxModal";
 
 export default function GaleriPage() {
+  const { items: allItems } = useGaleri();
+
   const [selectedMediaType, setSelectedMediaType] = useState<MediaType>("ALL");
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("Semua Kegiatan");
   const [lightboxItem, setLightboxItem] = useState<MediaItem | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
 
+  // Only show PUBLISHED items on public page
+  const publishedItems = useMemo(() => {
+    return allItems.filter((i) => i.status === "PUBLISHED");
+  }, [allItems]);
+
   // Filtered media items based on media type & searchable activity category
   const filteredItems = useMemo(() => {
-    return GALLERY_DATA.filter((item) => {
+    return publishedItems.filter((item) => {
       if (selectedMediaType !== "ALL" && item.type !== selectedMediaType) {
         return false;
       }
@@ -41,10 +48,19 @@ export default function GaleriPage() {
       }
       return true;
     });
-  }, [selectedMediaType, selectedCategory]);
+  }, [publishedItems, selectedMediaType, selectedCategory]);
 
-  const spotlightItem =
-    GALLERY_DATA.find((item) => item.featured) || GALLERY_DATA[0];
+  const spotlightItem = useMemo(() => {
+    return publishedItems.find((item) => item.featured) || publishedItems[0];
+  }, [publishedItems]);
+
+  const spotlightHeroImages = useMemo(() => {
+    if (publishedItems.length === 0) return undefined;
+    return publishedItems.slice(0, 10).map((i) => ({
+      src: i.thumbnailUrl,
+      alt: i.title,
+    }));
+  }, [publishedItems]);
 
   const currentLightboxIndex = lightboxItem
     ? filteredItems.findIndex((i) => i.id === lightboxItem.id)
@@ -91,6 +107,7 @@ export default function GaleriPage() {
           <div className="w-full max-w-[1650px] mx-auto">
             <GaleriSpotlight
               item={spotlightItem}
+              images={spotlightHeroImages}
               onSelect={setLightboxItem}
               onShare={handleShare}
               hasCopied={hasCopied}

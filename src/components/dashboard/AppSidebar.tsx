@@ -147,6 +147,11 @@ const adminNavGroups: NavGroupData[] = [
             icon: UserCog,
           },
           {
+            title: "CMS Galeri",
+            url: "/dashboard/galeri",
+            icon: ImageIcon,
+          },
+          {
             title: "CMS Program Kerja",
             icon: Calendar,
             isUnderDevelopment: true,
@@ -156,11 +161,7 @@ const adminNavGroups: NavGroupData[] = [
             icon: BookOpen,
             isUnderDevelopment: true,
           },
-          {
-            title: "CMS Galeri",
-            icon: ImageIcon,
-            isUnderDevelopment: true,
-          },
+
           {
             title: "CMS Struktur Organisasi",
             icon: Network,
