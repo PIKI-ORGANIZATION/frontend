@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Play,
-  Calendar,
-  MapPin,
-  Clock,
-  Share2,
-  Check,
-} from "lucide-react";
+import { Play, Calendar, MapPin, Clock, Share2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   TiltedGridHero,
@@ -100,7 +93,7 @@ export function GaleriSpotlight({
                 {item.title}
               </h3>
 
-              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+              <p className="text-sm sm:text-base text-muted-foreground line-clamp-2 leading-relaxed">
                 {item.deskripsi}
               </p>
             </div>

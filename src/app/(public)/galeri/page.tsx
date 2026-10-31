@@ -75,26 +75,33 @@ export default function GaleriPage() {
 
   return (
     <main className="min-h-screen bg-background flex flex-col selection:bg-primary">
-      <section className="pt-28 pb-10 md:pt-36 md:pb-20 px-4 md:px-6 xl:px-0 max-w-7xl mx-auto w-full">
-        {/* 1. Page Header */}
+      {/* 1. Page Header Section */}
+      <section className="pt-28 pb-4 md:pt-36 md:pb-8 px-4 md:px-6 xl:px-0 max-w-7xl mx-auto w-full">
         <PageHeader
           align="center"
           eyebrow={""}
           title="Galeri & Dokumentasi"
           description="Jelajahi dokumentasi perjalanan, kegiatan, dan kontribusi PIKI dalam membangun bangsa serta melayani gereja. Setiap foto dan video mengabadikan langkah, kolaborasi, dan karya nyata organisasi."
         />
+      </section>
 
-        {/* 2. Spotlight Highlight Banner (Hero) */}
-        {spotlightItem && (
-          <GaleriSpotlight
-            item={spotlightItem}
-            onSelect={setLightboxItem}
-            onShare={handleShare}
-            hasCopied={hasCopied}
-          />
-        )}
+      {/* 2. Spotlight Highlight Banner */}
+      {spotlightItem && (
+        <section className="w-full px-0 sm:px-4 md:px-8 mb-4">
+          <div className="w-full max-w-[1650px] mx-auto">
+            <GaleriSpotlight
+              item={spotlightItem}
+              onSelect={setLightboxItem}
+              onShare={handleShare}
+              hasCopied={hasCopied}
+            />
+          </div>
+        </section>
+      )}
 
-        {/* 3. Filtering Toolbar: Segmented Media Format Tabs & Searchable Popover Dropdown */}
+      {/* 3. Main Content & Gallery Grid Section */}
+      <section className="pb-16 md:pb-24 px-4 md:px-6 xl:px-0 max-w-7xl mx-auto w-full">
+        {/* Filtering Toolbar: Segmented Media Format Tabs & Searchable Popover Dropdown */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-4 border-b border-border/60">
           {/* Format Tabs Switcher */}
           <div
