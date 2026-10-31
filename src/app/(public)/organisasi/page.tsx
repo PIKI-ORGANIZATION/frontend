@@ -17,7 +17,7 @@ export default function OrganisasiPage() {
     <main className="w-full bg-background flex flex-col">
       {/* Header Section */}
       <section className="flex-1 w-full pt-32 pb-24 md:pt-40 md:pb-32 px-5 md:px-10 lg:px-30 mx-auto">
-        <PageHeader 
+        <PageHeader
           eyebrow="Profil Organisasi"
           title="Tentang PIKI"
           description="Persatuan Intelegensia Kristen Indonesia hadir sebagai wadah pergerakan dan pemikiran bagi kaum intelektual Kristen untuk melayani nusa dan bangsa berlandaskan nilai-keadilan dan kebenaran."
@@ -34,13 +34,12 @@ export default function OrganisasiPage() {
       <StructureSection />
 
       {/* Jajaran Bidang & Dewan Pakar */}
-      <ExtendedStructureSection />
+      {/* <ExtendedStructureSection /> */}
 
       {/* Contact Section */}
       <section className="w-full py-24 md:py-32 bg-card relative z-20 shadow-[0_-20px_50px_rgba(0,0,0,0.05)] rounded-t-[3rem] md:rounded-t-[5rem]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12">
           <div className="flex flex-col md:flex-row gap-16 lg:gap-24">
-            
             {/* Contact Info */}
             <div className="md:w-1/2 flex flex-col gap-10">
               <div className="flex flex-col gap-4">
@@ -65,8 +64,12 @@ export default function OrganisasiPage() {
                     <FaWhatsapp className="w-6 h-6 text-green-600 group-hover:text-white transition-colors" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-muted-foreground">WhatsApp Resmi</span>
-                    <span className="text-lg font-medium group-hover:text-primary transition-colors">+62 812-3456-7890</span>
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      WhatsApp Resmi
+                    </span>
+                    <span className="text-lg font-medium group-hover:text-primary transition-colors">
+                      +62 812-3456-7890
+                    </span>
                   </div>
                 </a>
 
@@ -78,8 +81,12 @@ export default function OrganisasiPage() {
                     <Mail className="w-6 h-6 text-primary group-hover:text-primary-foreground transition-colors" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-muted-foreground">Email</span>
-                    <span className="text-lg font-medium group-hover:text-primary transition-colors">halo@piki.or.id</span>
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      Email
+                    </span>
+                    <span className="text-lg font-medium group-hover:text-primary transition-colors">
+                      halo@piki.or.id
+                    </span>
                   </div>
                 </a>
 
@@ -88,10 +95,13 @@ export default function OrganisasiPage() {
                     <MapPin className="w-6 h-6 text-foreground/70" />
                   </div>
                   <div className="flex flex-col pt-2">
-                    <span className="text-sm font-semibold text-muted-foreground">Kantor Sekretariat DPP PIKI</span>
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      Kantor Sekretariat DPP PIKI
+                    </span>
                     <span className="text-base font-medium leading-relaxed mt-1">
                       Graha Oikoumene, Lt. 3<br />
-                      Jl. Salemba Raya No. 10, Jakarta Pusat<br />
+                      Jl. Salemba Raya No. 10, Jakarta Pusat
+                      <br />
                       10430, Indonesia
                     </span>
                   </div>
@@ -156,7 +166,6 @@ export default function OrganisasiPage() {
                 </Button>
               </form>
             </div>
-
           </div>
         </div>
       </section>

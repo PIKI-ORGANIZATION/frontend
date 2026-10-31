@@ -24,7 +24,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 mb-16 md:mb-24",
+        "flex flex-col gap-4 mb-12 md:mb-14",
         align === "center" && "items-center text-center",
         border && "border-b border-foreground/10 pb-12",
         className,
