@@ -21,7 +21,7 @@ export const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] =
 export const MEDIA_FILTERS: MediaFilterOption[] = [
   { value: "ALL", label: "Semua Media", icon: Layers },
   { value: "PHOTO", label: "Galeri Foto", icon: Camera },
-  { value: "VIDEO", label: "Video Liputan", icon: Film },
+  { value: "VIDEO", label: "Video Kegiatan", icon: Film },
   { value: "INSTAGRAM", label: "Feed Instagram", icon: FaInstagram },
 ];
 
@@ -196,5 +196,3 @@ export const SPOTLIGHT_HERO_IMAGES = [
     alt: "Refleksi HUT Kemerdekaan RI",
   },
 ];
-
-

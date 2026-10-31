@@ -46,6 +46,23 @@ export default function GaleriPage() {
   const spotlightItem =
     GALLERY_DATA.find((item) => item.featured) || GALLERY_DATA[0];
 
+  const currentLightboxIndex = lightboxItem
+    ? filteredItems.findIndex((i) => i.id === lightboxItem.id)
+    : -1;
+
+  const handleNextLightbox = () => {
+    if (currentLightboxIndex === -1 || filteredItems.length <= 1) return;
+    const nextIndex = (currentLightboxIndex + 1) % filteredItems.length;
+    setLightboxItem(filteredItems[nextIndex]);
+  };
+
+  const handlePrevLightbox = () => {
+    if (currentLightboxIndex === -1 || filteredItems.length <= 1) return;
+    const prevIndex =
+      (currentLightboxIndex - 1 + filteredItems.length) % filteredItems.length;
+    setLightboxItem(filteredItems[prevIndex]);
+  };
+
   const handleShare = (item: MediaItem, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -83,7 +100,7 @@ export default function GaleriPage() {
           <div
             role="tablist"
             aria-label="Filter Tipe Media"
-            className="inline-flex items-center p-1 rounded-lg bg-muted/60 dark:bg-muted/30 border border-border/80 overflow-x-auto max-w-full"
+            className="inline-flex items-center p-1 rounded-lg bg-muted/60 border border-border/80 overflow-x-auto max-w-full"
           >
             {MEDIA_FILTERS.map((filter) => {
               const isSelected = selectedMediaType === filter.value;
@@ -95,7 +112,7 @@ export default function GaleriPage() {
                   aria-selected={isSelected}
                   onClick={() => setSelectedMediaType(filter.value)}
                   className={cn(
-                    "flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer select-none",
+                    "flex items-center gap-2 px-3.5 py-1.5 rounded-md text-sm sm:text-md font-medium transition-all whitespace-nowrap cursor-pointer select-none",
                     isSelected
                       ? "bg-background text-foreground shadow-2xs font-semibold"
                       : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-normal",
@@ -110,7 +127,7 @@ export default function GaleriPage() {
 
           {/* Searchable Activity / Slug Dropdown & Meta counter */}
           <div className="flex items-center gap-3 self-stretch md:self-auto justify-between md:justify-end">
-            <span className="text-xs text-muted-foreground font-mono hidden sm:inline-block">
+            <span className="text-sm text-muted-foreground font-mono hidden sm:inline-block">
               {filteredItems.length} media
             </span>
             <GaleriCategoryFilter
@@ -149,7 +166,7 @@ export default function GaleriPage() {
           ) : (
             <motion.div
               layout
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
               role="list"
               aria-label="Daftar Galeri Media"
             >
@@ -173,12 +190,18 @@ export default function GaleriPage() {
         </div>
       </section>
 
-      {/* 6. Lightbox Modal Dialog (Photos & Lazy YouTube Player) */}
+      {/* 6. Immersive Fullscreen Lightbox Modal (Photos & Lazy YouTube Player) */}
       <GaleriLightboxModal
         item={lightboxItem}
         onClose={() => setLightboxItem(null)}
         onShare={handleShare}
         hasCopied={hasCopied}
+        onNext={filteredItems.length > 1 ? handleNextLightbox : undefined}
+        onPrev={filteredItems.length > 1 ? handlePrevLightbox : undefined}
+        totalItems={filteredItems.length}
+        currentIndex={
+          currentLightboxIndex >= 0 ? currentLightboxIndex : undefined
+        }
       />
     </main>
   );

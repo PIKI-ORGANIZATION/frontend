@@ -33,11 +33,11 @@ export function GaleriMediaCard({ item, onSelect }: GaleriMediaCardProps) {
           onSelect(item);
         }
       }}
-      className="group relative cursor-pointer overflow-hidden border-border/80 transition-all duration-300 hover:border-primary/50 hover:shadow-xl flex flex-col h-full bg-card"
+      className="group relative border border-border/80 cursor-pointer overflow-hidden transition-all duration-300 flex flex-col h-full p-0 pt-0 gap-0"
       aria-label={`Lihat detail ${item.title}`}
     >
       {/* Media Thumbnail with Modern Web Guidance Aspect-Ratio & Lazy Load */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+      <div className="relative aspect-4/3 w-full overflow-hidden bg-muted">
         <Image
           src={item.thumbnailUrl}
           alt={item.title}
@@ -101,7 +101,7 @@ export function GaleriMediaCard({ item, onSelect }: GaleriMediaCardProps) {
             <>
               <Play className="mb-2 h-8 w-8 fill-white text-white transition-transform group-hover:scale-110" />
               <p className="text-xs font-semibold text-center text-white/90">
-                Putar Video Liputan
+                Putar Video
               </p>
             </>
           )}
@@ -143,4 +143,3 @@ export function GaleriMediaCard({ item, onSelect }: GaleriMediaCardProps) {
     </Card>
   );
 }
-
