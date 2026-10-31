@@ -160,7 +160,7 @@ export default function PengurusCMSPage() {
     "Semua Status";
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
       {/* 1. Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 ">
         <div>
@@ -689,8 +689,7 @@ export default function PengurusCMSPage() {
               prev
                 ? {
                     ...prev,
-                    status:
-                      prev.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
+                    status: prev.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
                   }
                 : null,
             );

@@ -102,7 +102,7 @@ export default function CmsLandingPage() {
   };
 
   return (
-    <div className="space-y-6 mx-auto max-w-7xl">
+    <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/70 pb-5">
         <div className="space-y-1">
@@ -137,10 +137,7 @@ export default function CmsLandingPage() {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(
-              buttonVariants({ size: "sm" }),
-              "font-semibold",
-            )}
+            className={cn(buttonVariants({ size: "sm" }), "font-semibold")}
           >
             <span>Buka Halaman Publik</span>
             <ExternalLink className="w-3.5 h-3.5" />

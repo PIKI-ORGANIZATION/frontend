@@ -16,7 +16,6 @@ import {
   Network,
   UserCog,
   Search,
-  X,
   ChevronRight,
   Settings,
 } from "lucide-react";
@@ -39,6 +38,7 @@ import {
 import { cn, UserPayload } from "@/lib/utils";
 import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
 import { LottiePlayer } from "@/components/ui/lottie-player";
+import ModalSearchMenu from "./ModalSearcMenu";
 
 export type NavSubItem = {
   title: string;
@@ -578,95 +578,12 @@ export function AppSidebar({ user }: { user?: UserPayload | null }) {
 
       {/* Search Command Palette Overlay */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] bg-background/50 backdrop-blur-xs px-4">
-          <div
-            className="absolute inset-0"
-            onClick={() => setIsSearchOpen(false)}
-          />
-          <div className="relative w-full max-w-lg bg-popover border border-border rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center px-3.5 border-b border-border">
-              <Search className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
-              <input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent py-3.5 outline-none text-xs sm:text-sm text-foreground placeholder:text-muted-foreground"
-                placeholder="Ketikkan nama modul, menu, atau fitur..."
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setIsSearchOpen(false);
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => setIsSearchOpen(false)}
-                className="p-1 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-2 space-y-1 max-h-72 overflow-y-auto text-xs">
-              <p className="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                {searchQuery.trim() ? "Hasil Pencarian" : "Menu Pintas"}
-              </p>
-              {filteredSearchItems.length === 0 ? (
-                <p className="px-3 py-6 text-center text-xs text-muted-foreground">
-                  Tidak ada menu yang sesuai dengan &ldquo;{searchQuery}&rdquo;.
-                </p>
-              ) : (
-                filteredSearchItems.map((item) => {
-                  const ItemIcon = item.icon;
-                  const isUnderDev = item.isUnderDevelopment || !item.url;
-
-                  if (isUnderDev) {
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          setIsSearchOpen(false);
-                          toast.info(
-                            `Modul ${item.title} sedang dalam tahap pengembangan`,
-                            {
-                              description:
-                                "Fitur ini akan segera tersedia pada pembaruan sistem berikutnya.",
-                            },
-                          );
-                        }}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-colors text-zinc-800 dark:text-zinc-200 group-hover:text-primary font-normal group cursor-pointer text-left"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <ItemIcon className="h-3.5 w-3.5 text-zinc-500 group-hover:text-primary transition-colors shrink-0" />
-                          <span className="truncate">{item.title}</span>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground/70 font-normal ml-2 shrink-0">
-                          {item.group}
-                        </span>
-                      </button>
-                    );
-                  }
-
-                  return (
-                    <Link
-                      key={item.id}
-                      href={item.url!}
-                      onClick={() => setIsSearchOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted transition-colors text-zinc-800 dark:text-zinc-200 group-hover:text-primary font-normal group"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <ItemIcon className="h-3.5 w-3.5 text-zinc-500 group-hover:text-primary transition-colors shrink-0" />
-                        <span className="truncate">{item.title}</span>
-                      </div>
-                      <span className="text-[10px] text-muted-foreground/70 font-normal ml-2 shrink-0">
-                        {item.group}
-                      </span>
-                    </Link>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
+        <ModalSearchMenu
+          setIsSearchOpen={setIsSearchOpen}
+          setSearchQuery={setSearchQuery}
+          searchQuery={searchQuery}
+          filteredSearchItems={filteredSearchItems}
+        />
       )}
     </Sidebar>
   );
