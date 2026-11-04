@@ -1,71 +1,150 @@
 "use client";
 
-import { useSyncExternalStore, useCallback, useMemo } from "react";
-import { GaleriItem, GaleriFormValues, GaleriStats, StatusPublikasi } from "../types";
-import { initialGaleriData } from "../data/initialGaleriData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
+import {
+  GaleriItem,
+  GaleriFormValues,
+  GaleriStats,
+  GaleriApiResponse,
+  GaleriStatsApiResponse,
+  GaleriPreviewApiResponse,
+  UploadFileResponse,
+  MediaType,
+  StatusPublikasi,
+  getSafeImageSrc,
+} from "../types";
+import { initialGaleriData } from "../data/initialGaleriData";
 
-const STORAGE_KEY = "piki_galeri_data";
-const EVENT_NAME = "piki:galeri_updated";
+export interface GaleriFilterParams {
+  type?: MediaType;
+  kategori?: string;
+  status?: StatusPublikasi | "ALL";
+  search?: string;
+  penempatan?: "BERANDA" | "GALERI";
+  currentPage?: number;
+  pageSize?: number;
+  fixed?: "all";
+}
 
-function subscribe(callback: () => void) {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
-  window.addEventListener(EVENT_NAME, callback);
-  window.addEventListener("storage", callback);
-  return () => {
-    window.removeEventListener(EVENT_NAME, callback);
-    window.removeEventListener("storage", callback);
+/**
+ * Hook utama pengelolaan data galeri terintegrasi dengan backend API (/api/v1/galeri).
+ * Menggunakan React Query untuk caching, sinkronisasi data instan, dan penanganan mutasi.
+ */
+export function useGaleri(filters?: GaleriFilterParams) {
+  const queryClient = useQueryClient();
+
+  // 1. Fetch Daftar Galeri
+  const queryParams = useMemo(() => {
+    const p = new URLSearchParams();
+    // Default CMS mengambil semua status jika fixed=all
+    p.append("fixed", filters?.fixed || "all");
+
+    if (filters?.type && filters.type !== "ALL") {
+      p.append("type", filters.type);
+    }
+    if (filters?.kategori && filters.kategori !== "ALL") {
+      p.append("kategori", filters.kategori);
+    }
+    if (filters?.status && filters.status !== "ALL") {
+      p.append("status", filters.status);
+    }
+    if (filters?.search?.trim()) {
+      p.append("search", filters.search.trim());
+    }
+    if (filters?.penempatan) {
+      p.append("penempatan", filters.penempatan);
+    }
+    if (filters?.currentPage) {
+      p.append("currentPage", filters.currentPage.toString());
+    }
+    if (filters?.pageSize) {
+      p.append("pageSize", filters.pageSize.toString());
+    }
+    return p.toString();
+  }, [filters]);
+
+  const {
+    data: apiListData,
+    isLoading: isListLoading,
+    isError: isListError,
+    error: listError,
+    refetch: refetchList,
+  } = useQuery({
+    queryKey: ["galeri", "list", queryParams],
+    queryFn: async () => {
+      try {
+        const res = await apiFetch<GaleriApiResponse>(`/galeri?${queryParams}`);
+        // Backend format: { success, data: { result: [...], pagination: {...} } }
+        if (res?.data?.result && Array.isArray(res.data.result)) {
+          return res.data;
+        }
+        return {
+          result: initialGaleriData,
+          pagination: {
+            currentPage: 1,
+            pageSize: initialGaleriData.length,
+            total: initialGaleriData.length,
+          },
+        };
+      } catch (err) {
+        console.warn("Gagal mengambil data galeri dari API, menggunakan data cadangan:", err);
+        return {
+          result: initialGaleriData,
+          pagination: {
+            currentPage: 1,
+            pageSize: initialGaleriData.length,
+            total: initialGaleriData.length,
+          },
+        };
+      }
+    },
+    staleTime: 30 * 1000,
+  });
+
+  // 2. Fetch Statistik Galeri
+  const {
+    data: apiStatsData,
+    isLoading: isStatsLoading,
+    refetch: refetchStats,
+  } = useQuery({
+    queryKey: ["galeri", "stats"],
+    queryFn: async () => {
+      try {
+        const res = await apiFetch<GaleriStatsApiResponse>("/galeri/stats");
+        if (res?.data && typeof res.data.total === "number") {
+          return res.data;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 30 * 1000,
+  });
+
+  const rawItems = apiListData?.result || initialGaleriData;
+  const items: GaleriItem[] = useMemo(() => {
+    return rawItems.map((item) => ({
+      ...item,
+      thumbnailUrl: getSafeImageSrc(
+        item.thumbnailUrl,
+        item.type === "PHOTO" ? getSafeImageSrc(item.url) : "/footage/image1.webp",
+      ),
+    }));
+  }, [rawItems]);
+  const pagination = apiListData?.pagination || {
+    currentPage: 1,
+    pageSize: items.length,
+    total: items.length,
   };
-}
 
-let cachedSnapshot: GaleriItem[] = initialGaleriData;
-let lastRaw: string | null = null;
-
-function getSnapshot(): GaleriItem[] {
-  if (typeof window === "undefined") return initialGaleriData;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      cachedSnapshot = initialGaleriData;
-      lastRaw = null;
-      return cachedSnapshot;
-    }
-    if (raw !== lastRaw) {
-      lastRaw = raw;
-      const parsed = JSON.parse(raw);
-      cachedSnapshot =
-        Array.isArray(parsed) && parsed.length > 0
-          ? parsed
-          : initialGaleriData;
-    }
-    return cachedSnapshot;
-  } catch (e) {
-    console.error("Failed to read galeri data from localStorage", e);
-    return initialGaleriData;
-  }
-}
-
-function getServerSnapshot(): GaleriItem[] {
-  return initialGaleriData;
-}
-
-function persistGaleri(data: GaleriItem[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: data }));
-  } catch (e) {
-    console.error("Failed to save galeri data to localStorage", e);
-  }
-}
-
-export function useGaleri() {
-  const items = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-
-  // Statistics calculation
+  // Hitung fallback statistik jika backend stats belum termuat
   const stats: GaleriStats = useMemo(() => {
+    if (apiStatsData) return apiStatsData;
+
     let photoCount = 0;
     let videoCount = 0;
     let instagramCount = 0;
@@ -93,130 +172,251 @@ export function useGaleri() {
       draftCount,
       spotlightCount,
     };
-  }, [items]);
+  }, [apiStatsData, items]);
 
-  // Add new media
+  // Invalidate queries helper
+  const invalidateGaleri = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["galeri"] });
+  }, [queryClient]);
+
+  // 3. Mutasi Tambah Media
+  const addMutation = useMutation({
+    mutationFn: async (values: GaleriFormValues) => {
+      const res = await apiFetch<{ success: boolean; data: GaleriItem }>(
+        "/galeri",
+        {
+          method: "POST",
+          body: JSON.stringify(values),
+        },
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateGaleri();
+      toast.success("Dokumentasi baru berhasil ditambahkan!");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal menambahkan dokumentasi");
+    },
+  });
+
+  // 4. Mutasi Ubah Media
+  const updateMutation = useMutation({
+    mutationFn: async ({
+      id,
+      values,
+    }: {
+      id: string;
+      values: Partial<GaleriFormValues>;
+    }) => {
+      const res = await apiFetch<{ success: boolean; data: GaleriItem }>(
+        `/galeri/${id}/update`,
+        {
+          method: "POST",
+          body: JSON.stringify(values),
+        },
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateGaleri();
+      toast.success("Dokumentasi berhasil diperbarui!");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal memperbarui dokumentasi");
+    },
+  });
+
+  // 5. Mutasi Toggle Status (PUBLISHED ⇄ DRAFT)
+  const toggleStatusMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiFetch<{ success: boolean; data: GaleriItem }>(
+        `/galeri/${id}/toggle-status`,
+        {
+          method: "POST",
+        },
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      invalidateGaleri();
+      toast.success(
+        data?.status === "PUBLISHED"
+          ? "Dokumentasi telah ditayangkan ke publik!"
+          : "Dokumentasi dialihkan ke draf internal.",
+      );
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal mengubah status publikasi");
+    },
+  });
+
+  // 6. Mutasi Toggle Spotlight / Featured
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiFetch<{ success: boolean; data: GaleriItem }>(
+        `/galeri/${id}/toggle-featured`,
+        {
+          method: "POST",
+        },
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      invalidateGaleri();
+      toast.success(
+        data?.featured
+          ? "Spotlight diaktifkan! Dokumentasi ini tampil di area sorotan utama."
+          : "Spotlight dinonaktifkan.",
+      );
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal mengubah status spotlight");
+    },
+  });
+
+  // 7. Mutasi Hapus Media (Soft Delete)
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiFetch<{ success: boolean; message: string }>(
+        `/galeri/${id}/delete`,
+        {
+          method: "POST",
+        },
+      );
+      return id;
+    },
+    onSuccess: () => {
+      invalidateGaleri();
+      toast.success("Dokumentasi berhasil dihapus.");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal menghapus dokumentasi");
+    },
+  });
+
+  // 8. Upload Foto (Maksimal 5MB)
+  const uploadFoto = useCallback(async (file: File): Promise<string> => {
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("Ukuran foto maksimal 5MB");
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await apiFetch<{ url?: string; data?: { url: string } }>(
+      "/upload",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    const uploadedUrl = res.url || res.data?.url;
+    if (!uploadedUrl) {
+      throw new Error("Gagal memperoleh URL foto dari server");
+    }
+    return uploadedUrl;
+  }, []);
+
+  // 9. Upload Video Lokal (Maksimal 50MB)
+  const uploadVideo = useCallback(
+    async (file: File): Promise<UploadFileResponse> => {
+      if (file.size > 50 * 1024 * 1024) {
+        throw new Error(
+          "Ukuran video melebihi batas maksimal 50MB. Silakan kompres video atau gunakan tautan YouTube.",
+        );
+      }
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await apiFetch<UploadFileResponse>("/upload/video", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.url) {
+        throw new Error("Gagal memperoleh URL video dari server");
+      }
+      return res;
+    },
+    [],
+  );
+
+  // 10. Pratinjau Tautan Eksternal (YouTube & Instagram)
+  const previewMedia = useCallback(
+    async (
+      url: string,
+      type?: "VIDEO" | "INSTAGRAM",
+    ): Promise<GaleriPreviewApiResponse["data"]> => {
+      // Auto-detect type if not explicitly supplied
+      const resolvedType =
+        type || (/instagram\.com/i.test(url) ? "INSTAGRAM" : "VIDEO");
+
+      const res = await apiFetch<GaleriPreviewApiResponse>("/galeri/preview", {
+        method: "POST",
+        body: JSON.stringify({ url: url.trim(), type: resolvedType }),
+      });
+      return res.data;
+    },
+    [],
+  );
+
+  // Wrapper functions for backwards-compatibility with existing component props
   const addMedia = useCallback(
     (values: GaleriFormValues) => {
-      const newItem: GaleriItem = {
-        ...values,
-        id: `media-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      // If set as featured spotlight, unset existing spotlight
-      let updatedList = [...items];
-      if (values.featured) {
-        updatedList = updatedList.map((i) => ({ ...i, featured: false }));
-      }
-
-      updatedList = [newItem, ...updatedList];
-      persistGaleri(updatedList);
-      toast.success("Dokumentasi media berhasil ditambahkan");
-      return newItem;
+      return addMutation.mutateAsync(values);
     },
-    [items],
+    [addMutation],
   );
 
-  // Update existing media
   const updateMedia = useCallback(
     (id: string, values: Partial<GaleriFormValues>) => {
-      const updatedList = items.map((i) => {
-        if (i.id === id) {
-          return {
-            ...i,
-            ...values,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        // If this item is being set as featured, ensure other items are unfeatured
-        if (values.featured) {
-          return { ...i, featured: false };
-        }
-        return i;
-      });
-
-      persistGaleri(updatedList);
-      toast.success("Dokumentasi media berhasil diperbarui");
+      return updateMutation.mutateAsync({ id, values });
     },
-    [items],
+    [updateMutation],
   );
 
-  // Delete media
-  const deleteMedia = useCallback(
-    (id: string) => {
-      const target = items.find((i) => i.id === id);
-      const updatedList = items.filter((i) => i.id !== id);
-      persistGaleri(updatedList);
-      toast.success(`Media "${target?.title || id}" telah dihapus`);
-    },
-    [items],
-  );
-
-  // Toggle status (PUBLISHED <-> DRAFT)
   const toggleStatus = useCallback(
     (id: string) => {
-      const updatedList = items.map((item): GaleriItem => {
-        if (item.id === id) {
-          const nextStatus: StatusPublikasi =
-            item.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
-          toast.success(
-            `Status "${item.title}" diubah menjadi ${
-              nextStatus === "PUBLISHED" ? "Tayang Publik" : "Draf Internal"
-            }`,
-          );
-          return { ...item, status: nextStatus, updatedAt: new Date().toISOString() };
-        }
-        return item;
-      });
-      persistGaleri(updatedList);
+      return toggleStatusMutation.mutateAsync(id);
     },
-    [items],
+    [toggleStatusMutation],
   );
 
-  // Toggle featured spotlight
   const toggleFeatured = useCallback(
     (id: string) => {
-      const target = items.find((i) => i.id === id);
-      const isCurrentlyFeatured = Boolean(target?.featured);
-
-      const updatedList = items.map((item) => {
-        if (item.id === id) {
-          const nextFeatured = !isCurrentlyFeatured;
-          if (nextFeatured) {
-            toast.success(`"${item.title}" dijadikan Spotlight Utama di halaman galeri!`);
-          } else {
-            toast.info(`Highlight utama dinonaktifkan untuk "${item.title}"`);
-          }
-          return { ...item, featured: nextFeatured, updatedAt: new Date().toISOString() };
-        }
-        // If enabling for target, disable for all other items
-        if (!isCurrentlyFeatured) {
-          return { ...item, featured: false };
-        }
-        return item;
-      });
-
-      persistGaleri(updatedList);
+      return toggleFeaturedMutation.mutateAsync(id);
     },
-    [items],
+    [toggleFeaturedMutation],
   );
 
-  // Reset to default data
-  const resetToDefault = useCallback(() => {
-    persistGaleri(initialGaleriData);
-    toast.success("Data galeri berhasil dikembalikan ke default bawaan sistem");
-  }, []);
+  const deleteMedia = useCallback(
+    (id: string) => {
+      return deleteMutation.mutateAsync(id);
+    },
+    [deleteMutation],
+  );
 
   return {
     items,
+    pagination,
     stats,
+    isLoading: isListLoading || isStatsLoading,
+    isError: isListError,
+    error: listError,
+    refetch: refetchList,
+    refetchStats,
     addMedia,
     updateMedia,
     deleteMedia,
     toggleStatus,
     toggleFeatured,
-    resetToDefault,
+    uploadFoto,
+    uploadVideo,
+    previewMedia,
+    isSubmitting:
+      addMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending,
   };
 }

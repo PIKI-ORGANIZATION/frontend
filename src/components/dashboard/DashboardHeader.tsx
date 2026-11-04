@@ -33,6 +33,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserPayload } from "@/lib/utils";
+import { isSuperAdmin } from "@/lib/rbac";
 
 interface DashboardHeaderProps {
   user?: UserPayload | null;
@@ -44,8 +45,18 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const getRoleDisplay = () => {
-    if (!user || !user.roles || user.roles.length === 0) return "Administrator";
-    return user.roles[0].replace(/_/g, " ");
+    if (!user) return "Administrator";
+    if (isSuperAdmin(user)) return "Super Admin (DPP)";
+    if (user.tingkat === "DPD") {
+      return user.cabang ? `Admin DPD ${user.cabang}` : "Admin DPD";
+    }
+    if (user.tingkat === "DPC") {
+      return user.cabang ? `Admin DPC ${user.cabang}` : "Admin DPC";
+    }
+    if (user.roles && user.roles.length > 0) {
+      return user.roles[0].replace(/_/g, " ");
+    }
+    return "Administrator";
   };
 
   const getInitials = () => {

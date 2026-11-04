@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { FlutedGlass } from "@paper-design/shaders-react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import Link from "next/link";
@@ -36,6 +36,20 @@ const loginSchema = z.object({
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
+
+function ExpiredSessionBanner() {
+  const searchParams = useSearchParams();
+  const hasNotified = useRef(false);
+
+  useEffect(() => {
+    if (searchParams.get("expired") === "true" && !hasNotified.current) {
+      hasNotified.current = true;
+      toast.warning("Sesi login Anda telah berakhir. Silakan masuk kembali.");
+    }
+  }, [searchParams]);
+
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -89,9 +103,13 @@ export default function LoginPage() {
       }
 
       if (data.accessToken) {
-        // Jika remember dicentang, cookie bisa disimpan lebih lama (misal 7 hari), kalau tidak 1 hari
-        const expiresIn = values.remember ? 7 : 1;
-        Cookies.set("token", data.accessToken, { expires: expiresIn });
+        // Sesuaikan dengan batas backend JWT_EXPIRES_IN=1d (maksimal 1 hari)
+        const expiresIn = values.remember ? 1 : undefined;
+        Cookies.set("token", data.accessToken, {
+          expires: expiresIn,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+        });
 
         toast.success("Login berhasil!");
 
@@ -118,6 +136,9 @@ export default function LoginPage() {
 
   return (
     <section className="min-h-[calc(100vh-140px)] bg-white p-3 text-black antialiased [font-synthesis:none] dark:bg-[#050505] dark:text-white">
+      <Suspense fallback={null}>
+        <ExpiredSessionBanner />
+      </Suspense>
       <div className="grid min-h-[calc(100vh-1.5rem)] gap-4 sm:gap-6 lg:grid-cols-[0.94fr_1.06fr]">
         {/* Left Side - Login Form */}
         <div className="flex min-h-[60vh] sm:min-h-[500px] lg:min-h-0 items-center justify-center rounded-2xl lg:rounded-md border border-black/10 bg-white px-6 py-10 sm:px-10 sm:py-16 lg:px-14 lg:py-20 xl:px-20 dark:border-white/5 dark:bg-[#0a0a0c]">
@@ -286,9 +307,11 @@ export default function LoginPage() {
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 className="flex items-center gap-3 sm:gap-4"
               >
-                <img
+                <Image
                   src="/logo1.png"
-                  alt="Member"
+                  alt="Logo PIKI"
+                  width={48}
+                  height={48}
                   className="size-10 sm:size-12 shrink-0 object-contain"
                 />
                 <div>

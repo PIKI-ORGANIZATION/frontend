@@ -7,6 +7,7 @@ import {
   type TiltedGridImage,
 } from "@/components/ui/tilted-grid-hero";
 import { SPOTLIGHT_HERO_IMAGES } from "../data/galeriData";
+import { formatTanggalIndo } from "@/features/galeri/types";
 import type { MediaItem } from "../types";
 
 interface GaleriSpotlightProps {
@@ -68,7 +69,7 @@ export function GaleriSpotlight({
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1 font-medium font-mono">
                   <Calendar className="w-3.5 h-3.5" />
-                  {item.tanggal}
+                  {formatTanggalIndo(item.tanggal)}
                 </span>
                 {item.lokasi && (
                   <>

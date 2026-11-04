@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { Button } from "@/components/ui/button";
+import { formatTanggalIndo, getSafeImageSrc } from "@/features/galeri/types";
 import type { MediaItem } from "../types";
 
 interface GaleriLightboxModalProps {
@@ -38,10 +39,13 @@ interface GaleriLightboxModalProps {
 interface GaleriVideoPlayerProps {
   videoId: string;
   title: string;
+  url?: string;
 }
 
-function GaleriVideoPlayer({ videoId, title }: GaleriVideoPlayerProps) {
+function GaleriVideoPlayer({ videoId, title, url }: GaleriVideoPlayerProps) {
   const [loading, setLoading] = useState(true);
+  const startMatch = url?.match(/[?&]t=(\d+)s?/);
+  const startParam = startMatch ? `&start=${startMatch[1]}` : "";
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black border border-border/40 dark:border-white/10 shadow-2xl">
@@ -52,7 +56,7 @@ function GaleriVideoPlayer({ videoId, title }: GaleriVideoPlayerProps) {
       )}
       <iframe
         key={videoId}
-        src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1${startParam}`}
         title={title}
         onLoad={() => setLoading(false)}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -205,19 +209,51 @@ export function GaleriLightboxModal({
 
                 {/* Media Container */}
                 <div
-                  className="relative max-h-[60vh] sm:max-h-[68vh] md:max-h-[72vh] w-full max-w-5xl overflow-hidden cursor-default"
+                  className="relative max-h-[60vh] sm:max-h-[68vh] md:max-h-[72vh] w-full max-w-5xl overflow-hidden cursor-default flex items-center justify-center"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {item.type === "VIDEO" && item.youtubeVideoId ? (
-                    <GaleriVideoPlayer
-                      key={item.youtubeVideoId}
-                      videoId={item.youtubeVideoId}
-                      title={item.title}
-                    />
+                  {item.type === "VIDEO" ? (
+                    item.youtubeVideoId ? (
+                      <GaleriVideoPlayer
+                        key={item.youtubeVideoId}
+                        videoId={item.youtubeVideoId}
+                        title={item.title}
+                        url={item.url}
+                      />
+                    ) : (
+                      <video
+                        key={item.url}
+                        controls
+                        autoPlay
+                        playsInline
+                        poster={item.thumbnailUrl}
+                        className="max-h-[60vh] sm:max-h-[68vh] md:max-h-[72vh] w-full aspect-video rounded-2xl bg-black shadow-2xl"
+                      >
+                        <source src={item.url} />
+                        Peramban Anda tidak mendukung pemutar video HTML5.
+                      </video>
+                    )
+                  ) : item.type === "INSTAGRAM" && (item.embedUrl || item.instagramUrl || item.url) ? (
+                    <div className="flex items-center justify-center w-full max-w-md h-[55vh] sm:h-[65vh] max-h-[680px]">
+                      <iframe
+                        key={item.embedUrl || item.instagramUrl || item.url}
+                        src={
+                          item.embedUrl ||
+                          `${(item.instagramUrl || item.url).replace(/\/?(\?.*)?$/, "")}/embed`
+                        }
+                        title={item.title}
+                        className="w-full h-full rounded-2xl border border-border/80 shadow-2xl bg-card"
+                        loading="lazy"
+                      />
+                    </div>
                   ) : (
                     <div className="relative h-[50vh] sm:h-[60vh] md:h-[66vh] w-full flex items-center justify-center">
                       <Image
-                        src={item.url}
+                        src={getSafeImageSrc(
+                          item.type === "INSTAGRAM"
+                            ? item.thumbnailUrl || item.url
+                            : item.url || item.thumbnailUrl,
+                        )}
                         alt={item.title}
                         fill
                         priority
@@ -236,7 +272,7 @@ export function GaleriLightboxModal({
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-muted-foreground ">
                     <span className="flex items-center gap-1.5 font-mono text-muted-foreground ">
                       <Calendar className="size-3.5 text-primary" />
-                      {item.tanggal}
+                      {formatTanggalIndo(item.tanggal)}
                     </span>
 
                     {item.lokasi && (

@@ -3,9 +3,7 @@
 import { useState, useMemo } from "react";
 import {
   Plus,
-  Search,
   Filter,
-  RotateCcw,
   LayoutGrid,
   List,
   Layers,
@@ -13,10 +11,11 @@ import {
   Film,
   Check,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { FaInstagram } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import {
   Popover,
   PopoverContent,
@@ -38,32 +37,33 @@ import {
   StatusPublikasi,
   KATEGORI_GALERI_OPTIONS,
 } from "@/features/galeri/types";
-import { GaleriStatsCards } from "./components/GaleriStatsCards";
 import { GaleriGridView } from "./components/GaleriGridView";
 import { GaleriTableView } from "./components/GaleriTableView";
 import { GaleriEditorDialog } from "./components/GaleriEditorDialog";
 import { GaleriDetailDrawer } from "./components/GaleriDetailDrawer";
 import { GaleriDeleteDialog } from "./components/GaleriDeleteDialog";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type FilterStatus = "ALL" | StatusPublikasi;
 
 const STATUS_FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: "ALL", label: "Semua Status" },
-  { value: "PUBLISHED", label: "Tayang Publik (Published)" },
-  { value: "DRAFT", label: "Draf Internal (Draft)" },
+  { value: "PUBLISHED", label: "Tayang (Published)" },
+  { value: "DRAFT", label: "Draf (Draft)" },
+  { value: "ARCHIVED", label: "Arsip (Archived)" },
 ];
 
 export default function GaleriCMSPage() {
   const {
     items,
     stats,
+    isLoading,
     addMedia,
     updateMedia,
     deleteMedia,
     toggleStatus,
     toggleFeatured,
-    resetToDefault,
   } = useGaleri();
 
   // Filter States
@@ -126,37 +126,62 @@ export default function GaleriCMSPage() {
   };
 
   // Handler: Save (Create or Update)
-  const handleSave = (values: GaleriFormValues) => {
+  const handleSave = async (values: GaleriFormValues) => {
     if (editingItem) {
-      updateMedia(editingItem.id, values);
+      const updated = await updateMedia(editingItem.id, values);
       if (inspectingItem?.id === editingItem.id) {
-        setInspectingItem((prev) => (prev ? { ...prev, ...values } : null));
+        setInspectingItem(updated || { ...editingItem, ...values });
       }
     } else {
-      const created = addMedia(values);
-      setInspectingItem(created);
+      const created = await addMedia(values);
+      if (created) setInspectingItem(created);
     }
   };
 
-  const handleToggleStatus = (id: string) => {
-    toggleStatus(id);
+  const handleToggleStatus = async (id: string) => {
+    const updated = await toggleStatus(id);
     if (inspectingItem?.id === id) {
       setInspectingItem((prev) =>
         prev
           ? {
               ...prev,
-              status: prev.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
+              status:
+                updated?.status ||
+                (prev.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED"),
             }
           : null,
       );
     }
   };
 
-  const handleToggleFeatured = (id: string) => {
-    toggleFeatured(id);
+  const allCategoryOptions = useMemo(() => {
+    const set = new Set<string>(KATEGORI_GALERI_OPTIONS);
+    items.forEach((it) => {
+      if (it.kategoriKegiatan && it.kategoriKegiatan.trim()) {
+        set.add(it.kategoriKegiatan.trim());
+      }
+    });
+    return Array.from(set);
+  }, [items]);
+
+  const handleToggleFeatured = async (id: string) => {
+    const target = items.find((i) => i.id === id);
+    if (target && target.type !== "VIDEO") {
+      toast.error(
+        "Hanya dokumentasi video yang dapat dijadikan spotlight utama.",
+      );
+      return;
+    }
+    if (target && target.status === "ARCHIVED") {
+      toast.error("Item yang diarsipkan tidak dapat dijadikan spotlight.");
+      return;
+    }
+    const updated = await toggleFeatured(id);
     if (inspectingItem?.id === id) {
       setInspectingItem((prev) =>
-        prev ? { ...prev, featured: !prev.featured } : null,
+        prev
+          ? { ...prev, featured: updated?.featured ?? !prev.featured }
+          : null,
       );
     }
   };
@@ -174,8 +199,8 @@ export default function GaleriCMSPage() {
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Kelola dokumentasi arsip foto kegiatan, rekaman liputan video, dan
-            postingan media sosial PIKI.
+            Kelola dokumentasi arsip foto kegiatan, rekaman liputan video
+            (hingga 50MB), dan postingan media sosial PIKI.
           </p>
         </div>
 
@@ -188,136 +213,134 @@ export default function GaleriCMSPage() {
       </div>
 
       {/* 3. Toolbar: Media Type Tabs, Search, Popover Filters & View Switcher */}
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3">
         {/* Category Tabs (Segmented Control Track per StyleGuide & CMS Pengurus) */}
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="flex items-center overflow-x-auto pb-1 max-w-full">
-            <div
-              role="tablist"
-              aria-label="Filter Format Media"
-              className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
-            >
-              {[
-                {
-                  id: "ALL" as const,
-                  label: "Semua Format",
-                  count: stats.total,
-                  icon: Layers,
-                },
-                {
-                  id: "PHOTO" as const,
-                  label: "Dokumentasi Foto",
-                  count: stats.photoCount,
-                  icon: Camera,
-                },
-                {
-                  id: "VIDEO" as const,
-                  label: "Video Kegiatan",
-                  count: stats.videoCount,
-                  icon: Film,
-                },
-                {
-                  id: "INSTAGRAM" as const,
-                  label: "Instagram Post",
-                  count: stats.instagramCount,
-                  icon: FaInstagram,
-                },
-              ].map((tab) => {
-                const isSelected = selectedMediaType === tab.id;
-                const Icon = tab.icon;
+        <div className="flex items-center overflow-x-auto pb-1 max-w-full">
+          <div
+            role="tablist"
+            aria-label="Filter Format Media"
+            className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
+          >
+            {[
+              {
+                id: "ALL" as const,
+                label: "Semua Format",
+                count: stats.total,
+                icon: Layers,
+              },
+              {
+                id: "PHOTO" as const,
+                label: "Dokumentasi Foto",
+                count: stats.photoCount,
+                icon: Camera,
+              },
+              {
+                id: "VIDEO" as const,
+                label: "Liputan Video",
+                count: stats.videoCount,
+                icon: Film,
+              },
+              {
+                id: "INSTAGRAM" as const,
+                label: "Instagram Post",
+                count: stats.instagramCount,
+                icon: FaInstagram,
+              },
+            ].map((tab) => {
+              const isSelected = selectedMediaType === tab.id;
+              const Icon = tab.icon;
 
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={isSelected}
-                    onClick={() => setSelectedMediaType(tab.id)}
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => setSelectedMediaType(tab.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer select-none",
+                    "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
+                    isSelected
+                      ? "bg-background text-foreground font-medium shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-normal border border-transparent",
+                  )}
+                >
+                  <Icon
                     className={cn(
-                      "flex items-center gap-2 px-3 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer select-none",
-                      "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
+                      "size-3.5 shrink-0",
+                      isSelected ? "text-primary" : "text-muted-foreground",
+                    )}
+                  />
+                  <span>{tab.label}</span>
+                  <span
+                    className={cn(
+                      "ml-0.5 px-1.5 py-0.5 shrink-0 rounded-full text-[10px] font-mono transition-colors",
                       isSelected
-                        ? "bg-background text-foreground font-medium shadow-2xs"
-                        : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-normal border border-transparent",
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "bg-muted text-muted-foreground",
                     )}
                   >
-                    <Icon
-                      className={cn(
-                        "size-3.5 shrink-0",
-                        isSelected ? "text-primary" : "text-muted-foreground",
-                      )}
-                    />
-                    <span>{tab.label}</span>
-                    <span
-                      className={cn(
-                        "ml-0.5 px-1.5 py-0.5 shrink-0 rounded-full text-[10px] font-mono transition-colors",
-                        isSelected
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          {/* View Mode Switcher (Tabel vs Grid) */}
-          <div
-            role="radiogroup"
-            aria-label="Mode Tampilan Data"
-            className="inline-flex items-center p-0.5 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
-          >
-            <button
-              type="button"
-              role="radio"
-              aria-checked={viewMode === "table"}
-              onClick={() => setViewMode("table")}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-sm transition-all cursor-pointer select-none",
-                viewMode === "table"
-                  ? "bg-background text-foreground font-medium shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              title="Mode Tampilan Tabel"
-            >
-              <List className="size-3.5" />
-              <span className="hidden sm:inline">Tabel</span>
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={viewMode === "grid"}
-              onClick={() => setViewMode("grid")}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-sm transition-all cursor-pointer select-none",
-                viewMode === "grid"
-                  ? "bg-background text-foreground font-medium shadow-2xs"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              title="Mode Tampilan Grid Visual"
-            >
-              <LayoutGrid className="size-3.5" />
-              <span className="hidden sm:inline">Grid Visual</span>
-            </button>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Search, Filters & View Mode Switcher Row */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-          {/* Search Box - 100% vertically centered icon with top-1/2 -translate-y-1/2 pointer-events-none */}
-          <div className="relative flex-1 max-w-md flex items-center">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
+          {/* Search Box - Reusable SearchInput with 100% Flexbox Items-Center */}
+          <div className="flex-1 max-w-md">
+            <SearchInput
               placeholder="Cari dokumentasi kegiatan atau lokasi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              onClear={() => setSearchQuery("")}
             />
           </div>
 
           <div className="flex flex-wrap items-center gap-2 self-end lg:self-auto">
+            {/* View Mode Switcher (Tabel vs Grid) */}
+            <div
+              role="radiogroup"
+              aria-label="Mode Tampilan Data"
+              className="inline-flex items-center p-0.5 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={viewMode === "table"}
+                onClick={() => setViewMode("table")}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-sm transition-all cursor-pointer select-none",
+                  viewMode === "table"
+                    ? "bg-background text-foreground font-medium shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                title="Mode Tampilan Tabel"
+              >
+                <List className="size-3.5" />
+                <span className="hidden sm:inline">Tabel</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={viewMode === "grid"}
+                onClick={() => setViewMode("grid")}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-sm transition-all cursor-pointer select-none",
+                  viewMode === "grid"
+                    ? "bg-background text-foreground font-medium shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                title="Mode Tampilan Grid Visual"
+              >
+                <LayoutGrid className="size-3.5" />
+                <span className="hidden sm:inline">Grid Visual</span>
+              </button>
+            </div>
+
             {/* Filter Popover Kategori - Wajib Popover per StyleGuide */}
             <Popover
               open={openKategoriPopover}
@@ -367,7 +390,7 @@ export default function GaleriCMSPage() {
                           )}
                         />
                       </CommandItem>
-                      {KATEGORI_GALERI_OPTIONS.map((cat) => (
+                      {allCategoryOptions.map((cat) => (
                         <CommandItem
                           key={cat}
                           value={cat}
@@ -452,9 +475,34 @@ export default function GaleriCMSPage() {
         </div>
       </div>
 
-      {/* 4. Main Display: Grid View vs Table View */}
+      {/* 4. Main Display: Loading Skeleton, Empty State, Grid View vs Table View */}
       <div className="min-h-[40vh]">
-        {viewMode === "grid" ? (
+        {isLoading && items.length === 0 ? (
+          <div className="min-h-[40vh] flex flex-col items-center justify-center p-12 border border-border/80 rounded-2xl bg-card">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="mt-3 text-sm text-muted-foreground">
+              Menghubungkan ke server dan memuat data dokumentasi...
+            </p>
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="min-h-[40vh] flex flex-col items-center justify-center p-12 border border-dashed border-border rounded-2xl bg-card/60 text-center">
+            <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground mb-3">
+              <Layers className="size-6 opacity-60" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground">
+              Tidak Ada Dokumentasi Ditemukan
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+              {searchQuery
+                ? "Coba sesuaikan kata kunci pencarian atau ganti filter kategori kegiatan."
+                : "Belum ada arsip dokumentasi media. Mulai tambahkan dokumentasi baru."}
+            </p>
+            <Button onClick={handleOpenAdd} className="mt-5 cursor-pointer">
+              <Plus className="size-4 mr-2" />
+              <span>Tambah Dokumentasi Baru</span>
+            </Button>
+          </div>
+        ) : viewMode === "grid" ? (
           <GaleriGridView
             items={filteredItems}
             onInspect={setInspectingItem}
@@ -475,7 +523,7 @@ export default function GaleriCMSPage() {
         )}
       </div>
 
-      {/* 5. Editor Dialog Modal (Add & Edit) */}
+      {/* 5. Editor Dialog Modal (Add & Edit dengan Upload Video 50MB & Foto) */}
       <GaleriEditorDialog
         open={isEditorOpen}
         onOpenChange={setIsEditorOpen}
@@ -500,13 +548,13 @@ export default function GaleriCMSPage() {
         open={Boolean(deletingId)}
         onOpenChange={(open) => !open && setDeletingId(null)}
         title={deletingTarget?.title}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deletingId) {
-            deleteMedia(deletingId);
-            setDeletingId(null);
+            await deleteMedia(deletingId);
             if (inspectingItem?.id === deletingId) {
               setInspectingItem(null);
             }
+            setDeletingId(null);
           }
         }}
       />

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GaleriItem } from "@/features/galeri/types";
+import { GaleriItem, formatTanggalIndo, getSafeImageSrc } from "@/features/galeri/types";
 import { cn } from "@/lib/utils";
 
 interface GaleriTableViewProps {
@@ -79,7 +79,7 @@ export function GaleriTableView({
                     onClick={() => onInspect(item)}
                   >
                     <Image
-                      src={item.thumbnailUrl}
+                      src={getSafeImageSrc(item.thumbnailUrl)}
                       alt={item.title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform"
@@ -137,7 +137,7 @@ export function GaleriTableView({
                 {/* Waktu & Lokasi */}
                 <TableCell className="py-3 text-xs text-muted-foreground">
                   <p className="font-mono text-foreground font-medium">
-                    {item.tanggal}
+                    {formatTanggalIndo(item.tanggal)}
                   </p>
                   {item.lokasi && (
                     <p className="truncate max-w-[120px] text-[11px]">
@@ -160,29 +160,42 @@ export function GaleriTableView({
                         "text-[10px] font-semibold border-0 transition-opacity hover:opacity-80",
                         item.status === "PUBLISHED"
                           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                          : "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+                          : item.status === "ARCHIVED"
+                            ? "bg-slate-500/15 text-slate-700 dark:text-slate-300"
+                            : "bg-amber-500/15 text-amber-700 dark:text-amber-400",
                       )}
                     >
-                      {item.status === "PUBLISHED" ? "Tayang" : "Draf"}
+                      {item.status === "PUBLISHED"
+                        ? "Tayang"
+                        : item.status === "ARCHIVED"
+                          ? "Arsip"
+                          : "Draf"}
                     </Badge>
                   </button>
                 </TableCell>
 
-                {/* Spotlight Switch */}
+                {/* Spotlight Switch (Khusus Video) */}
                 <TableCell className="py-3 text-center">
                   <button
                     type="button"
+                    disabled={item.type !== "VIDEO" || item.status === "ARCHIVED"}
                     onClick={() => onToggleFeatured(item.id)}
                     title={
-                      item.featured
-                        ? "Hapus dari Spotlight Utama"
-                        : "Jadikan Spotlight Utama"
+                      item.type !== "VIDEO"
+                        ? "Hanya video yang dapat dijadikan spotlight utama"
+                        : item.status === "ARCHIVED"
+                          ? "Item yang diarsipkan tidak dapat dijadikan spotlight"
+                          : item.featured
+                            ? "Hapus dari Spotlight Utama"
+                            : "Jadikan Spotlight Utama"
                     }
                     className={cn(
-                      "size-7 rounded-lg inline-flex items-center justify-center transition-colors cursor-pointer",
-                      item.featured
-                        ? "text-amber-500 bg-amber-500/15"
-                        : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted",
+                      "size-7 rounded-lg inline-flex items-center justify-center transition-colors",
+                      item.type !== "VIDEO" || item.status === "ARCHIVED"
+                        ? "opacity-25 cursor-not-allowed text-muted-foreground"
+                        : item.featured
+                          ? "text-amber-500 bg-amber-500/15 cursor-pointer"
+                          : "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted cursor-pointer",
                     )}
                   >
                     <Star

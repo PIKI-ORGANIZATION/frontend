@@ -17,7 +17,7 @@ import { FaInstagram } from "react-icons/fa";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GaleriItem } from "@/features/galeri/types";
+import { GaleriItem, formatTanggalIndo, getSafeImageSrc } from "@/features/galeri/types";
 import { cn } from "@/lib/utils";
 
 interface GaleriGridViewProps {
@@ -66,7 +66,7 @@ export function GaleriGridView({
               onClick={() => onInspect(item)}
             >
               <Image
-                src={item.thumbnailUrl}
+                src={getSafeImageSrc(item.thumbnailUrl)}
                 alt={item.title}
                 fill
                 loading="lazy"
@@ -101,10 +101,16 @@ export function GaleriGridView({
                     "text-[10px] font-semibold border-0 backdrop-blur-xs shadow-xs",
                     item.status === "PUBLISHED"
                       ? "bg-emerald-600/90 text-white"
-                      : "bg-amber-500/90 text-white",
+                      : item.status === "ARCHIVED"
+                        ? "bg-slate-600/90 text-white"
+                        : "bg-amber-500/90 text-white",
                   )}
                 >
-                  {item.status === "PUBLISHED" ? "Tayang" : "Draf"}
+                  {item.status === "PUBLISHED"
+                    ? "Tayang"
+                    : item.status === "ARCHIVED"
+                      ? "Arsip"
+                      : "Draf"}
                 </Badge>
               </div>
 
@@ -125,7 +131,7 @@ export function GaleriGridView({
                     {item.kategoriKegiatan}
                   </Badge>
                   <span className="font-mono text-[11px] shrink-0">
-                    {item.tanggal}
+                    {formatTanggalIndo(item.tanggal)}
                   </span>
                 </div>
 
@@ -152,21 +158,28 @@ export function GaleriGridView({
               <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
                 {/* Left Quick Actions */}
                 <div className="flex items-center gap-1">
-                  {/* Toggle Spotlight Button */}
+                  {/* Toggle Spotlight Button - Khusus Video */}
                   <Button
                     variant="ghost"
                     size="icon"
+                    disabled={item.type !== "VIDEO" || item.status === "ARCHIVED"}
                     onClick={() => onToggleFeatured(item.id)}
                     title={
-                      item.featured
-                        ? "Hapus dari Spotlight Utama"
-                        : "Jadikan Spotlight Utama"
+                      item.type !== "VIDEO"
+                        ? "Hanya video yang dapat dijadikan spotlight utama"
+                        : item.status === "ARCHIVED"
+                          ? "Item yang diarsipkan tidak dapat dijadikan spotlight"
+                          : item.featured
+                            ? "Hapus dari Spotlight Utama"
+                            : "Jadikan Spotlight Utama"
                     }
                     className={cn(
-                      "size-8 rounded-lg cursor-pointer transition-colors",
-                      item.featured
-                        ? "text-amber-500 hover:text-amber-600 bg-amber-500/10"
-                        : "text-muted-foreground hover:text-foreground",
+                      "size-8 rounded-lg transition-colors",
+                      item.type !== "VIDEO" || item.status === "ARCHIVED"
+                        ? "opacity-30 cursor-not-allowed text-muted-foreground"
+                        : item.featured
+                          ? "text-amber-500 hover:text-amber-600 bg-amber-500/10 cursor-pointer"
+                          : "text-muted-foreground hover:text-foreground cursor-pointer",
                     )}
                   >
                     <Star
@@ -185,7 +198,9 @@ export function GaleriGridView({
                     title={
                       item.status === "PUBLISHED"
                         ? "Ubah jadi Draf"
-                        : "Terbitkan ke Publik"
+                        : item.status === "ARCHIVED"
+                          ? "Terbitkan dari Arsip"
+                          : "Terbitkan ke Publik"
                     }
                     className="size-8 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
                   >

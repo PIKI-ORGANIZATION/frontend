@@ -13,7 +13,7 @@ import { PengurusEditorDialog } from "./components/PengurusEditorDialog";
 import { PengurusDetailDrawer } from "./components/PengurusDetailDrawer";
 import { PengurusGridView } from "./components/PengurusGridView";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import {
   Popover,
@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus,
-  Search,
   Filter,
   Check,
   ChevronDown,
@@ -259,13 +258,12 @@ export default function PengurusCMSPage() {
 
         {/* Search & Popover Status Filter */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md flex items-center">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+          <div className="flex-1 max-w-md">
+            <SearchInput
               placeholder="Cari berdasarkan nama, jabatan, atau bidang..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              onClear={() => setSearchQuery("")}
             />
           </div>
 

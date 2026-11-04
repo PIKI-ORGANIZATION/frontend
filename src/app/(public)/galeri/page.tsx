@@ -13,12 +13,31 @@ import {
   CATEGORIES,
   type CategoryFilter,
   MEDIA_FILTERS,
+  SPOTLIGHT_HERO_IMAGES,
 } from "./data/galeriData";
 import { useGaleri } from "@/features/galeri/hooks/useGaleri";
+import { getSafeImageSrc } from "@/features/galeri/types";
 import { GaleriSpotlight } from "./components/GaleriSpotlight";
 import { GaleriCategoryFilter } from "./components/GaleriCategoryFilter";
 import { GaleriMediaCard } from "./components/GaleriMediaCard";
 import { GaleriLightboxModal } from "./components/GaleriLightboxModal";
+
+// Fallback default spotlight video resmi PIKI (apabila belum ada data yang diisi dari CMS)
+const DEFAULT_SPOTLIGHT_FALLBACK: MediaItem = {
+  id: "spotlight-piki-default",
+  title: "Kongres Nasional DPP PIKI 2024: Membangun Bangsa Berintegritas & Cendekia",
+  deskripsi:
+    "Rekaman paripurna pembukaan Kongres Nasional DPP PIKI yang dihadiri perwakilan DPD dari 34 provinsi, merumuskan arah gerak kebangsaan dan kontribusi cendekiawan Kristen dalam menyongsong Indonesia Emas.",
+  type: "VIDEO",
+  url: "https://www.youtube.com/watch?v=7D_DOAttHLs&t=1515s",
+  thumbnailUrl: "https://img.youtube.com/vi/7D_DOAttHLs/hqdefault.jpg",
+  kategoriKegiatan: "Kongres & Pelantikan",
+  tanggal: "2024-10-15",
+  lokasi: "Grand Sahid Jaya, Jakarta",
+  duration: "25:15",
+  youtubeVideoId: "7D_DOAttHLs",
+  featured: true,
+};
 
 export default function GaleriPage() {
   const { items: allItems } = useGaleri();
@@ -51,13 +70,18 @@ export default function GaleriPage() {
   }, [publishedItems, selectedMediaType, selectedCategory]);
 
   const spotlightItem = useMemo(() => {
-    return publishedItems.find((item) => item.featured) || publishedItems[0];
+    // Spotlight WAJIB berupa VIDEO yang diunggah dan di-set sebagai spotlight (featured) di CMS.
+    // Jika belum ada video di CMS yang di-set sebagai spotlight, tetap gunakan fallback video resmi PIKI.
+    const featuredVideo = publishedItems.find(
+      (item) => item.type === "VIDEO" && item.featured,
+    );
+    return featuredVideo || DEFAULT_SPOTLIGHT_FALLBACK;
   }, [publishedItems]);
 
   const spotlightHeroImages = useMemo(() => {
-    if (publishedItems.length === 0) return undefined;
+    if (publishedItems.length === 0) return SPOTLIGHT_HERO_IMAGES;
     return publishedItems.slice(0, 10).map((i) => ({
-      src: i.thumbnailUrl,
+      src: getSafeImageSrc(i.thumbnailUrl),
       alt: i.title,
     }));
   }, [publishedItems]);

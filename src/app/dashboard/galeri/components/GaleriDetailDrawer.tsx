@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useMemo,
   useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
@@ -16,6 +17,7 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Archive,
   Edit2,
   Trash2,
   Calendar,
@@ -31,7 +33,7 @@ import {
 import { FaInstagram } from "react-icons/fa";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GaleriItem } from "@/features/galeri/types";
+import { GaleriItem, formatTanggalIndo, getSafeImageSrc } from "@/features/galeri/types";
 import { cn } from "@/lib/utils";
 
 interface GaleriDetailDrawerProps {
@@ -221,6 +223,40 @@ export function GaleriDetailDrawer({
     }
   }, [isRendered, handleClose]);
 
+  // Track view mode per item idiomatically without useEffect cascading render
+  const [selectedViewMode, setSelectedViewMode] = useState<{
+    itemId: string;
+    mode: "embed" | "cover";
+  } | null>(null);
+
+  const igViewMode =
+    selectedViewMode && selectedViewMode.itemId === activeItem?.id
+      ? selectedViewMode.mode
+      : "embed";
+
+  const setIgViewMode = (mode: "embed" | "cover") => {
+    if (!activeItem) return;
+    setSelectedViewMode({ itemId: activeItem.id, mode });
+  };
+
+  const igEmbedUrl = useMemo(() => {
+    if (!activeItem || activeItem.type !== "INSTAGRAM") return null;
+    if (activeItem.embedUrl) return activeItem.embedUrl;
+    const targetUrl = activeItem.instagramUrl || activeItem.url || "";
+    const match = targetUrl.match(
+      /instagram\.com\/(?:[\w.]+\/)?(p|reels?|tv)\/([a-zA-Z0-9_-]+)/i,
+    );
+    if (!match) return null;
+    const postType = match[1].toLowerCase().startsWith("reel") ? "reel" : "p";
+    return `https://www.instagram.com/${postType}/${match[2]}/embed`;
+  }, [activeItem]);
+
+  const isVideoFile =
+    Boolean(activeItem) &&
+    activeItem?.type === "VIDEO" &&
+    !activeItem.youtubeVideoId &&
+    Boolean(activeItem?.url);
+
   if (!isMounted || !isRendered || !activeItem) {
     return null;
   }
@@ -305,7 +341,44 @@ export function GaleriDetailDrawer({
         <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
           <div ref={contentRef} className="flex flex-col gap-6 opacity-0">
             {/* Media Hero Showcase */}
-            <div className="rounded-xl overflow-hidden border border-border/80 bg-black shadow-xs aspect-video w-full relative">
+            <div
+              className={cn(
+                "rounded-xl overflow-hidden border border-border/80 bg-black shadow-xs w-full relative transition-all duration-300",
+                activeItem.type === "INSTAGRAM" && igViewMode === "embed"
+                  ? "aspect-4/5 sm:aspect-square max-h-[520px]"
+                  : "aspect-video",
+              )}
+            >
+              {/* Optional view toggle for Instagram items */}
+              {activeItem.type === "INSTAGRAM" && igEmbedUrl && activeItem.thumbnailUrl && (
+                <div className="absolute top-3 right-3 z-20 flex items-center gap-1 p-1 rounded-lg bg-black/75 backdrop-blur-md border border-white/15 text-white shadow-md">
+                  <button
+                    type="button"
+                    onClick={() => setIgViewMode("embed")}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer",
+                      igViewMode === "embed"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-white/80 hover:text-white hover:bg-white/10",
+                    )}
+                  >
+                    Live Embed
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIgViewMode("cover")}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer",
+                      igViewMode === "cover"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-white/80 hover:text-white hover:bg-white/10",
+                    )}
+                  >
+                    Cover Card
+                  </button>
+                </div>
+              )}
+
               {activeItem.type === "VIDEO" && activeItem.youtubeVideoId ? (
                 <iframe
                   src={`https://www.youtube-nocookie.com/embed/${activeItem.youtubeVideoId}?rel=0`}
@@ -313,9 +386,38 @@ export function GaleriDetailDrawer({
                   className="w-full h-full border-0"
                   allowFullScreen
                 />
+              ) : isVideoFile ? (
+                <video
+                  src={activeItem.url}
+                  controls
+                  playsInline
+                  poster={activeItem.thumbnailUrl}
+                  className="w-full h-full object-contain"
+                >
+                  Peramban Anda tidak mendukung pemutar video HTML5.
+                </video>
+              ) : activeItem.type === "INSTAGRAM" ? (
+                igViewMode === "embed" && igEmbedUrl ? (
+                  <iframe
+                    key={igEmbedUrl}
+                    src={igEmbedUrl}
+                    title={activeItem.title}
+                    className="w-full h-full border-0 bg-background"
+                    loading="lazy"
+                  />
+                ) : (
+                  <Image
+                    src={getSafeImageSrc(activeItem.thumbnailUrl)}
+                    alt={activeItem.title}
+                    fill
+                    className="object-cover"
+                    unoptimized={isBlobOrData}
+                    sizes="(max-width: 640px) 100vw, 650px"
+                  />
+                )
               ) : (
                 <Image
-                  src={activeItem.url || activeItem.thumbnailUrl}
+                  src={getSafeImageSrc(activeItem.url || activeItem.thumbnailUrl)}
                   alt={activeItem.title}
                   fill
                   className="object-cover"
@@ -368,13 +470,20 @@ export function GaleriDetailDrawer({
                   "text-[11px] py-0.5",
                   activeItem.status === "PUBLISHED"
                     ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20"
-                    : "text-amber-600 bg-amber-500/10 border-amber-500/20",
+                    : activeItem.status === "ARCHIVED"
+                      ? "text-slate-600 bg-slate-500/10 border-slate-500/20"
+                      : "text-amber-600 bg-amber-500/10 border-amber-500/20",
                 )}
               >
                 {activeItem.status === "PUBLISHED" ? (
                   <>
                     <Eye className="w-3 h-3 mr-1" />
                     Tayang Publik
+                  </>
+                ) : activeItem.status === "ARCHIVED" ? (
+                  <>
+                    <Archive className="w-3 h-3 mr-1" />
+                    Diarsipkan
                   </>
                 ) : (
                   <>
@@ -416,7 +525,7 @@ export function GaleriDetailDrawer({
                       Tanggal Kegiatan
                     </span>
                     <span className="font-medium text-foreground font-mono">
-                      {activeItem.tanggal}
+                      {formatTanggalIndo(activeItem.tanggal, { month: "long" })}
                     </span>
                   </div>
                 </div>
@@ -522,8 +631,22 @@ export function GaleriDetailDrawer({
             <Button
               variant="outline"
               size="sm"
+              disabled={activeItem.type !== "VIDEO" || activeItem.status === "ARCHIVED"}
               onClick={() => onToggleFeatured(activeItem.id)}
-              className="cursor-pointer"
+              title={
+                activeItem.type !== "VIDEO"
+                  ? "Hanya video yang dapat dijadikan spotlight utama"
+                  : activeItem.status === "ARCHIVED"
+                    ? "Item yang diarsipkan tidak dapat dijadikan spotlight"
+                    : activeItem.featured
+                      ? "Hapus dari Spotlight Utama"
+                      : "Jadikan Spotlight Utama"
+              }
+              className={cn(
+                "cursor-pointer",
+                (activeItem.type !== "VIDEO" || activeItem.status === "ARCHIVED") &&
+                  "opacity-40 cursor-not-allowed",
+              )}
             >
               <Star
                 className={cn(
@@ -546,6 +669,11 @@ export function GaleriDetailDrawer({
                 <>
                   <EyeOff className="w-3.5 h-3.5 mr-1.5" />
                   Jadikan Draf
+                </>
+              ) : activeItem.status === "ARCHIVED" ? (
+                <>
+                  <Eye className="w-3.5 h-3.5 mr-1.5" />
+                  Terbitkan
                 </>
               ) : (
                 <>

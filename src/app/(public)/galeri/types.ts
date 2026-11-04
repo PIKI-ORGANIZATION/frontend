@@ -9,12 +9,13 @@ export interface MediaItem {
   type: "PHOTO" | "VIDEO" | "INSTAGRAM";
   url: string;
   thumbnailUrl: string;
+  embedUrl?: string | null;
   kategoriKegiatan: string;
   tanggal: string;
-  lokasi?: string;
-  duration?: string;
-  instagramUrl?: string;
-  youtubeVideoId?: string;
+  lokasi?: string | null;
+  duration?: string | null;
+  instagramUrl?: string | null;
+  youtubeVideoId?: string | null;
   featured?: boolean;
 }
 

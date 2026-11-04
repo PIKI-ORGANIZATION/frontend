@@ -5,10 +5,25 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export type TingkatWilayah = "DPD" | "DPC";
+
 export interface UserPayload {
-  username?: string;
+  sub?: string;
   email?: string;
+  username?: string;
   roles?: string[];
+  permissions?: string[];
+  cabangId?: string | null;
+  cabang?: string | null;
+  isCabang?: boolean | null;
+  tingkat?: TingkatWilayah | null;
+  dpdId?: string | null;
+  dpcId?: number | null;
+  isApprovedByDPC?: boolean;
+  isApprovedByDPP?: boolean;
+  isFromAdmin?: boolean;
+  exp?: number;
+  iat?: number;
   [key: string]: unknown;
 }
 

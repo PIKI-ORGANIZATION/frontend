@@ -42,3 +42,39 @@ export const ROLE_GROUPS = {
     ROLES.MEMBER
   ],
 };
+
+/**
+ * Memeriksa apakah user adalah Super Admin (DPP)
+ */
+export function isSuperAdmin(user: UserPayload | null | undefined): boolean {
+  if (!user) return false;
+  const isSuperRole = hasRole(user, [ROLES.SUPER_ADMIN, ROLES.ADMIN_DPP]);
+  const hasManageAll = user.permissions?.includes("MANAGE_ALL_CABANG");
+  return Boolean(isSuperRole || hasManageAll);
+}
+
+/**
+ * Memeriksa apakah user adalah admin DPD
+ */
+export function isDpdAdmin(user: UserPayload | null | undefined): boolean {
+  return user?.tingkat === "DPD" && Boolean(user?.dpdId);
+}
+
+/**
+ * Memeriksa apakah user adalah admin DPC
+ */
+export function isDpcAdmin(user: UserPayload | null | undefined): boolean {
+  return user?.tingkat === "DPC" && Boolean(user?.dpcId);
+}
+
+/**
+ * Memeriksa apakah user memiliki permission tertentu (Superadmin selalu true)
+ */
+export function hasPermission(
+  user: UserPayload | null | undefined,
+  requiredPermission: string,
+): boolean {
+  if (!user || !user.permissions || !Array.isArray(user.permissions)) return false;
+  if (isSuperAdmin(user)) return true;
+  return user.permissions.includes(requiredPermission);
+}

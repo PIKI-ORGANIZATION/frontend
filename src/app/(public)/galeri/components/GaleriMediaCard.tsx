@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -14,6 +15,7 @@ import {
 import { FaInstagram } from "react-icons/fa";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatTanggalIndo, getSafeImageSrc } from "@/features/galeri/types";
 import type { MediaItem } from "../types";
 
 interface GaleriMediaCardProps {
@@ -22,6 +24,18 @@ interface GaleriMediaCardProps {
 }
 
 export function GaleriMediaCard({ item, onSelect }: GaleriMediaCardProps) {
+  const [hasError, setHasError] = useState(false);
+  const [prevThumbnail, setPrevThumbnail] = useState(item.thumbnailUrl);
+
+  if (prevThumbnail !== item.thumbnailUrl) {
+    setPrevThumbnail(item.thumbnailUrl);
+    setHasError(false);
+  }
+
+  const safeSrc = hasError
+    ? "/footage/image1.webp"
+    : getSafeImageSrc(item.thumbnailUrl);
+
   return (
     <Card
       role="button"
@@ -39,12 +53,13 @@ export function GaleriMediaCard({ item, onSelect }: GaleriMediaCardProps) {
       {/* Media Thumbnail with Modern Web Guidance Aspect-Ratio & Lazy Load */}
       <div className="relative aspect-4/3 w-full overflow-hidden bg-muted">
         <Image
-          src={item.thumbnailUrl}
+          src={safeSrc}
           alt={item.title}
           fill
           loading="lazy"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={() => setHasError(true)}
         />
 
         {/* Top Badges */}
@@ -130,7 +145,7 @@ export function GaleriMediaCard({ item, onSelect }: GaleriMediaCardProps) {
         <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground font-mono">
           <span className="flex items-center gap-1">
             <Calendar className="size-3" />
-            {item.tanggal}
+            {formatTanggalIndo(item.tanggal)}
           </span>
           {item.lokasi && (
             <span className="truncate max-w-[130px] flex items-center gap-1">

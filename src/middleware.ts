@@ -17,6 +17,21 @@ export function middleware(request: NextRequest) {
   let user = null;
   if (token) {
     user = decodeToken(token);
+
+    // Cek apakah token sudah expired berdasarkan claim exp JWT (exp dalam detik)
+    if (user?.exp && Date.now() >= user.exp * 1000) {
+      if (isDashboard || isPortal) {
+        const response = NextResponse.redirect(
+          new URL("/login?expired=true", request.url),
+        );
+        response.cookies.delete("token");
+        return response;
+      }
+      // Di halaman auth/publik, bersihkan cookie yang sudah basi
+      const response = NextResponse.next();
+      response.cookies.delete("token");
+      return response;
+    }
   }
 
   const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);

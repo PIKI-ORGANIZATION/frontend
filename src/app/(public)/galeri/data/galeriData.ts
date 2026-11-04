@@ -33,13 +33,13 @@ export const GALLERY_DATA: MediaItem[] = [
     deskripsi:
       "Rekaman paripurna pembukaan Kongres Nasional DPP PIKI yang dihadiri perwakilan DPD dari 34 provinsi, merumuskan arah gerak kebangsaan dan kontribusi cendekiawan Kristen dalam menyongsong Indonesia Emas.",
     type: "VIDEO",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    thumbnailUrl: "/footage/image1.webp",
+    url: "https://www.youtube.com/watch?v=7D_DOAttHLs&t=1515s",
+    thumbnailUrl: "https://img.youtube.com/vi/7D_DOAttHLs/hqdefault.jpg",
     kategoriKegiatan: "Kongres & Pelantikan",
     tanggal: "15 Oktober 2024",
     lokasi: "Grand Sahid Jaya, Jakarta",
-    duration: "14:32",
-    youtubeVideoId: "dQw4w9WgXcQ",
+    duration: "25:15",
+    youtubeVideoId: "7D_DOAttHLs",
     featured: true,
   },
   {
@@ -160,8 +160,12 @@ export const INSTAGRAM_PREVIEWS = [
 
 export const SPOTLIGHT_HERO_IMAGES = [
   {
-    src: "/footage/image1.webp",
+    src: "https://img.youtube.com/vi/7D_DOAttHLs/hqdefault.jpg",
     alt: "Kongres Nasional DPP PIKI 2024",
+  },
+  {
+    src: "/footage/image1.webp",
+    alt: "Dokumentasi Kongres PIKI",
   },
   {
     src: "/footage/image2.jpeg",
