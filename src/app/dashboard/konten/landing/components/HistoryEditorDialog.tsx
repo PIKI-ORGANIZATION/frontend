@@ -34,13 +34,13 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface HistoryEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event?: HistoryEvent | null;
-  onSave: (data: HistoryEvent) => void;
+  onSave: (data: HistoryEvent) => void | Promise<void>;
+  onUploadPhoto?: (file: File) => Promise<string>;
 }
 
 const FOOTAGE_PRESETS = [
@@ -53,10 +53,12 @@ function HistoryForm({
   event,
   onOpenChange,
   onSave,
+  onUploadPhoto,
 }: {
   event?: HistoryEvent | null;
   onOpenChange: (open: boolean) => void;
-  onSave: (data: HistoryEvent) => void;
+  onSave: (data: HistoryEvent) => void | Promise<void>;
+  onUploadPhoto?: (file: File) => Promise<string>;
 }) {
   const isEditing = Boolean(event);
 
@@ -97,26 +99,31 @@ function HistoryForm({
 
     try {
       let uploadedUrl = "";
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const token = Cookies.get("token");
+      if (onUploadPhoto) {
+        uploadedUrl = await onUploadPhoto(file);
+      } else {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const token = Cookies.get("token");
 
-      if (apiUrl) {
-        const formData = new FormData();
-        formData.append("file", file);
-        try {
-          const res = await fetch(`${apiUrl}/upload`, {
-            method: "POST",
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            body: formData,
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.url) uploadedUrl = data.url;
-          }
-        } catch {}
+        if (apiUrl) {
+          const formData = new FormData();
+          formData.append("file", file);
+          try {
+            const res = await fetch(`${apiUrl}/upload`, {
+              method: "POST",
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              body: formData,
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.url) uploadedUrl = data.url;
+              if (data.data?.url) uploadedUrl = data.data.url;
+            }
+          } catch {}
+        }
       }
 
-      // Fallback base64 data URL untuk dummy/offline preview
+      // Fallback base64 data URL untuk offline preview jika API gagal
       if (!uploadedUrl) {
         uploadedUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -128,8 +135,10 @@ function HistoryForm({
 
       setImage(uploadedUrl);
       toast.success("Foto dokumentasi berhasil dimuat.");
-    } catch {
-      toast.error("Gagal memproses berkas foto.");
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : "Gagal memproses berkas foto.",
+      );
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -442,6 +451,7 @@ export function HistoryEditorDialog({
   onOpenChange,
   event,
   onSave,
+  onUploadPhoto,
 }: HistoryEditorDialogProps) {
   const isEditing = Boolean(event);
 
@@ -463,6 +473,7 @@ export function HistoryEditorDialog({
           event={event}
           onOpenChange={onOpenChange}
           onSave={onSave}
+          onUploadPhoto={onUploadPhoto}
         />
       </DialogContent>
     </Dialog>

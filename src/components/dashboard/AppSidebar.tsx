@@ -127,6 +127,12 @@ const adminNavGroups: NavGroupData[] = [
         ],
       },
       {
+        id: "manajemen-wilayah",
+        title: "Wilayah & Cabang",
+        icon: Network,
+        url: "/dashboard/wilayah",
+      },
+      {
         id: "manajemen-konten",
         title: "Manajemen Konten",
         icon: FileText,

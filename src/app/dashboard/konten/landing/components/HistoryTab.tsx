@@ -26,26 +26,38 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
+import { getSafeImageSrc } from "@/features/galeri/types";
 
 interface HistoryTabProps {
-  events: HistoryEvent[];
-  setEvents: React.Dispatch<React.SetStateAction<HistoryEvent[]>>;
+  events?: HistoryEvent[];
+  setEvents?: React.Dispatch<React.SetStateAction<HistoryEvent[]>>;
 }
 
-export function HistoryTab({ events, setEvents }: HistoryTabProps) {
+export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
+  const {
+    events: remoteEvents,
+    isLoading,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    uploadFoto,
+  } = useSejarah({ fixed: "all", fallbackIfEmpty: false });
+
+  // Gunakan propEvents jika disediakan, atau gunakan remoteEvents dari API
+  const effectiveEvents = propEvents && setEvents ? propEvents : remoteEvents;
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "ALL" | "PUBLISHED" | "DRAFT"
   >("ALL");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<HistoryEvent | null>(null);
-  const [selectedPreviewId, setSelectedPreviewId] = useState<string>(
-    events[0]?.id || "",
-  );
+  const [selectedPreviewId, setSelectedPreviewId] = useState<string>("");
 
   // Filtered dataset
   const filteredEvents = useMemo(() => {
-    return events
+    return effectiveEvents
       .filter((item) => {
         const matchesStatus =
           statusFilter === "ALL" || item.status === statusFilter;
@@ -58,16 +70,15 @@ export function HistoryTab({ events, setEvents }: HistoryTabProps) {
         return matchesStatus && matchesSearch;
       })
       .sort((a, b) => a.order - b.order);
-  }, [events, search, statusFilter]);
+  }, [effectiveEvents, search, statusFilter]);
 
   const activePreviewEvent = useMemo(() => {
-    return (
-      events.find((e) => e.id === selectedPreviewId) ||
-      filteredEvents[0] ||
-      events[0] ||
-      null
-    );
-  }, [events, selectedPreviewId, filteredEvents]);
+    if (selectedPreviewId) {
+      const found = effectiveEvents.find((e) => e.id === selectedPreviewId);
+      if (found) return found;
+    }
+    return filteredEvents[0] || effectiveEvents[0] || null;
+  }, [effectiveEvents, selectedPreviewId, filteredEvents]);
 
   const handleOpenAdd = () => {
     setEditingEvent(null);
@@ -79,50 +90,58 @@ export function HistoryTab({ events, setEvents }: HistoryTabProps) {
     setEditorOpen(true);
   };
 
-  const handleToggleStatus = (id: string) => {
-    setEvents((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const newStatus = item.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
-          toast.success(
-            `Status "${item.title}" diubah menjadi ${
-              newStatus === "PUBLISHED" ? "Tayang (Published)" : "Draf (Draft)"
-            }`,
-          );
-          return {
-            ...item,
-            status: newStatus,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return item;
-      }),
-    );
-  };
-
-  const handleDelete = (id: string, title: string) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus peristiwa "${title}"?`)) {
-      setEvents((prev) => prev.filter((item) => item.id !== id));
-      toast.success(`Tonggak sejarah "${title}" berhasil dihapus.`);
+  const handleToggleStatus = async (item: HistoryEvent) => {
+    const newStatus = item.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+    if (setEvents) {
+      setEvents((prev) =>
+        prev.map((e) => (e.id === item.id ? { ...e, status: newStatus } : e)),
+      );
+    }
+    try {
+      await updateEvent(item.id, { status: newStatus });
+      toast.success(
+        `Status "${item.title}" diubah menjadi ${
+          newStatus === "PUBLISHED" ? "Tayang (Published)" : "Draf (Draft)"
+        }`,
+      );
+    } catch {
+      // Toast error dikelola oleh hook
     }
   };
 
-  const handleSaveEvent = (savedEvent: HistoryEvent) => {
-    setEvents((prev) => {
-      const exists = prev.some((item) => item.id === savedEvent.id);
-      if (exists) {
-        toast.success(`Data "${savedEvent.title}" berhasil diperbarui.`);
-        return prev.map((item) =>
-          item.id === savedEvent.id ? savedEvent : item,
-        );
-      } else {
-        toast.success(
-          `Tonggak sejarah baru "${savedEvent.title}" berhasil ditambahkan.`,
-        );
-        return [...prev, savedEvent];
+  const handleDelete = async (id: string, title: string) => {
+    if (confirm(`Apakah Anda yakin ingin menonaktifkan peristiwa "${title}"?`)) {
+      if (setEvents) {
+        setEvents((prev) => prev.filter((item) => item.id !== id));
       }
-    });
-    setSelectedPreviewId(savedEvent.id);
+      try {
+        await deleteEvent(id);
+      } catch {
+        // Toast error dikelola oleh hook
+      }
+    }
+  };
+
+  const handleSaveEvent = async (savedEvent: HistoryEvent) => {
+    try {
+      if (editingEvent) {
+        await updateEvent(editingEvent.id, savedEvent);
+      } else {
+        await addEvent(savedEvent);
+      }
+      if (setEvents) {
+        setEvents((prev) => {
+          const exists = prev.some((item) => item.id === savedEvent.id);
+          return exists
+            ? prev.map((item) => (item.id === savedEvent.id ? savedEvent : item))
+            : [...prev, savedEvent];
+        });
+      }
+      setSelectedPreviewId(savedEvent.id);
+      setEditorOpen(false);
+    } catch {
+      // Toast error dikelola oleh hook
+    }
   };
 
   return (
@@ -183,7 +202,19 @@ export function HistoryTab({ events, setEvents }: HistoryTabProps) {
             </span>
           </div>
 
-          {filteredEvents.length === 0 ? (
+          {isLoading && effectiveEvents.length === 0 ? (
+            <div className="p-6 space-y-4">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx} className="flex items-center gap-4 animate-pulse">
+                  <div className="w-12 h-12 rounded bg-muted/60 shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-muted/60 rounded w-1/4" />
+                    <div className="h-3 bg-muted/40 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredEvents.length === 0 ? (
             <div className="p-12 text-center text-xs text-muted-foreground space-y-2">
               <Clock className="w-8 h-8 text-muted-foreground/40 mx-auto" />
               <p className="font-medium text-foreground">
@@ -194,7 +225,7 @@ export function HistoryTab({ events, setEvents }: HistoryTabProps) {
           ) : (
             <div className="divide-y divide-border/60">
               {filteredEvents.map((item) => {
-                const isSelected = item.id === selectedPreviewId;
+                const isSelected = item.id === (activePreviewEvent?.id || selectedPreviewId);
                 return (
                   <div
                     key={item.id}
@@ -209,7 +240,7 @@ export function HistoryTab({ events, setEvents }: HistoryTabProps) {
                       {/* Thumbnail Footage */}
                       <div className="w-12 h-12 rounded-sm bg-muted overflow-hidden shrink-0 border border-border/70 relative">
                         <Image
-                          src={item.image}
+                          src={getSafeImageSrc(item.image, "/footage/image1.webp")}
                           alt={item.title}
                           fill
                           sizes="48px"
@@ -261,7 +292,7 @@ export function HistoryTab({ events, setEvents }: HistoryTabProps) {
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleToggleStatus(item.id);
+                          handleToggleStatus(item);
                         }}
                         title={
                           item.status === "PUBLISHED"
@@ -330,6 +361,7 @@ export function HistoryTab({ events, setEvents }: HistoryTabProps) {
         onOpenChange={setEditorOpen}
         event={editingEvent}
         onSave={handleSaveEvent}
+        onUploadPhoto={uploadFoto}
       />
     </div>
   );

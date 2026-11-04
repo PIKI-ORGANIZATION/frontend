@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { useGetAnggotaDetail } from "@/hooks/api/useAnggota";
 import {
   Loader2,
@@ -23,10 +24,11 @@ import {
   AlertCircle,
   Heart,
   Quote,
+  Shield,
 } from "lucide-react";
+import { AssignAdminCabangDialog } from "./AssignAdminCabangDialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
   Accordion,
@@ -73,6 +75,7 @@ const InfoItem = ({
 
 export function AnggotaDetailModal({ uuid, onClose }: AnggotaDetailModalProps) {
   const { data, isLoading, error } = useGetAnggotaDetail(uuid);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   console.log("DATA >>>>>", data);
 
@@ -130,7 +133,7 @@ export function AnggotaDetailModal({ uuid, onClose }: AnggotaDetailModalProps) {
     if (!dateString) return "-";
     try {
       return format(new Date(dateString), "dd MMMM yyyy", { locale: id });
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };
@@ -228,6 +231,20 @@ export function AnggotaDetailModal({ uuid, onClose }: AnggotaDetailModalProps) {
                       </p>
                     </div>
                   </div>
+
+                  {/* Tombol Penetapan Admin Wilayah */}
+                  {anggota.akun && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAssignDialogOpen(true)}
+                      className="w-full text-xs gap-1.5 font-medium border-primary/30 hover:bg-primary/10 text-primary mt-2"
+                    >
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>Tugaskan Admin Wilayah</span>
+                    </Button>
+                  )}
                 </div>
 
                 {/* Bio Section in Sidebar */}
@@ -566,6 +583,11 @@ export function AnggotaDetailModal({ uuid, onClose }: AnggotaDetailModalProps) {
           </div>
         </div>
       </DialogContent>
+      <AssignAdminCabangDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        anggota={anggota}
+      />
     </Dialog>
   );
 }

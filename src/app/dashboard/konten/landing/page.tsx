@@ -3,11 +3,10 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  initialHistoryEvents,
   initialHeroContent,
   initialAboutVisionContent,
 } from "./data/dummyLandingData";
-import { HistoryEvent, HeroContent, AboutVisionContent } from "./types";
+import { HeroContent, AboutVisionContent } from "./types";
 import { HistoryTab } from "./components/HistoryTab";
 import { HeroSectionTab } from "./components/HeroSectionTab";
 import { AboutVisionTab } from "./components/AboutVisionTab";
@@ -25,22 +24,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
+
 const STORAGE_KEYS = {
-  HISTORY: "piki_cms_landing_history_v1",
   HERO: "piki_cms_landing_hero_v1",
   ABOUT_VISION: "piki_cms_landing_about_vision_v1",
 };
 
 export default function CmsLandingPage() {
-  const [historyEvents, setHistoryEvents] = useState<HistoryEvent[]>(() => {
-    if (typeof window === "undefined") return initialHistoryEvents;
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.HISTORY);
-      return saved ? JSON.parse(saved) : initialHistoryEvents;
-    } catch {
-      return initialHistoryEvents;
-    }
-  });
+  const { events: historyEvents } = useSejarah({ fixed: "all" });
 
   const [heroContent, setHeroContent] = useState<HeroContent>(() => {
     if (typeof window === "undefined") return initialHeroContent;
@@ -63,13 +55,6 @@ export default function CmsLandingPage() {
       }
     });
 
-  // Sync to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(historyEvents));
-    } catch {}
-  }, [historyEvents]);
-
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEYS.HERO, JSON.stringify(heroContent));
@@ -88,16 +73,14 @@ export default function CmsLandingPage() {
   const handleResetAll = () => {
     if (
       confirm(
-        "Apakah Anda yakin ingin mengembalikan seluruh data Landing Page ke pengaturan bawaan default?",
+        "Apakah Anda yakin ingin mengembalikan form Hero dan Visi-Misi ke pengaturan bawaan default?",
       )
     ) {
-      setHistoryEvents(initialHistoryEvents);
       setHeroContent(initialHeroContent);
       setAboutVisionContent(initialAboutVisionContent);
-      localStorage.removeItem(STORAGE_KEYS.HISTORY);
       localStorage.removeItem(STORAGE_KEYS.HERO);
       localStorage.removeItem(STORAGE_KEYS.ABOUT_VISION);
-      toast.success("Seluruh data CMS Landing Page dikembalikan ke default.");
+      toast.success("Data Hero dan Visi-Misi dikembalikan ke default.");
     }
   };
 
@@ -184,7 +167,7 @@ export default function CmsLandingPage() {
           value="history"
           className="focus-visible:outline-none space-y-4"
         >
-          <HistoryTab events={historyEvents} setEvents={setHistoryEvents} />
+          <HistoryTab />
         </TabsContent>
 
         {/* Tab 2: Hero Section */}

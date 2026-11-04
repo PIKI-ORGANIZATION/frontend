@@ -4,46 +4,19 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import Image from "next/image";
-
-const HISTORY_TIMELINE = [
-  {
-    year: "1963",
-    title: "Lahirnya PIKI",
-    desc: "Berdiri di Jakarta atas kesadaran pentingnya partisipasi cendekiawan Kristen dalam pembangunan bangsa dan negara.",
-    image: "/footage/image1.webp",
-  },
-  {
-    year: "1970",
-    title: "Konsolidasi Organisasi",
-    desc: "Membentuk cabang-cabang (DPC) dan daerah (DPD) di berbagai provinsi untuk memperluas jangkauan pelayanan ke seluruh pelosok negeri.",
-    image: "/footage/image2.jpeg",
-  },
-  {
-    year: "1998",
-    title: "Era Reformasi",
-    desc: "PIKI turut aktif menyuarakan pembaruan dan demokratisasi melalui berbagai kajian lintas disiplin dan pernyataan sikap organisasi.",
-    image: "/footage/image3.jpg",
-  },
-  {
-    year: "2010",
-    title: "Program Revitalisasi",
-    desc: "Fokus pada pemberdayaan generasi muda dan profesional Kristen untuk menjawab tantangan era globalisasi dan digital.",
-    image: "/footage/image1.webp",
-  },
-  {
-    year: "2024",
-    title: "Transformasi Digital",
-    desc: "Peluncuran Sistem CMS Nasional & Satu Data PIKI untuk manajemen keanggotaan terpusat dan penerbitan KTA Digital otomatis.",
-    image: "/footage/image2.jpeg",
-  },
-];
+import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
+import { getSafeImageSrc } from "@/features/galeri/types";
 
 export function HistorySection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
+  // Ambil data sejarah aktif dari API backend dengan fallback otomatis
+  const { events } = useSejarah({ fallbackIfEmpty: true });
+
   useEffect(() => {
+    if (events.length === 0) return;
     gsap.registerPlugin(ScrollTrigger);
     if (!containerRef.current || !wrapperRef.current) return;
 
@@ -162,7 +135,7 @@ export function HistorySection() {
     });
 
     return () => mm.revert();
-  }, []);
+  }, [events]);
 
   return (
     <section
@@ -182,14 +155,14 @@ export function HistorySection() {
           ref={wrapperRef}
           className="flex gap-6 md:gap-24 w-max h-full items-start px-6 md:px-[10vw] pt-28 md:pt-48 pb-12 md:pb-0"
         >
-          {HISTORY_TIMELINE.map((item, i) => (
+          {events.map((item, i) => (
             <div
-              key={i}
+              key={item.id || i}
               className="history-card w-[85vw] md:w-[60vw] lg:w-[45vw] flex flex-col justify-start snap-center shrink-0 group"
             >
               <div className="relative w-full aspect-[16/10] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden mb-6 md:mb-8 shadow-2xl">
                 <Image
-                  src={item.image}
+                  src={getSafeImageSrc(item.image, "/footage/image1.webp")}
                   alt={item.title}
                   fill
                   className="history-img object-cover transition-transform duration-700 group-hover:scale-105 grayscale"

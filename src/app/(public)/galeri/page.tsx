@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import type { MediaType, MediaItem } from "./types";
 import {
   CATEGORIES,
-  type CategoryFilter,
   MEDIA_FILTERS,
   SPOTLIGHT_HERO_IMAGES,
 } from "./data/galeriData";
@@ -40,11 +39,11 @@ const DEFAULT_SPOTLIGHT_FALLBACK: MediaItem = {
 };
 
 export default function GaleriPage() {
-  const { items: allItems } = useGaleri();
+  const { items: allItems, isLoading } = useGaleri({ fetchStats: false });
 
   const [selectedMediaType, setSelectedMediaType] = useState<MediaType>("ALL");
   const [selectedCategory, setSelectedCategory] =
-    useState<CategoryFilter>("Semua Kegiatan");
+    useState<string>("Semua Kegiatan");
   const [lightboxItem, setLightboxItem] = useState<MediaItem | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
 
@@ -52,6 +51,21 @@ export default function GaleriPage() {
   const publishedItems = useMemo(() => {
     return allItems.filter((i) => i.status === "PUBLISHED");
   }, [allItems]);
+
+  // Dynamic activity categories derived from published items + base categories
+  const dynamicCategories = useMemo(() => {
+    const set = new Set<string>();
+    set.add("Semua Kegiatan");
+    CATEGORIES.forEach((c) => {
+      if (c !== "Semua Kegiatan") set.add(c);
+    });
+    publishedItems.forEach((item) => {
+      if (item.kategoriKegiatan && item.kategoriKegiatan.trim()) {
+        set.add(item.kategoriKegiatan.trim());
+      }
+    });
+    return Array.from(set);
+  }, [publishedItems]);
 
   // Filtered media items based on media type & searchable activity category
   const filteredItems = useMemo(() => {
@@ -179,7 +193,7 @@ export default function GaleriPage() {
               {filteredItems.length} media
             </span>
             <GaleriCategoryFilter
-              categories={CATEGORIES}
+              categories={dynamicCategories}
               selectedCategory={selectedCategory}
               onSelectCategory={setSelectedCategory}
             />
@@ -188,7 +202,31 @@ export default function GaleriPage() {
 
         {/* 4. Multimedia Grid with Reference PopLayout Card Animations */}
         <div className="min-h-[40vh]">
-          {filteredItems.length === 0 ? (
+          {isLoading ? (
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+              aria-label="Memuat galeri..."
+              role="status"
+            >
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-border/50 bg-card overflow-hidden animate-pulse flex flex-col"
+                >
+                  <div className="aspect-4/3 w-full bg-muted/60" />
+                  <div className="p-5 space-y-3 flex-1">
+                    <div className="h-4 bg-muted/60 rounded w-1/3" />
+                    <div className="h-5 bg-muted/80 rounded w-3/4" />
+                    <div className="h-3 bg-muted/50 rounded w-full" />
+                    <div className="flex gap-2 pt-2">
+                      <div className="h-3 bg-muted/40 rounded w-1/4" />
+                      <div className="h-3 bg-muted/40 rounded w-1/4" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="py-20 text-center rounded-2xl border border-dashed border-border bg-card/50 flex flex-col items-center justify-center gap-3">
               <Camera className="w-10 h-10 text-muted-foreground/40" />
               <h4 className="text-base font-semibold text-foreground">
@@ -226,7 +264,10 @@ export default function GaleriPage() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: Math.min(index * 0.03, 0.3),
+                    }}
                     role="listitem"
                   >
                     <GaleriMediaCard item={item} onSelect={setLightboxItem} />

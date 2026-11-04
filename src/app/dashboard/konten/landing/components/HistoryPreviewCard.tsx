@@ -5,6 +5,7 @@ import Image from "next/image";
 import { HistoryEvent } from "../types";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, User, Eye } from "lucide-react";
+import { getSafeImageSrc } from "@/features/galeri/types";
 
 interface HistoryPreviewCardProps {
   event: HistoryEvent;
@@ -34,7 +35,7 @@ export function HistoryPreviewCard({ event }: HistoryPreviewCardProps) {
         {/* Gambar Latar dengan Overlay Gradien */}
         <div className="relative h-48 w-full overflow-hidden bg-muted">
           <Image
-            src={event.image}
+            src={getSafeImageSrc(event.image, "/footage/image1.webp")}
             alt={event.title}
             fill
             sizes="(max-width: 768px) 100vw, 400px"

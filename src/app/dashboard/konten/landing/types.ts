@@ -1,17 +1,4 @@
-export interface HistoryEvent {
-  id: string;
-  year: string;
-  title: string;
-  desc: string;
-  fullNarrative?: string;
-  image: string;
-  location?: string;
-  keyFigure?: string;
-  order: number;
-  status: "PUBLISHED" | "DRAFT";
-  createdAt: string;
-  updatedAt: string;
-}
+export type { HistoryEvent } from "@/features/sejarah/types";
 
 export interface HeroContent {
   eyebrow: string;

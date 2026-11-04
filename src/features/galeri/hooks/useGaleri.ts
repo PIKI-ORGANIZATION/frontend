@@ -27,6 +27,7 @@ export interface GaleriFilterParams {
   currentPage?: number;
   pageSize?: number;
   fixed?: "all";
+  fetchStats?: boolean;
 }
 
 /**
@@ -104,7 +105,9 @@ export function useGaleri(filters?: GaleriFilterParams) {
     staleTime: 30 * 1000,
   });
 
-  // 2. Fetch Statistik Galeri
+  // 2. Fetch Statistik Galeri (Hanya dijalankan jika fetchStats diaktifkan)
+  const shouldFetchStats = filters?.fetchStats ?? true;
+
   const {
     data: apiStatsData,
     isLoading: isStatsLoading,
@@ -122,6 +125,7 @@ export function useGaleri(filters?: GaleriFilterParams) {
         return null;
       }
     },
+    enabled: shouldFetchStats,
     staleTime: 30 * 1000,
   });
 
@@ -295,6 +299,26 @@ export function useGaleri(filters?: GaleriFilterParams) {
     },
   });
 
+  // 7b. Mutasi Arsip Media
+  const archiveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiFetch<{ success: boolean; data: GaleriItem }>(
+        `/galeri/${id}/archive`,
+        {
+          method: "POST",
+        },
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateGaleri();
+      toast.success("Dokumentasi berhasil diarsipkan.");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal mengarsipkan dokumentasi");
+    },
+  });
+
   // 8. Upload Foto (Maksimal 5MB)
   const uploadFoto = useCallback(async (file: File): Promise<string> => {
     if (file.size > 5 * 1024 * 1024) {
@@ -397,6 +421,13 @@ export function useGaleri(filters?: GaleriFilterParams) {
     [deleteMutation],
   );
 
+  const archiveMedia = useCallback(
+    (id: string) => {
+      return archiveMutation.mutateAsync(id);
+    },
+    [archiveMutation],
+  );
+
   return {
     items,
     pagination,
@@ -409,6 +440,7 @@ export function useGaleri(filters?: GaleriFilterParams) {
     addMedia,
     updateMedia,
     deleteMedia,
+    archiveMedia,
     toggleStatus,
     toggleFeatured,
     uploadFoto,
@@ -417,6 +449,7 @@ export function useGaleri(filters?: GaleriFilterParams) {
     isSubmitting:
       addMutation.isPending ||
       updateMutation.isPending ||
-      deleteMutation.isPending,
+      deleteMutation.isPending ||
+      archiveMutation.isPending,
   };
 }

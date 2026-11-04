@@ -301,6 +301,7 @@ function GaleriEditorForm({
     } finally {
       setIsUploading(false);
       setUploadMessage(null);
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -315,6 +316,7 @@ function GaleriEditorForm({
       toast.error(
         "Ukuran file video melebihi batas 50MB. Harap kompres video atau gunakan tautan YouTube.",
       );
+      if (e.target) e.target.value = "";
       return;
     }
 
@@ -337,6 +339,7 @@ function GaleriEditorForm({
     } finally {
       setIsUploading(false);
       setUploadMessage(null);
+      if (e.target) e.target.value = "";
     }
   };
 
@@ -360,6 +363,7 @@ function GaleriEditorForm({
     } finally {
       setIsUploading(false);
       setUploadMessage(null);
+      if (e.target) e.target.value = "";
     }
   };
 

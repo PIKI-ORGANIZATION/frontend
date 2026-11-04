@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -62,33 +62,36 @@ export default function VerifikasiPage() {
     setIsReviewOpen(true);
   };
 
-  const handleProcess = (
-    id: string,
-    status: "APPROVED_DPP" | "REJECTED",
-    catatanVerifikasi?: string,
-  ) => {
-    setProcessingId(id);
-    processVerifikasi(
-      { id, status, catatanVerifikasi },
-      {
-        onSuccess: () => {
-          toast.success(
-            status === "APPROVED_DPP"
-              ? "Pendaftaran berhasil disetujui & KTA diterbitkan."
-              : "Pendaftaran telah ditolak.",
-          );
-          setProcessingId(null);
-          setIsReviewOpen(false);
+  const handleProcess = useCallback(
+    (
+      id: string,
+      action: "APPROVE" | "REJECT",
+      catatanVerifikasi?: string,
+    ) => {
+      setProcessingId(id);
+      processVerifikasi(
+        { id, action, catatanVerifikasi },
+        {
+          onSuccess: () => {
+            toast.success(
+              action === "APPROVE"
+                ? "Pendaftaran berhasil disetujui & KTA diterbitkan."
+                : "Pendaftaran telah ditolak.",
+            );
+            setProcessingId(null);
+            setIsReviewOpen(false);
+          },
+          onError: (err) => {
+            toast.error(err.message || "Gagal memproses verifikasi");
+            setProcessingId(null);
+          },
         },
-        onError: (err) => {
-          toast.error(err.message || "Gagal memproses verifikasi");
-          setProcessingId(null);
-        },
-      },
-    );
-  };
+      );
+    },
+    [processVerifikasi],
+  );
 
-  const registrasiList = data?.data || [];
+  const registrasiList = useMemo(() => data?.data || [], [data?.data]);
 
   // Filter client-side berdasarkan pencarian nama, email, atau no WA
   const filteredList = useMemo(() => {
@@ -175,15 +178,27 @@ export default function VerifikasiPage() {
         ),
         cell: ({ row }) => {
           const item = row.original;
-          const namaCabang = item.cabang?.namaCabang || item.dpc || "-";
-          const prov = item.cabang?.provinsi || item.dpp || "";
+          const namaCabang = item.dpc || item.cabang?.namaCabang || "-";
+          const prov = item.dpd || item.cabang?.provinsi || item.dpp || "";
           return (
             <div className="flex flex-col text-xs">
-              <span className="font-medium text-foreground">{namaCabang}</span>
+              <div className="flex items-center gap-1.5 font-medium text-foreground">
+                <span>{namaCabang}</span>
+                {item.kode_kabupaten && (
+                  <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1 rounded">
+                    {item.kode_kabupaten}
+                  </span>
+                )}
+              </div>
               {prov && (
-                <span className="text-muted-foreground text-[11px]">
-                  {prov}
-                </span>
+                <div className="flex items-center gap-1 text-muted-foreground text-[11px] mt-0.5">
+                  <span>{prov}</span>
+                  {item.kode_provinsi && (
+                    <span className="text-[9px] font-mono opacity-80">
+                      ({item.kode_provinsi})
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           );
@@ -217,15 +232,28 @@ export default function VerifikasiPage() {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Status" />
         ),
-        cell: () => (
-          <Badge
-            variant="secondary"
-            className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-medium text-xs flex items-center gap-1 w-fit"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
-            Menunggu DPP
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          const status = item.statusVerifikasi || "";
+          const isPending = status.startsWith("PENDING");
+          return (
+            <Badge
+              variant="secondary"
+              className={
+                isPending
+                  ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-medium text-xs flex items-center gap-1 w-fit"
+                  : status.startsWith("APPROVED")
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium text-xs flex items-center gap-1 w-fit"
+                  : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 font-medium text-xs flex items-center gap-1 w-fit"
+              }
+            >
+              {isPending && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />}
+              {status === "PENDING_VERIFIKASI_DPP"
+                ? "Menunggu Verifikasi"
+                : status.replace(/_/g, " ")}
+            </Badge>
+          );
+        },
       },
       {
         id: "berkas",
@@ -274,7 +302,7 @@ export default function VerifikasiPage() {
               <Button
                 size="sm"
                 disabled={isCurrentPending}
-                onClick={() => handleProcess(item.id, "APPROVED_DPP")}
+                onClick={() => handleProcess(item.id, "APPROVE")}
                 className="h-8 px-2.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 {isCurrentPending ? (
@@ -289,7 +317,7 @@ export default function VerifikasiPage() {
         },
       },
     ],
-    [isPending, processingId],
+    [isPending, processingId, handleProcess],
   );
 
   const table = useReactTable({
@@ -439,8 +467,8 @@ export default function VerifikasiPage() {
         selectedItem={selectedItem}
         isPending={isPending}
         processingId={processingId}
-        onApprove={(id) => handleProcess(id, "APPROVED_DPP")}
-        onReject={(id, reason) => handleProcess(id, "REJECTED", reason)}
+        onApprove={(id) => handleProcess(id, "APPROVE")}
+        onReject={(id, reason) => handleProcess(id, "REJECT", reason)}
       />
     </div>
   );

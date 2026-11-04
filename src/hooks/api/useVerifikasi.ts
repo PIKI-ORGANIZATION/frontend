@@ -1,7 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Cookies from "js-cookie";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+import { apiFetch } from "@/lib/api";
 
 export interface RegistrasiItem {
   id: string;
@@ -9,9 +7,14 @@ export interface RegistrasiItem {
   email: string;
   noWa: string;
   statusVerifikasi: string;
-  dpp: string;
-  dpc: string;
-  cabang: {
+  statusPembayaran?: string | null;
+  dpd?: string | null;
+  dpc?: string | null;
+  kode_provinsi?: string | null;
+  kode_kabupaten?: string | null;
+  kotaDomisili?: string | null;
+  dpp?: string;
+  cabang?: {
     namaCabang: string;
     provinsi: string;
   } | null;
@@ -20,23 +23,26 @@ export interface RegistrasiItem {
   buktiBayarUrl?: string | null;
 }
 
-export function useGetRegistrasiPending() {
+export interface RegistrasiListResponse {
+  success: boolean;
+  data: RegistrasiItem[];
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
+
+export function useGetRegistrasiPending(statusVerifikasi: string = "PENDING_VERIFIKASI_DPP") {
   return useQuery({
-    queryKey: ["registrasi", "pending"],
+    queryKey: ["registrasi", "pending", statusVerifikasi],
     queryFn: async () => {
-      const token = Cookies.get("token");
-      // Fetch data dengan status PENDING_VERIFIKASI_DPP
-      const res = await fetch(
-        `${API_BASE}/registrasi?statusVerifikasi=PENDING_VERIFIKASI_DPP`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      if (!res.ok) throw new Error("Gagal mengambil data registrasi pending");
-      return res.json() as Promise<{ data: RegistrasiItem[] }>;
+      const endpoint = statusVerifikasi
+        ? `/registrasi?statusVerifikasi=${encodeURIComponent(statusVerifikasi)}`
+        : "/registrasi";
+      return apiFetch<RegistrasiListResponse>(endpoint);
     },
+    staleTime: 15 * 1000,
   });
 }
 
@@ -46,37 +52,27 @@ export function useApproveRegistrasi() {
   return useMutation({
     mutationFn: async ({
       id,
-      status,
+      action,
       catatanVerifikasi,
     }: {
       id: string;
-      status: "APPROVED_DPP" | "REJECTED";
+      action: "APPROVE" | "REJECT";
       catatanVerifikasi?: string;
     }) => {
-      const token = Cookies.get("token");
-      const res = await fetch(`${API_BASE}/registrasi/${id}/verifikasi`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      return apiFetch<{ success: boolean; message: string; data?: unknown }>(
+        `/registrasi/${id}/verifikasi`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            action,
+            catatanVerifikasi,
+          }),
         },
-        body: JSON.stringify({
-          status,
-          actorNama: "SUPER_ADMIN", // Sementara di hardcode untuk role super_admin
-          catatanVerifikasi,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.message || "Gagal memproses verifikasi");
-      }
-
-      return res.json();
+      );
     },
     onSuccess: () => {
       // Invalidate query supaya tabel refresh otomatis
-      queryClient.invalidateQueries({ queryKey: ["registrasi", "pending"] });
+      queryClient.invalidateQueries({ queryKey: ["registrasi"] });
     },
   });
 }

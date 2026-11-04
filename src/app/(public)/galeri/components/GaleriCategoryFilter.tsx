@@ -20,9 +20,9 @@ import { cn } from "@/lib/utils";
 import type { CategoryFilter } from "../data/galeriData";
 
 interface GaleriCategoryFilterProps {
-  categories: readonly string[];
-  selectedCategory: CategoryFilter;
-  onSelectCategory: (cat: CategoryFilter) => void;
+  categories: readonly string[] | string[];
+  selectedCategory: string;
+  onSelectCategory: (cat: string) => void;
 }
 
 export function GaleriCategoryFilter({

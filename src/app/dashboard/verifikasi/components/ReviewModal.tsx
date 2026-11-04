@@ -91,12 +91,14 @@ export function ReviewModal({
               <div className="flex flex-col">
                 <span className="text-muted-foreground">Cabang (DPC)</span>
                 <span className="font-medium">
-                  {selectedItem.cabang?.namaCabang || selectedItem.dpc || "-"}
+                  {selectedItem.dpc || selectedItem.cabang?.namaCabang || "-"}
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="text-muted-foreground">Wilayah (DPP)</span>
-                <span className="font-medium">{selectedItem.dpp || "-"}</span>
+                <span className="text-muted-foreground">Daerah (DPD)</span>
+                <span className="font-medium">
+                  {selectedItem.dpd || selectedItem.cabang?.provinsi || selectedItem.dpp || "-"}
+                </span>
               </div>
               <div className="flex flex-col col-span-2">
                 <span className="text-muted-foreground">Tanggal Daftar</span>
