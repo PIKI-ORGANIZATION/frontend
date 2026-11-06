@@ -52,6 +52,8 @@ export function useDpdList(params?: {
       );
       const raw = res?.data?.result ?? res?.data ?? res?.result ?? [];
       const list = Array.isArray(raw) ? raw : [];
+      // Urutkan default berdasarkan kode provinsi terkecil
+      list.sort((a: DpdItem, b: DpdItem) => Number(a.kodeProvinsi) - Number(b.kodeProvinsi));
       const meta = res?.meta || res?.pagination || {
         total: list.length,
         page: currentPage,
@@ -163,6 +165,12 @@ export function useDpcList(params?: {
       );
       const raw = res?.data?.result ?? res?.data ?? res?.result ?? [];
       const list = Array.isArray(raw) ? raw : [];
+      // Urutkan default berdasarkan kode provinsi lalu kabupaten terkecil
+      list.sort((a: DpcItem, b: DpcItem) => {
+        const provDiff = Number(a.kode_provinsi) - Number(b.kode_provinsi);
+        if (provDiff !== 0) return provDiff;
+        return Number(a.kode_kabupaten) - Number(b.kode_kabupaten);
+      });
       const meta = res?.meta || res?.pagination || {
         total: list.length,
         page: currentPage,
@@ -258,7 +266,11 @@ export function useMasterProvinsi() {
         message: string;
         data: MasterProvinsi[];
       }>("/master-wilayah/master-provinsi");
-      return res.data || [];
+      const list = res.data || [];
+      // Urutkan default berdasarkan kode provinsi terkecil
+      return [...list].sort(
+        (a, b) => Number(a.kode_provinsi) - Number(b.kode_provinsi),
+      );
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -274,7 +286,11 @@ export function useMasterKabupaten(kodeProvinsi?: string | null) {
         message: string;
         data: MasterKabupaten[];
       }>(`/master-wilayah/master-kabupaten?kode_provinsi=${encodeURIComponent(kodeProvinsi)}`);
-      return res.data || [];
+      const list = res.data || [];
+      // Urutkan default berdasarkan kode kabupaten terkecil
+      return [...list].sort(
+        (a, b) => Number(a.kode_kabupaten) - Number(b.kode_kabupaten),
+      );
     },
     enabled: Boolean(kodeProvinsi),
     staleTime: 5 * 60 * 1000,

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import {
   Table,
   TableBody,
@@ -31,13 +32,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { CabangItem, DpdItem, DpcItem } from "@/features/wilayah/types";
 import { useTautkanCabang } from "@/features/wilayah/hooks/useWilayah";
 
@@ -48,6 +42,12 @@ interface CabangTabProps {
   isLoading: boolean;
 }
 
+const TINGKAT_ORGANISASI_OPTIONS = [
+  { value: "NONE", label: "Lepaskan Tautan (Tanpa Wilayah)" },
+  { value: "DPD", label: "Tingkat Daerah / Provinsi (DPD)" },
+  { value: "DPC", label: "Tingkat Cabang / Kab-Kota (DPC)" },
+];
+
 export function CabangTab({
   cabangList,
   dpdList,
@@ -55,6 +55,9 @@ export function CabangTab({
   isLoading,
 }: CabangTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   const [selectedCabang, setSelectedCabang] = useState<CabangItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -81,19 +84,35 @@ export function CabangTab({
     });
   }, [safeCabangList, searchTerm]);
 
+  const totalPages = Math.ceil(filteredCabang.length / pageSize) || 1;
+  const paginatedCabang = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCabang.slice(start, start + pageSize);
+  }, [filteredCabang, currentPage, pageSize]);
+
+  // Urutkan DPD berdasarkan kode terkecil, dan tampilkan nama tanpa kode
   const dpdOptions = useMemo(() => {
-    return dpdList.map((d) => ({
+    const sorted = [...dpdList].sort(
+      (a, b) => Number(a.kodeProvinsi) - Number(b.kodeProvinsi)
+    );
+    return sorted.map((d) => ({
       value: d.id,
       label: `DPD ${d.dpd}`,
-      subLabel: d.kodeProvinsi,
+      searchKey: `DPD ${d.dpd}`,
     }));
   }, [dpdList]);
 
+  // Urutkan DPC berdasarkan kode terkecil, dan tampilkan nama tanpa kode
   const dpcOptions = useMemo(() => {
-    return dpcList.map((d) => ({
+    const sorted = [...dpcList].sort((a, b) => {
+      const p = Number(a.kode_provinsi) - Number(b.kode_provinsi);
+      if (p !== 0) return p;
+      return Number(a.kode_kabupaten) - Number(b.kode_kabupaten);
+    });
+    return sorted.map((d) => ({
       value: String(d.id),
-      label: `DPC ${d.dpc}`,
-      subLabel: `${d.kode_kabupaten} - ${d.dpd}`,
+      label: `DPC ${d.dpc} (${d.dpd})`,
+      searchKey: `DPC ${d.dpc} ${d.dpd}`,
     }));
   }, [dpcList]);
 
@@ -140,77 +159,85 @@ export function CabangTab({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* 1. Header Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <Input
             placeholder="Cari profil cabang, provinsi, kota..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 text-xs h-9"
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="pl-10 text-sm h-10 bg-background"
           />
         </div>
       </div>
 
       {/* 2. Data Table */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
         <Table>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="text-xs font-semibold">Nama Profil Cabang</TableHead>
-              <TableHead className="text-xs font-semibold">Domisili Wilayah</TableHead>
-              <TableHead className="text-xs font-semibold">Status Cabang</TableHead>
-              <TableHead className="text-xs font-semibold">Tautan Hierarki Wilayah</TableHead>
-              <TableHead className="text-right text-xs font-semibold">Aksi</TableHead>
+              <TableHead className="text-sm font-semibold py-3.5 px-4">Nama Profil Cabang</TableHead>
+              <TableHead className="text-sm font-semibold py-3.5 px-4">Lokasi & Domisili</TableHead>
+              <TableHead className="text-sm font-semibold py-3.5 px-4">Status Publik</TableHead>
+              <TableHead className="text-sm font-semibold py-3.5 px-4">Tautan Kepengurusan</TableHead>
+              <TableHead className="text-right text-sm font-semibold py-3.5 px-4">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-44 text-center">
+                <TableCell colSpan={5} className="h-52 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    <span className="text-xs">Memuat daftar cabang...</span>
+                    <span className="text-sm">Memuat profil cabang...</span>
                   </div>
                 </TableCell>
               </TableRow>
             ) : filteredCabang.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-44 text-center text-muted-foreground text-xs">
-                  <Building2 className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-                  <p className="font-medium text-foreground">Tidak ada data profil cabang.</p>
+                <TableCell colSpan={5} className="h-52 text-center text-muted-foreground text-sm">
+                  <Building className="w-9 h-9 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="font-semibold text-foreground">Tidak ada profil cabang ditemukan.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {searchTerm
+                      ? "Coba sesuaikan kata kunci pencarian Anda."
+                      : "Belum ada profil cabang publik yang terdaftar dalam sistem."}
+                  </p>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCabang.map((item) => {
+              paginatedCabang.map((item) => {
                 const linkedDpd = item.dpdId ? dpdList.find((d) => d.id === item.dpdId) : null;
                 const linkedDpc = item.dpcId ? dpcList.find((d) => d.id === item.dpcId) : null;
 
                 return (
-                  <TableRow key={item.uuid} className="hover:bg-muted/40 transition-colors">
-                    <TableCell>
-                      <div className="font-semibold text-foreground text-xs md:text-sm">
+                  <TableRow key={item.uuid} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="py-4 px-4">
+                      <div className="font-semibold text-foreground text-sm">
                         {item.namaCabang}
                       </div>
-                      <div className="text-[11px] text-muted-foreground">{item.email}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{item.email}</div>
                     </TableCell>
-                    <TableCell>
-                      <div className="text-xs space-y-0.5">
+                    <TableCell className="py-4 px-4">
+                      <div className="text-sm space-y-1">
                         <div className="font-medium flex items-center gap-1.5 text-foreground">
-                          <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
                           <span>{item.kabupatenKota}</span>
                         </div>
-                        <div className="text-[11px] text-muted-foreground pl-4">
+                        <div className="text-xs text-muted-foreground pl-5.5">
                           {item.provinsi}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4 px-4">
                       <Badge
                         variant="secondary"
-                        className={`text-[10px] px-2 py-0.5 font-medium rounded-full ${
+                        className={`text-xs px-2.5 py-0.5 font-medium rounded-md ${
                           item.statusCabang === "ACTIVE"
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                             : "bg-muted text-muted-foreground"
@@ -219,11 +246,11 @@ export function CabangTab({
                         {item.statusCabang}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4 px-4">
                       {item.dpdId ? (
                         <Badge
                           variant="outline"
-                          className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium flex items-center gap-1.5 w-fit"
+                          className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium flex items-center gap-1.5 w-fit py-1 px-2.5"
                         >
                           <Building2 className="w-3.5 h-3.5" />
                           Tingkat DPD: {linkedDpd?.dpd || item.dpdRef?.dpd || "Provinsi"}
@@ -231,26 +258,26 @@ export function CabangTab({
                       ) : item.dpcId ? (
                         <Badge
                           variant="outline"
-                          className="text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-medium flex items-center gap-1.5 w-fit"
+                          className="text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-medium flex items-center gap-1.5 w-fit py-1 px-2.5"
                         >
                           <Building className="w-3.5 h-3.5" />
                           Tingkat DPC: {linkedDpc?.dpc || item.dpcRef?.dpc || "Kabupaten/Kota"}
                         </Badge>
                       ) : (
-                        <span className="text-xs text-muted-foreground italic flex items-center gap-1">
-                          <Unlink className="w-3 h-3 opacity-60" /> Belum Tertaut
+                        <span className="text-xs text-muted-foreground italic flex items-center gap-1.5">
+                          <Unlink className="w-3.5 h-3.5 opacity-60" /> Belum Tertaut
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="py-4 px-4 text-right">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => handleOpenManageLink(item)}
-                        className="text-xs h-8 gap-1.5"
+                        className="h-9 px-3 text-xs sm:text-sm font-medium gap-1.5"
                       >
-                        <Link2 className="w-3.5 h-3.5 text-primary" />
+                        <Link2 className="w-4 h-4 text-primary" />
                         <span>Atur Tautan</span>
                       </Button>
                     </TableCell>
@@ -262,51 +289,50 @@ export function CabangTab({
         </Table>
       </div>
 
+      {/* 3. Reusable Pagination Component */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredCabang.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        isFetching={isLoading}
+      />
+
       {/* Dialog Atur Tautan Cabang */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Link2 className="w-4 h-4 text-primary" />
-              Atur Tautan Wilayah: {selectedCabang?.namaCabang}
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+              <Link2 className="w-5 h-5 text-primary" />
+              Atur Tautan: {selectedCabang?.namaCabang}
             </DialogTitle>
-            <DialogDescription>
-              Tautkan profil cabang ini ke struktur kepengurusan DPD (Provinsi) atau DPC (Kab/Kota).
+            <DialogDescription className="text-sm text-muted-foreground">
+              Tautkan profil cabang publik ini ke struktur kepengurusan DPD (Provinsi) atau DPC (Kabupaten/Kota).
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSaveLink} className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Tingkat Organisasi</Label>
-              <Select
+          <form onSubmit={handleSaveLink} className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="linkType-select" className="text-sm font-medium text-foreground">
+                Tingkat Organisasi
+              </Label>
+              <SearchableSelect
+                id="linkType-select"
                 value={linkType}
                 onValueChange={(val) => {
-                  if (val) {
-                    setLinkType(val as "NONE" | "DPD" | "DPC");
-                    setTargetId("");
-                  }
+                  setLinkType(val as "NONE" | "DPD" | "DPC");
+                  setTargetId("");
                 }}
-              >
-                <SelectTrigger className="text-xs">
-                  <SelectValue placeholder="Pilih tingkat..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NONE" className="text-xs">
-                    Lepaskan Tautan (Tanpa Wilayah)
-                  </SelectItem>
-                  <SelectItem value="DPD" className="text-xs">
-                    Tingkat Daerah / Provinsi (DPD)
-                  </SelectItem>
-                  <SelectItem value="DPC" className="text-xs">
-                    Tingkat Cabang / Kab-Kota (DPC)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                options={TINGKAT_ORGANISASI_OPTIONS}
+                placeholder="Pilih tingkat..."
+                searchPlaceholder="Cari tingkat..."
+              />
             </div>
 
             {linkType === "DPD" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="select-dpd-target" className="text-xs font-semibold">
+              <div className="space-y-2">
+                <Label htmlFor="select-dpd-target" className="text-sm font-medium text-foreground">
                   Pilih DPD (Provinsi)
                 </Label>
                 <SearchableSelect
@@ -315,15 +341,15 @@ export function CabangTab({
                   onValueChange={(val) => setTargetId(val)}
                   options={dpdOptions}
                   placeholder="Pilih DPD..."
-                  searchPlaceholder="Cari provinsi / DPD..."
+                  searchPlaceholder="Cari nama provinsi / DPD..."
                   emptyMessage="DPD tidak ditemukan"
                 />
               </div>
             )}
 
             {linkType === "DPC" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="select-dpc-target" className="text-xs font-semibold">
+              <div className="space-y-2">
+                <Label htmlFor="select-dpc-target" className="text-sm font-medium text-foreground">
                   Pilih DPC (Kabupaten/Kota)
                 </Label>
                 <SearchableSelect
@@ -338,28 +364,25 @@ export function CabangTab({
               </div>
             )}
 
-            <DialogFooter className="pt-2">
+            <DialogFooter className="pt-3 gap-2">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 onClick={() => setDialogOpen(false)}
                 disabled={tautkanCabangMutation.isPending}
+                className="h-10 px-4 text-sm"
               >
                 Batal
               </Button>
               <Button
                 type="submit"
-                size="sm"
-                disabled={
-                  tautkanCabangMutation.isPending ||
-                  (linkType !== "NONE" && !targetId)
-                }
+                disabled={tautkanCabangMutation.isPending || (linkType !== "NONE" && !targetId)}
+                className="h-10 px-5 text-sm font-medium"
               >
                 {tautkanCabangMutation.isPending && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 )}
-                Simpan Tautan
+                Simpan Perubahan
               </Button>
             </DialogFooter>
           </form>
@@ -368,4 +391,3 @@ export function CabangTab({
     </div>
   );
 }
-

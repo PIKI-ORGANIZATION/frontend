@@ -39,6 +39,7 @@ interface LinkCabangFormInnerProps {
 
 function LinkCabangFormInner({
   targetType,
+  targetName,
   currentCabangUuid,
   cabangList,
   onSave,
@@ -71,6 +72,7 @@ function LinkCabangFormInner({
         value: c.uuid,
         label: c.namaCabang,
         subLabel: `${c.kabupatenKota}, ${c.provinsi}`,
+        searchKey: `${c.namaCabang} ${c.kabupatenKota} ${c.provinsi}`,
       })),
     ];
   }, [availableCabang]);
@@ -82,10 +84,10 @@ function LinkCabangFormInner({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 py-2">
-      <div className="space-y-1.5">
-        <Label htmlFor="cabang-select" className="text-xs font-semibold">
-          Pilih Profil Cabang
+    <form onSubmit={handleSubmit} className="space-y-5 py-2">
+      <div className="space-y-2">
+        <Label htmlFor="cabang-select" className="text-sm font-medium text-foreground">
+          Pilih Profil Cabang untuk {targetName}
         </Label>
         <SearchableSelect
           id="cabang-select"
@@ -96,23 +98,27 @@ function LinkCabangFormInner({
           searchPlaceholder="Cari nama cabang atau kota..."
           emptyMessage="Tidak ada cabang yang tersedia"
         />
-        <p className="text-[11px] text-muted-foreground mt-1">
-          Hanya profil cabang yang belum terikat ke wilayah lain yang dapat dipilih.
+        <p className="text-xs text-muted-foreground mt-1">
+          Hanya profil cabang publik yang belum terikat ke wilayah lain yang dapat dipilih.
         </p>
       </div>
 
-      <DialogFooter className="pt-2">
+      <DialogFooter className="pt-3 gap-2">
         <Button
           type="button"
           variant="outline"
-          size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
+          className="h-10 px-4 text-sm"
         >
           Batal
         </Button>
-        <Button type="submit" size="sm" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="h-10 px-5 text-sm font-medium"
+        >
+          {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
           Simpan Tautan
         </Button>
       </DialogFooter>
@@ -132,29 +138,25 @@ export function LinkCabangDialog({
 }: LinkCabangDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Link2 className="w-4 h-4 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+            <Link2 className="w-5 h-5 text-primary" />
             Tautkan Profil Cabang ke {targetType}
           </DialogTitle>
-          <DialogDescription>
-            Hubungkan entitas profil cabang resmi PIKI dengan kepengurusan wilayah{" "}
-            <strong className="text-foreground">{targetName}</strong>.
+          <DialogDescription className="text-sm text-muted-foreground">
+            Pilih profil cabang website resmi yang mewakili kepengurusan {targetName}.
           </DialogDescription>
         </DialogHeader>
 
         {open && (
           <LinkCabangFormInner
-            key={currentCabangUuid || "none-cabang"}
+            key={currentCabangUuid || "new-link"}
             targetType={targetType}
             targetName={targetName}
             currentCabangUuid={currentCabangUuid}
             cabangList={cabangList}
-            onSave={async (uuid) => {
-              await onSave(uuid);
-              onOpenChange(false);
-            }}
+            onSave={onSave}
             onCancel={() => onOpenChange(false)}
             isSubmitting={isSubmitting}
           />

@@ -21,6 +21,16 @@ export interface RegistrasiItem {
   created_at: string;
   fileKtpUrl: string;
   buktiBayarUrl?: string | null;
+  catatanVerifikasi?: string | null;
+  tglVerifikasi?: string | null;
+  verifikatorUuid?: string | null;
+}
+
+export interface RegistrasiCounts {
+  all: number;
+  pending: number;
+  approved: number;
+  rejected: number;
 }
 
 export interface RegistrasiListResponse {
@@ -30,20 +40,48 @@ export interface RegistrasiListResponse {
     total: number;
     page: number;
     limit: number;
+    counts?: RegistrasiCounts;
   };
 }
 
-export function useGetRegistrasiPending(statusVerifikasi: string = "PENDING_VERIFIKASI_DPP") {
+export interface GetRegistrasiParams {
+  statusVerifikasi?: "ALL" | "PENDING" | "APPROVED" | "REJECTED" | string;
+  search?: string;
+  currentPage?: number;
+  pageSize?: number;
+}
+
+export function useGetRegistrasiList(params: GetRegistrasiParams = {}) {
+  const { statusVerifikasi = "ALL", search, currentPage = 1, pageSize = 50 } = params;
+
   return useQuery({
-    queryKey: ["registrasi", "pending", statusVerifikasi],
+    queryKey: ["registrasi", statusVerifikasi, search, currentPage, pageSize],
     queryFn: async () => {
-      const endpoint = statusVerifikasi
-        ? `/registrasi?statusVerifikasi=${encodeURIComponent(statusVerifikasi)}`
-        : "/registrasi";
+      const queryParams = new URLSearchParams();
+      if (statusVerifikasi && statusVerifikasi !== "ALL") {
+        queryParams.set("statusVerifikasi", statusVerifikasi);
+      }
+      if (search && search.trim()) {
+        queryParams.set("search", search.trim());
+      }
+      if (currentPage) {
+        queryParams.set("skip", String((currentPage - 1) * pageSize));
+      }
+      if (pageSize) {
+        queryParams.set("take", String(pageSize));
+      }
+
+      const qs = queryParams.toString();
+      const endpoint = qs ? `/registrasi?${qs}` : "/registrasi";
       return apiFetch<RegistrasiListResponse>(endpoint);
     },
     staleTime: 15 * 1000,
   });
+}
+
+// Alias for backward compatibility
+export function useGetRegistrasiPending(statusVerifikasi: string = "PENDING") {
+  return useGetRegistrasiList({ statusVerifikasi });
 }
 
 export function useApproveRegistrasi() {

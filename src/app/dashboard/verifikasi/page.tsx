@@ -26,7 +26,7 @@ import {
   DataTableToolbar,
 } from "@/components/data-table";
 import {
-  useGetRegistrasiPending,
+  useGetRegistrasiList,
   useApproveRegistrasi,
   RegistrasiItem,
 } from "@/hooks/api/useVerifikasi";
@@ -39,19 +39,31 @@ import {
   Phone,
   Clock,
   FileCheck,
+  CheckCircle2,
+  XCircle,
+  Users,
+  ShieldCheck,
 } from "lucide-react";
 import { ReviewModal } from "./components/ReviewModal";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+
+type TabStatus = "ALL" | "PENDING" | "APPROVED" | "REJECTED";
 
 export default function VerifikasiPage() {
-  const { data, isLoading, error } = useGetRegistrasiPending();
-  const { mutate: processVerifikasi, isPending } = useApproveRegistrasi();
-
-  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabStatus>("PENDING");
   const [searchTerm, setSearchTerm] = useState("");
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
+  const { data, isLoading, error } = useGetRegistrasiList({
+    statusVerifikasi: activeTab,
+    search: searchTerm,
+  });
+
+  const { mutate: processVerifikasi, isPending } = useApproveRegistrasi();
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   // States for Review Modal
   const [selectedItem, setSelectedItem] = useState<RegistrasiItem | null>(null);
@@ -63,11 +75,7 @@ export default function VerifikasiPage() {
   };
 
   const handleProcess = useCallback(
-    (
-      id: string,
-      action: "APPROVE" | "REJECT",
-      catatanVerifikasi?: string,
-    ) => {
+    (id: string, action: "APPROVE" | "REJECT", catatanVerifikasi?: string) => {
       setProcessingId(id);
       processVerifikasi(
         { id, action, catatanVerifikasi },
@@ -92,20 +100,40 @@ export default function VerifikasiPage() {
   );
 
   const registrasiList = useMemo(() => data?.data || [], [data?.data]);
+  const counts = data?.meta?.counts;
 
-  // Filter client-side berdasarkan pencarian nama, email, atau no WA
-  const filteredList = useMemo(() => {
-    if (!searchTerm) return registrasiList;
-    const q = searchTerm.toLowerCase();
-    return registrasiList.filter(
-      (item) =>
-        item.namaLengkap?.toLowerCase().includes(q) ||
-        item.email?.toLowerCase().includes(q) ||
-        item.noWa?.includes(q) ||
-        item.cabang?.namaCabang?.toLowerCase().includes(q) ||
-        item.dpc?.toLowerCase().includes(q),
-    );
-  }, [registrasiList, searchTerm]);
+  // Segmented control tabs configuration
+  const TABS: {
+    id: TabStatus;
+    label: string;
+    count: number;
+    icon: React.ElementType;
+  }[] = [
+    {
+      id: "ALL",
+      label: "Semua Pendaftar",
+      count: counts?.all ?? 0,
+      icon: Users,
+    },
+    {
+      id: "PENDING",
+      label: "Menunggu Verifikasi",
+      count: counts?.pending ?? 0,
+      icon: Clock,
+    },
+    {
+      id: "APPROVED",
+      label: "Telah Disetujui",
+      count: counts?.approved ?? 0,
+      icon: CheckCircle2,
+    },
+    {
+      id: "REJECTED",
+      label: "Ditolak",
+      count: counts?.rejected ?? 0,
+      icon: XCircle,
+    },
+  ];
 
   // Kolom TanStack Table untuk Verifikasi
   const columns = useMemo<ColumnDef<RegistrasiItem>[]>(
@@ -146,12 +174,12 @@ export default function VerifikasiPage() {
             : "?";
           return (
             <div className="flex items-center gap-3 py-1">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 font-semibold text-sm border border-orange-500/20">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold text-sm border border-primary/20">
                 {initial}
               </span>
               <div className="flex flex-col min-w-0">
                 <span
-                  className="font-semibold text-foreground truncate cursor-pointer hover:underline"
+                  className="font-semibold text-sm text-foreground truncate cursor-pointer hover:underline"
                   onClick={() => openReview(item)}
                 >
                   {item.namaLengkap}
@@ -178,27 +206,20 @@ export default function VerifikasiPage() {
         ),
         cell: ({ row }) => {
           const item = row.original;
-          const namaCabang = item.dpc || item.cabang?.namaCabang || "-";
-          const prov = item.dpd || item.cabang?.provinsi || item.dpp || "";
+          const namaCabang = item.dpc
+            ? `DPC ${item.dpc}`
+            : item.cabang?.namaCabang || "-";
+          const namaDaerah = item.dpd
+            ? `DPD ${item.dpd}`
+            : item.cabang?.provinsi || item.dpp || "";
+
           return (
-            <div className="flex flex-col text-xs">
-              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                <span>{namaCabang}</span>
-                {item.kode_kabupaten && (
-                  <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1 rounded">
-                    {item.kode_kabupaten}
-                  </span>
-                )}
-              </div>
-              {prov && (
-                <div className="flex items-center gap-1 text-muted-foreground text-[11px] mt-0.5">
-                  <span>{prov}</span>
-                  {item.kode_provinsi && (
-                    <span className="text-[9px] font-mono opacity-80">
-                      ({item.kode_provinsi})
-                    </span>
-                  )}
-                </div>
+            <div className="flex flex-col text-sm">
+              <span className="font-medium text-foreground">{namaCabang}</span>
+              {namaDaerah && (
+                <span className="text-xs text-muted-foreground mt-0.5">
+                  {namaDaerah}
+                </span>
               )}
             </div>
           );
@@ -215,8 +236,8 @@ export default function VerifikasiPage() {
             return <span className="text-xs text-muted-foreground">-</span>;
           try {
             return (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3 text-muted-foreground/70" />
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
                 {format(new Date(dateStr), "dd MMM yyyy HH:mm", {
                   locale: localeId,
                 })}
@@ -235,22 +256,76 @@ export default function VerifikasiPage() {
         cell: ({ row }) => {
           const item = row.original;
           const status = item.statusVerifikasi || "";
-          const isPending = status.startsWith("PENDING");
+
+          if (status.startsWith("PENDING") || status === "BYPASSED_TO_DPD") {
+            const label =
+              status === "PENDING_VERIFIKASI_DPC"
+                ? "Menunggu DPC"
+                : status === "PENDING_VERIFIKASI_DPD"
+                  ? "Menunggu DPD"
+                  : status === "BYPASSED_TO_DPD"
+                    ? "Eskalasi ke DPD"
+                    : status === "PENDING_VERIFIKASI_DPP"
+                      ? "Menunggu DPP"
+                      : "Menunggu Verifikasi";
+
+            return (
+              <Badge
+                variant="secondary"
+                className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-medium text-xs flex items-center gap-1.5 w-fit"
+              >
+                {/* <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" /> */}
+                {label}
+              </Badge>
+            );
+          }
+
+          if (status.startsWith("APPROVED")) {
+            const label =
+              status === "APPROVED_DPC"
+                ? "Disetujui DPC"
+                : status === "APPROVED_DPD"
+                  ? "Disetujui DPD"
+                  : status === "APPROVED_DPP"
+                    ? "Disetujui DPP"
+                    : "Disetujui";
+
+            const colorClass =
+              status === "APPROVED_DPC"
+                ? "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20"
+                : status === "APPROVED_DPD"
+                  ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+                  : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20";
+
+            return (
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "border font-medium text-xs flex items-center gap-1.5 w-fit",
+                  colorClass,
+                )}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                {label}
+              </Badge>
+            );
+          }
+
+          if (status === "REJECTED") {
+            return (
+              <Badge
+                variant="secondary"
+                className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 font-medium text-xs flex items-center gap-1.5 w-fit"
+              >
+                <XCircle className="h-3.5 w-3.5 shrink-0" />
+                Ditolak
+              </Badge>
+            );
+          }
+
           return (
-            <Badge
-              variant="secondary"
-              className={
-                isPending
-                  ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 font-medium text-xs flex items-center gap-1 w-fit"
-                  : status.startsWith("APPROVED")
-                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium text-xs flex items-center gap-1 w-fit"
-                  : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 font-medium text-xs flex items-center gap-1 w-fit"
-              }
-            >
-              {isPending && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />}
-              {status === "PENDING_VERIFIKASI_DPP"
-                ? "Menunggu Verifikasi"
-                : status.replace(/_/g, " ")}
+            <Badge variant="outline" className="text-xs font-medium">
+              {status.replace(/_/g, " ")}
             </Badge>
           );
         },
@@ -265,13 +340,23 @@ export default function VerifikasiPage() {
         cell: ({ row }) => {
           const item = row.original;
           return (
-            <div className="flex items-center gap-1 text-xs">
+            <div className="flex items-center gap-1.5 text-xs">
               {item.fileKtpUrl && (
                 <Badge
                   variant="outline"
-                  className="text-[11px] font-normal py-0 px-1.5"
+                  className="text-xs font-normal py-0.5 px-2 bg-muted/40"
                 >
-                  <FileCheck className="h-3 w-3 mr-1 text-emerald-500" /> KTP
+                  <FileCheck className="h-3.5 w-3.5 mr-1 text-emerald-600 dark:text-emerald-400" />
+                  KTP
+                </Badge>
+              )}
+              {item.buktiBayarUrl && (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-normal py-0.5 px-2 bg-muted/40"
+                >
+                  <FileCheck className="h-3.5 w-3.5 mr-1 text-blue-600 dark:text-blue-400" />
+                  Bayar
                 </Badge>
               )}
             </div>
@@ -287,7 +372,11 @@ export default function VerifikasiPage() {
         ),
         cell: ({ row }) => {
           const item = row.original;
+          const isPendingVerifikasi =
+            item.statusVerifikasi?.startsWith("PENDING") ||
+            item.statusVerifikasi === "BYPASSED_TO_DPD";
           const isCurrentPending = isPending && processingId === item.id;
+
           return (
             <div className="flex items-center justify-end gap-2">
               <Button
@@ -297,21 +386,24 @@ export default function VerifikasiPage() {
                 className="h-8 px-2.5 text-xs font-medium"
               >
                 <Eye className="w-3.5 h-3.5 mr-1 text-primary" />
-                Review
+                {isPendingVerifikasi ? "Review" : "Detail"}
               </Button>
-              <Button
-                size="sm"
-                disabled={isCurrentPending}
-                onClick={() => handleProcess(item.id, "APPROVE")}
-                className="h-8 px-2.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                {isCurrentPending ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                ) : (
-                  <Check className="w-3.5 h-3.5 mr-1" />
-                )}
-                Setujui
-              </Button>
+
+              {isPendingVerifikasi && (
+                <Button
+                  size="sm"
+                  disabled={isCurrentPending}
+                  onClick={() => handleProcess(item.id, "APPROVE")}
+                  className="h-8 px-2.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  {isCurrentPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  Setujui
+                </Button>
+              )}
             </div>
           );
         },
@@ -321,7 +413,7 @@ export default function VerifikasiPage() {
   );
 
   const table = useReactTable({
-    data: filteredList,
+    data: registrasiList,
     columns,
     state: {
       columnVisibility,
@@ -346,22 +438,76 @@ export default function VerifikasiPage() {
   }
 
   return (
-    <div className="space-y-4 px-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Verifikasi Keanggotaan
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Tinjau berkas pendaftaran anggota baru dan berikan persetujuan untuk
-            penerbitan KTA resmi.
+    <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto px-4 sm:px-6">
+      {/* 1. Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/70 pb-5">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Verifikasi Keanggotaan
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Tinjau berkas pendaftaran calon anggota baru dan berikan persetujuan
+            berjenjang untuk penerbitan KTA resmi PIKI.
           </p>
         </div>
       </div>
 
-      {/* Data Table Card Wrapper */}
-      <div className="space-y-4 py-4">
+      {/* 2. Navigation Tabs (Identik dengan format Tab Menu CMS Wilayah & CMS Galeri) */}
+      <div className="flex items-center overflow-x-auto pb-1 max-w-full">
+        <div
+          role="tablist"
+          aria-label="Filter Status Verifikasi"
+          className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
+        >
+          {TABS.map((tab) => {
+            const isSelected = activeTab === tab.id;
+            const Icon = tab.icon;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer select-none",
+                  "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
+                  isSelected
+                    ? "bg-background text-foreground font-medium shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-normal border border-transparent",
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "size-3.5 shrink-0",
+                    isSelected ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
+                <span>{tab.label}</span>
+                <span
+                  className={cn(
+                    "inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium min-w-5 h-4.5",
+                    isSelected
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Data Table Section */}
+      <div className="space-y-4">
         {/* Table Toolbar */}
         <DataTableToolbar
           table={table}
@@ -403,13 +549,11 @@ export default function VerifikasiPage() {
                   >
                     <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <span className="text-sm">
-                        Memuat antrean verifikasi...
-                      </span>
+                      <span className="text-sm">Memuat data verifikasi...</span>
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : filteredList.length === 0 ? (
+              ) : registrasiList.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
@@ -420,12 +564,14 @@ export default function VerifikasiPage() {
                         ✓
                       </div>
                       <p className="font-medium text-foreground">
-                        Tidak ada antrean verifikasi
+                        Tidak ada data pendaftar
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {searchTerm
                           ? "Tidak ada pendaftar yang cocok dengan kata kunci pencarian."
-                          : "Semua pendaftar telah diverifikasi."}
+                          : activeTab === "PENDING"
+                            ? "Semua pendaftar saat ini telah diverifikasi."
+                            : "Belum ada data pendaftar pada tab ini."}
                       </p>
                     </div>
                   </TableCell>
@@ -455,7 +601,7 @@ export default function VerifikasiPage() {
         {/* Pagination Controls */}
         <DataTablePagination
           table={table}
-          totalRows={filteredList.length}
+          totalRows={data?.meta?.total ?? registrasiList.length}
           pageSizeOptions={[10, 20, 30, 50]}
         />
       </div>

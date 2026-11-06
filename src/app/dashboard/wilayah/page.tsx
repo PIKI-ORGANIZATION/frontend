@@ -66,7 +66,7 @@ export default function WilayahDanCabangPage() {
               Manajemen Wilayah & Cabang
             </h1>
           </div>
-          <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             Kelola struktur kepengurusan DPD (Provinsi), DPC (Kabupaten/Kota), dan tautan
             profil cabang resmi PIKI secara nasional.
           </p>
@@ -108,7 +108,7 @@ export default function WilayahDanCabangPage() {
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    "ml-0.5 px-1.5 py-0.5 shrink-0 rounded-full text-[10px] font-mono transition-colors",
+                    "ml-1 px-2 py-0.5 shrink-0 rounded-full text-xs font-mono transition-colors",
                     isSelected
                       ? "bg-primary/10 text-primary font-semibold"
                       : "bg-muted text-muted-foreground"

@@ -12,13 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Loader2 } from "lucide-react";
 import { DpdItem, DpdFormValues, MasterProvinsi } from "@/features/wilayah/types";
@@ -42,6 +35,13 @@ interface DpdFormInnerProps {
   isSubmitting: boolean;
 }
 
+const STATUS_KEPENGURUSAN_OPTIONS = [
+  { value: "Definitif", label: "Definitif" },
+  { value: "Caretaker", label: "Caretaker" },
+  { value: "Mandataris", label: "Mandataris" },
+  { value: "Formatur", label: "Formatur" },
+];
+
 function DpdFormInner({
   dpd,
   masterProvinsi,
@@ -52,22 +52,32 @@ function DpdFormInner({
 }: DpdFormInnerProps) {
   const isEditing = Boolean(dpd);
 
-  const [kodeProvinsi, setKodeProvinsi] = useState<string>(dpd?.kodeProvinsi || "");
+  // Filter provinsi yang belum memiliki DPD jika dalam mode Tambah, urutkan berdasarkan kode provinsi terkecil
+  const availableProvinsi = useMemo(() => {
+    return masterProvinsi
+      .filter(
+        (p) =>
+          !existingDpdCodes.has(p.kode_provinsi) ||
+          (isEditing && p.kode_provinsi === dpd?.kodeProvinsi),
+      )
+      .sort((a, b) => Number(a.kode_provinsi) - Number(b.kode_provinsi));
+  }, [masterProvinsi, existingDpdCodes, isEditing, dpd?.kodeProvinsi]);
+
+  // Default diatur berdasarkan kode provinsi terkecil
+  const [kodeProvinsi, setKodeProvinsi] = useState<string>(
+    dpd?.kodeProvinsi || availableProvinsi[0]?.kode_provinsi || "",
+  );
   const [pengurus, setPengurus] = useState<string>(dpd?.pengurus || "");
   const [noHandphone, setNoHandphone] = useState<string>(dpd?.noHandphone || "");
   const [keterangan, setKeterangan] = useState<string>(dpd?.keterangan || "Definitif");
   const [penerbitanSk, setPenerbitanSk] = useState<string>(dpd?.penerbitanSk || "");
 
-  // Filter provinsi yang belum memiliki DPD jika dalam mode Tambah
-  const availableProvinsi = masterProvinsi.filter(
-    (p) => !existingDpdCodes.has(p.kode_provinsi) || (isEditing && p.kode_provinsi === dpd?.kodeProvinsi),
-  );
-
+  // Hanya menampilkan nama provinsi (tanpa kode provinsi)
   const provinsiOptions = useMemo(() => {
     return availableProvinsi.map((p) => ({
       value: p.kode_provinsi,
       label: p.nama_provinsi,
-      subLabel: p.kode_provinsi,
+      searchKey: p.nama_provinsi,
     }));
   }, [availableProvinsi]);
 
@@ -85,17 +95,17 @@ function DpdFormInner({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 py-2">
+    <form onSubmit={handleSubmit} className="space-y-5 py-2">
       {/* 1. Pilih Provinsi */}
-      <div className="space-y-1.5">
-        <Label htmlFor="provinsi" className="text-xs font-semibold">
-          Provinsi (DPD) <span className="text-red-500">*</span>
+      <div className="space-y-2">
+        <Label htmlFor="provinsi" className="text-sm font-medium text-foreground">
+          Provinsi (DPD) <span className="text-destructive">*</span>
         </Label>
         {isEditing ? (
           <Input
-            value={`${dpd?.dpd} (${dpd?.kodeProvinsi})`}
+            value={`DPD ${dpd?.dpd}`}
             disabled
-            className="bg-muted text-muted-foreground text-xs"
+            className="h-10 text-sm bg-muted text-muted-foreground font-medium"
           />
         ) : (
           <SearchableSelect
@@ -112,8 +122,8 @@ function DpdFormInner({
       </div>
 
       {/* 2. Pengurus / Ketua */}
-      <div className="space-y-1.5">
-        <Label htmlFor="pengurus" className="text-xs font-semibold">
+      <div className="space-y-2">
+        <Label htmlFor="pengurus" className="text-sm font-medium text-foreground">
           Ketua / Penanggung Jawab
         </Label>
         <Input
@@ -121,13 +131,13 @@ function DpdFormInner({
           placeholder="Contoh: Pdt. Dr. Nama Lengkap, M.Th"
           value={pengurus}
           onChange={(e) => setPengurus(e.target.value)}
-          className="text-xs"
+          className="h-10 text-sm"
         />
       </div>
 
       {/* 3. Kontak WhatsApp / Telepon */}
-      <div className="space-y-1.5">
-        <Label htmlFor="noHandphone" className="text-xs font-semibold">
+      <div className="space-y-2">
+        <Label htmlFor="noHandphone" className="text-sm font-medium text-foreground">
           No. Handphone / WhatsApp
         </Label>
         <Input
@@ -135,35 +145,28 @@ function DpdFormInner({
           placeholder="Contoh: 08123456789"
           value={noHandphone}
           onChange={(e) => setNoHandphone(e.target.value)}
-          className="text-xs"
+          className="h-10 text-sm"
         />
       </div>
 
-      {/* 4. Status Kepengurusan (Keterangan) */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="keterangan" className="text-xs font-semibold">
+      {/* 4. Status Kepengurusan & Nomor SK */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="keterangan" className="text-sm font-medium text-foreground">
             Status Kepengurusan
           </Label>
-          <Select
+          <SearchableSelect
+            id="keterangan"
             value={keterangan}
-            onValueChange={(val) => val && setKeterangan(val)}
-          >
-            <SelectTrigger id="keterangan" className="text-xs">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Definitif" className="text-xs">Definitif</SelectItem>
-              <SelectItem value="Caretaker" className="text-xs">Caretaker</SelectItem>
-              <SelectItem value="Mandataris" className="text-xs">Mandataris</SelectItem>
-              <SelectItem value="Formatur" className="text-xs">Formatur</SelectItem>
-            </SelectContent>
-          </Select>
+            onValueChange={(val) => setKeterangan(val)}
+            options={STATUS_KEPENGURUSAN_OPTIONS}
+            placeholder="Pilih status..."
+            searchPlaceholder="Cari status..."
+          />
         </div>
 
-        {/* 5. Nomor / SK Penerbitan */}
-        <div className="space-y-1.5">
-          <Label htmlFor="penerbitanSk" className="text-xs font-semibold">
+        <div className="space-y-2">
+          <Label htmlFor="penerbitanSk" className="text-sm font-medium text-foreground">
             Nomor SK
           </Label>
           <Input
@@ -171,27 +174,27 @@ function DpdFormInner({
             placeholder="SK-001/DPP/2024"
             value={penerbitanSk}
             onChange={(e) => setPenerbitanSk(e.target.value)}
-            className="text-xs"
+            className="h-10 text-sm"
           />
         </div>
       </div>
 
-      <DialogFooter className="pt-2">
+      <DialogFooter className="pt-3 gap-2">
         <Button
           type="button"
           variant="outline"
-          size="sm"
           onClick={onCancel}
           disabled={isSubmitting}
+          className="h-10 px-4 text-sm"
         >
           Batal
         </Button>
         <Button
           type="submit"
-          size="sm"
           disabled={isSubmitting || !kodeProvinsi}
+          className="h-10 px-5 text-sm font-medium"
         >
-          {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+          {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
           {isEditing ? "Simpan Perubahan" : "Tambah DPD"}
         </Button>
       </DialogFooter>
@@ -208,32 +211,27 @@ export function DpdEditorDialog({
   onSave,
   isSubmitting,
 }: DpdEditorDialogProps) {
-  const isEditing = Boolean(dpd);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg p-6">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? `Edit DPD ${dpd?.dpd || ""}` : "Tambah DPD Baru"}
+          <DialogTitle className="text-lg font-bold">
+            {dpd ? `Edit Data: DPD ${dpd.dpd}` : "Tambah Dewan Pimpinan Daerah (DPD)"}
           </DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? "Perbarui informasi pengurus, kontak, dan SK DPD."
-              : "Pilih provinsi untuk membentuk Dewan Pimpinan Daerah (DPD) baru."}
+          <DialogDescription className="text-sm text-muted-foreground">
+            {dpd
+              ? "Perbarui informasi pengurus, nomor SK, atau kontak DPD terkait."
+              : "Daftarkan kepengurusan DPD tingkat provinsi baru dalam jaringan PIKI."}
           </DialogDescription>
         </DialogHeader>
 
         {open && (
           <DpdFormInner
-            key={dpd ? dpd.id : "new-dpd"}
+            key={dpd?.id || "new-dpd"}
             dpd={dpd}
             masterProvinsi={masterProvinsi}
             existingDpdCodes={existingDpdCodes}
-            onSave={async (vals) => {
-              await onSave(vals);
-              onOpenChange(false);
-            }}
+            onSave={onSave}
             onCancel={() => onOpenChange(false)}
             isSubmitting={isSubmitting}
           />
