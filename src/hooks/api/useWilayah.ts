@@ -23,16 +23,23 @@ export function useDpp() {
   });
 }
 
-export function useDpc(dppName: string | undefined) {
+export function useDpc(
+  dppName: string | undefined,
+  kodeProvinsi?: string | undefined,
+) {
   return useQuery({
-    queryKey: ["dpc", dppName],
+    queryKey: ["dpc", dppName, kodeProvinsi],
     queryFn: async () => {
+      const q = new URLSearchParams();
+      if (dppName) q.set("dpd", dppName);
+      if (kodeProvinsi) q.set("kode_provinsi", kodeProvinsi);
+
       const res = await fetch(
-        `${API_BASE}/master-wilayah/dpc?dpd=${encodeURIComponent(dppName!)}`,
+        `${API_BASE}/master-wilayah/dpc?${q.toString()}`,
       );
       if (!res.ok) throw new Error("Gagal mengambil data Kabupaten/Kota (DPC)");
       return res.json();
     },
-    enabled: !!dppName,
+    enabled: !!(dppName || kodeProvinsi),
   });
 }

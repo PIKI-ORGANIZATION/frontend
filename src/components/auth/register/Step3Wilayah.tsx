@@ -77,7 +77,21 @@ export function Step3Wilayah({
 
   // Queries
   const { data: dppList, isLoading: isLoadingDpp } = useDpp();
-  const { data: dpcList, isLoading: isLoadingDpc } = useDpc(selectedDpp);
+  const selectedDppData = React.useMemo(() => {
+    return dppList?.data?.find((d: DppData) => d.dpp === selectedDpp);
+  }, [dppList?.data, selectedDpp]);
+
+  const sortedDppList = React.useMemo(() => {
+    if (!dppList?.data) return [];
+    return [...dppList.data].sort((a: DppData, b: DppData) =>
+      a.dpp.localeCompare(b.dpp, "id"),
+    );
+  }, [dppList?.data]);
+
+  const { data: dpcList, isLoading: isLoadingDpc } = useDpc(
+    selectedDpp,
+    selectedDppData?.kode_provinsi || undefined,
+  );
 
   const [openDpp, setOpenDpp] = React.useState(false);
   const [openDpc, setOpenDpc] = React.useState(false);
@@ -150,7 +164,7 @@ export function Step3Wilayah({
                       <CommandList>
                         <CommandEmpty>Provinsi tidak ditemukan.</CommandEmpty>
                         <CommandGroup>
-                          {dppList?.data?.map((dpp: DppData) => (
+                          {sortedDppList.map((dpp: DppData) => (
                             <CommandItem
                               key={dpp.dpp}
                               value={dpp.dpp}
