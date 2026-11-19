@@ -183,8 +183,15 @@ export function DaftarAnggotaView() {
         cell: ({ row }) => {
           const item = row.original;
           const cabangName =
-            item.cabang?.namaCabang || item.kotaDomisili || "-";
-          const provName = item.cabang?.provinsi || item.provinsi || "";
+            item.cabang?.namaCabang ||
+            item.akun?.registrasiList?.dpc ||
+            item.kotaDomisili ||
+            "-";
+          const provName =
+            item.cabang?.provinsi ||
+            item.provinsi ||
+            item.akun?.registrasiList?.dpd ||
+            "";
           return (
             <div className="flex flex-col text-xs">
               <span className="font-medium text-foreground">{cabangName}</span>
@@ -328,7 +335,9 @@ export function DaftarAnggotaView() {
       <div className="p-6 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 text-red-600">
         <p className="font-medium">Gagal memuat data anggota.</p>
         <p className="text-sm mt-1 text-red-500">
-          Silakan muat ulang halaman atau coba beberapa saat lagi.
+          {error instanceof Error
+            ? error.message
+            : "Silakan muat ulang halaman atau coba beberapa saat lagi."}
         </p>
       </div>
     );

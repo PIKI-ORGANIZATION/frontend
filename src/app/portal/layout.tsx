@@ -3,13 +3,15 @@
 import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { LogOut, Home } from "lucide-react";
+import { LogOut, Home, LayoutDashboard } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { MinimalFooter } from "@/components/ui/minimal-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { logoutSession } from "@/lib/api";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
 
 import {
   Navbar,
@@ -28,6 +30,8 @@ export default function PortalLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useCurrentUser();
+  const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -65,8 +69,19 @@ export default function PortalLayout({
             items={navItems}
             onItemClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="flex items-center gap-4 relative z-50">
+          <div className="flex items-center gap-3 relative z-50">
             <ThemeToggle variant="dropdown" />
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/dashboard")}
+                className="text-primary border-primary/30 hover:bg-primary/10 transition-colors"
+              >
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                Dashboard Admin
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -138,6 +153,17 @@ export default function PortalLayout({
               })}
             </div>
             <div className="w-full h-px bg-border my-2" />
+            {isAdmin && (
+              <button
+                onClick={() => handleNavigation("/dashboard")}
+                className="flex w-full items-center justify-center gap-2 text-primary bg-primary/10 py-2.5 px-3 rounded-md transition-colors hover:bg-primary/15 mb-2"
+              >
+                <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-base sm:text-lg font-medium">
+                  Dashboard Admin
+                </span>
+              </button>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={() => {

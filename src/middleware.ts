@@ -50,6 +50,7 @@ export function middleware(request: NextRequest) {
   }
 
   const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);
+  const isMember = hasRole(user, ROLE_GROUPS.USERS);
 
   // Jika sudah login dan membuka halaman auth
   if (isLogin && token && user) {
@@ -62,13 +63,14 @@ export function middleware(request: NextRequest) {
 
   // --- Route Protection, Isolation & Centralized Deny-by-Default RBAC ---
   if (token && user) {
-    // 1. Block Members from Dashboard (Admin Area)
+    // 1. Block Members without Admin role from Dashboard (Admin Area)
     if (isDashboard && !isAdmin) {
       return NextResponse.redirect(new URL("/portal", request.url));
     }
 
-    // 2. Block Admins from Portal (Member Area)
-    if (isPortal && isAdmin) {
+    // 2. Block pure Admins (tanpa role USER/MEMBER) dari Portal;
+    //    Akun dual-role (USER + ADMIN_CABANG/KETUA_CABANG) tetap boleh mengakses /portal.
+    if (isPortal && isAdmin && !isMember) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 

@@ -9,6 +9,7 @@ import {
   Users,
   LayoutDashboard,
   CheckCircle2,
+  CreditCard,
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -33,7 +34,12 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { logoutSession } from "@/lib/api";
 import { UserPayload } from "@/lib/utils";
-import { canAccessDashboardPath, isSuperAdmin } from "@/lib/rbac";
+import {
+  canAccessDashboardPath,
+  hasRole,
+  isSuperAdmin,
+  ROLE_GROUPS,
+} from "@/lib/rbac";
 
 function AccessDeniedNotice() {
   const searchParams = useSearchParams();
@@ -75,10 +81,10 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     if (!user) return "Administrator";
     if (isSuperAdmin(user)) return "Super Admin (DPP)";
     if (user.tingkat === "DPD") {
-      return user.cabang ? `Admin DPD ${user.cabang}` : "Admin DPD";
+      return user.cabang ? `${user.cabang}` : "Admin DPD";
     }
     if (user.tingkat === "DPC") {
-      return user.cabang ? `Admin DPC ${user.cabang}` : "Admin DPC";
+      return user.cabang ? ` ${user.cabang}` : "Admin DPC";
     }
     if (user.roles && user.roles.length > 0) {
       return user.roles[0].replace(/_/g, " ");
@@ -272,6 +278,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     "/dashboard/verifikasi",
     user,
   );
+  const hasMemberRole = hasRole(user, ROLE_GROUPS.USERS);
 
   return (
     <>
@@ -327,7 +334,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                     {getRoleDisplay().toLowerCase()}
                   </p>
                   <p className="text-[11px] leading-none text-muted-foreground font-mono truncate">
-                    {user?.email || user?.username || "admin@piki.or.id"}
+                    {user?.email || user?.username || "-"}
                   </p>
                 </div>
               </DropdownMenuLabel>
@@ -359,6 +366,16 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-500" />
                   <span>Verifikasi Pendaftar</span>
+                </DropdownMenuItem>
+              )}
+
+              {hasMemberRole && (
+                <DropdownMenuItem
+                  onClick={() => router.push("/portal")}
+                  className="cursor-pointer text-xs font-medium py-1.5"
+                >
+                  <CreditCard className="mr-2 h-4 w-4 text-primary" />
+                  <span>Portal Anggota &amp; KTA Saya</span>
                 </DropdownMenuItem>
               )}
 
