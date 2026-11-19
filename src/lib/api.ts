@@ -67,10 +67,11 @@ export async function apiFetch<T>(
 
   // 2. Tangani 403 Forbidden (Tidak memiliki hak akses / permission)
   if (res.status === 403) {
-    throw new ApiError(
-      "Anda tidak memiliki izin untuk mengakses sumber daya ini.",
-      403,
-    );
+    const forbiddenData = await res.json().catch(() => null);
+    const forbiddenMsg =
+      forbiddenData?.message ||
+      "Anda tidak memiliki izin untuk mengakses sumber daya ini.";
+    throw new ApiError(forbiddenMsg, 403, forbiddenData);
   }
 
   // 3. Parse JSON response jika ada
@@ -84,4 +85,27 @@ export async function apiFetch<T>(
   }
 
   return data as T;
+}
+
+/**
+ * Mengakhiri sesi login pengguna secara aman:
+ * 1. Memanggil POST /api/v1/auth/logout untuk mem-blacklist token JWT di Redis server.
+ * 2. Selalu menghapus cookie `token` di browser pada blok `finally`.
+ */
+export async function logoutSession(): Promise<void> {
+  const token = Cookies.get("token");
+  try {
+    if (token) {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    }
+  } catch {
+    // Abaikan kegagalan jaringan saat logout agar pencabutan sesi lokal tetap berjalan
+  } finally {
+    Cookies.remove("token");
+  }
 }

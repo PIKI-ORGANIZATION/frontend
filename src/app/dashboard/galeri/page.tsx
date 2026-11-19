@@ -42,6 +42,10 @@ import { GaleriTableView } from "./components/GaleriTableView";
 import { GaleriEditorDialog } from "./components/GaleriEditorDialog";
 import { GaleriDetailDrawer } from "./components/GaleriDetailDrawer";
 import { GaleriDeleteDialog } from "./components/GaleriDeleteDialog";
+import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
+import { Badge } from "@/components/ui/badge";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { resolveGaleriAccess } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -55,6 +59,9 @@ const STATUS_FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 ];
 
 export default function GaleriCMSPage() {
+  const { user, isReady } = useCurrentUser();
+  const access = useMemo(() => resolveGaleriAccess(user), [user]);
+
   const {
     items,
     stats,
@@ -64,7 +71,10 @@ export default function GaleriCMSPage() {
     deleteMedia,
     toggleStatus,
     toggleFeatured,
-  } = useGaleri();
+  } = useGaleri({
+    enabled: isReady && access.canView,
+    fetchStats: isReady && access.canViewStats,
+  });
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -115,18 +125,21 @@ export default function GaleriCMSPage() {
 
   // Handler: Open Add Dialog
   const handleOpenAdd = () => {
+    if (!access.canManage) return;
     setEditingItem(null);
     setIsEditorOpen(true);
   };
 
   // Handler: Open Edit Dialog
   const handleOpenEdit = (item: GaleriItem) => {
+    if (!access.canManage) return;
     setEditingItem(item);
     setIsEditorOpen(true);
   };
 
   // Handler: Save (Create or Update)
   const handleSave = async (values: GaleriFormValues) => {
+    if (!access.canManage) return;
     if (editingItem) {
       const updated = await updateMedia(editingItem.id, values);
       if (inspectingItem?.id === editingItem.id) {
@@ -139,6 +152,7 @@ export default function GaleriCMSPage() {
   };
 
   const handleToggleStatus = async (id: string) => {
+    if (!access.canManage) return;
     const updated = await toggleStatus(id);
     if (inspectingItem?.id === id) {
       setInspectingItem((prev) =>
@@ -165,6 +179,7 @@ export default function GaleriCMSPage() {
   }, [items]);
 
   const handleToggleFeatured = async (id: string) => {
+    if (!access.canManage) return;
     const target = items.find((i) => i.id === id);
     if (target && target.type !== "VIDEO") {
       toast.error(
@@ -188,15 +203,37 @@ export default function GaleriCMSPage() {
 
   const deletingTarget = items.find((i) => i.id === deletingId);
 
+  if (!isReady) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="size-7 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!access.canView) {
+    return (
+      <AccessDeniedState
+        title="Akses CMS Galeri Ditolak"
+        description="Akun Anda tidak memiliki izin GALERI_READ atau GALERI_MANAGE untuk membuka halaman manajemen galeri."
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
       {/* 1. Header Page & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               CMS Galeri &amp; Dokumentasi Kegiatan
             </h1>
+            {!access.canManage && (
+              <Badge variant="secondary" className="text-xs font-medium">
+                Mode Baca Saja
+              </Badge>
+            )}
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Kelola dokumentasi arsip foto kegiatan, rekaman liputan video
@@ -204,12 +241,14 @@ export default function GaleriCMSPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Button onClick={handleOpenAdd} className="cursor-pointer">
-            <Plus className="size-4 mr-2" />
-            <span>Tambah Dokumentasi</span>
-          </Button>
-        </div>
+        {access.canManage && (
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Button onClick={handleOpenAdd} className="cursor-pointer">
+              <Plus className="size-4 mr-2" />
+              <span>Tambah Dokumentasi</span>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* 3. Toolbar: Media Type Tabs, Search, Popover Filters & View Switcher */}
@@ -497,14 +536,17 @@ export default function GaleriCMSPage() {
                 ? "Coba sesuaikan kata kunci pencarian atau ganti filter kategori kegiatan."
                 : "Belum ada arsip dokumentasi media. Mulai tambahkan dokumentasi baru."}
             </p>
-            <Button onClick={handleOpenAdd} className="mt-5 cursor-pointer">
-              <Plus className="size-4 mr-2" />
-              <span>Tambah Dokumentasi Baru</span>
-            </Button>
+            {access.canManage && (
+              <Button onClick={handleOpenAdd} className="mt-5 cursor-pointer">
+                <Plus className="size-4 mr-2" />
+                <span>Tambah Dokumentasi Baru</span>
+              </Button>
+            )}
           </div>
         ) : viewMode === "grid" ? (
           <GaleriGridView
             items={filteredItems}
+            canManage={access.canManage}
             onInspect={setInspectingItem}
             onEdit={handleOpenEdit}
             onDelete={setDeletingId}
@@ -514,6 +556,7 @@ export default function GaleriCMSPage() {
         ) : (
           <GaleriTableView
             items={filteredItems}
+            canManage={access.canManage}
             onInspect={setInspectingItem}
             onEdit={handleOpenEdit}
             onDelete={setDeletingId}
@@ -524,17 +567,20 @@ export default function GaleriCMSPage() {
       </div>
 
       {/* 5. Editor Dialog Modal (Add & Edit dengan Upload Video 50MB & Foto) */}
-      <GaleriEditorDialog
-        open={isEditorOpen}
-        onOpenChange={setIsEditorOpen}
-        editingItem={editingItem}
-        onSave={handleSave}
-      />
+      {access.canManage && (
+        <GaleriEditorDialog
+          open={isEditorOpen}
+          onOpenChange={setIsEditorOpen}
+          editingItem={editingItem}
+          onSave={handleSave}
+        />
+      )}
 
       {/* 6. Slide-over Inspector Drawer with GSAP Right Slide-Over */}
       <GaleriDetailDrawer
         item={inspectingItem}
         allItems={filteredItems}
+        canManage={access.canManage}
         onClose={() => setInspectingItem(null)}
         onEdit={handleOpenEdit}
         onDelete={setDeletingId}
@@ -544,20 +590,22 @@ export default function GaleriCMSPage() {
       />
 
       {/* 7. Delete Confirmation Dialog */}
-      <GaleriDeleteDialog
-        open={Boolean(deletingId)}
-        onOpenChange={(open) => !open && setDeletingId(null)}
-        title={deletingTarget?.title}
-        onConfirm={async () => {
-          if (deletingId) {
-            await deleteMedia(deletingId);
-            if (inspectingItem?.id === deletingId) {
-              setInspectingItem(null);
+      {access.canManage && (
+        <GaleriDeleteDialog
+          open={Boolean(deletingId)}
+          onOpenChange={(open) => !open && setDeletingId(null)}
+          title={deletingTarget?.title}
+          onConfirm={async () => {
+            if (deletingId) {
+              await deleteMedia(deletingId);
+              if (inspectingItem?.id === deletingId) {
+                setInspectingItem(null);
+              }
+              setDeletingId(null);
             }
-            setDeletingId(null);
-          }
-        }}
-      />
+          }}
+        />
+      )}
     </div>
   );
 }

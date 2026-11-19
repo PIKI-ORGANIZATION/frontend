@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import { LandingHero } from "@/components/landing/hero/LandingHero";
 import { NewsSection } from "@/components/landing/profil/NewsSection";
@@ -8,6 +7,7 @@ import { HistorySection } from "@/components/landing/profil/HistorySection";
 import { StructureSection } from "@/components/landing/profil/StructureSection";
 import { ProgramSection } from "@/components/landing/profil/ProgramSection";
 import { StatistikSection } from "@/components/landing/profil/StatistikSection";
+import { GallerySection } from "@/components/landing/profil/GallerySection";
 
 export const metadata: Metadata = {
   title: "Beranda | PIKI - Persatuan Intelegensia Kristen Indonesia",
@@ -47,6 +47,7 @@ export default function Home() {
         <StructureSection />
         <ProgramSection />
         <NewsSection />
+        <GallerySection />
       </div>
     </main>
   );

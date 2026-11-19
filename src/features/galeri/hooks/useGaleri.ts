@@ -13,6 +13,7 @@ import {
   GaleriPreviewApiResponse,
   UploadFileResponse,
   MediaType,
+  PenempatanMedia,
   StatusPublikasi,
   getSafeImageSrc,
 } from "../types";
@@ -28,6 +29,7 @@ export interface GaleriFilterParams {
   pageSize?: number;
   fixed?: "all";
   fetchStats?: boolean;
+  enabled?: boolean;
 }
 
 /**
@@ -67,6 +69,8 @@ export function useGaleri(filters?: GaleriFilterParams) {
     return p.toString();
   }, [filters]);
 
+  const isEnabled = filters?.enabled ?? true;
+
   const {
     data: apiListData,
     isLoading: isListLoading,
@@ -75,6 +79,7 @@ export function useGaleri(filters?: GaleriFilterParams) {
     refetch: refetchList,
   } = useQuery({
     queryKey: ["galeri", "list", queryParams],
+    enabled: isEnabled,
     queryFn: async () => {
       try {
         const res = await apiFetch<GaleriApiResponse>(`/galeri?${queryParams}`);
@@ -105,8 +110,8 @@ export function useGaleri(filters?: GaleriFilterParams) {
     staleTime: 30 * 1000,
   });
 
-  // 2. Fetch Statistik Galeri (Hanya dijalankan jika fetchStats diaktifkan)
-  const shouldFetchStats = filters?.fetchStats ?? true;
+  // 2. Fetch Statistik Galeri (Hanya dijalankan jika enabled & fetchStats diaktifkan)
+  const shouldFetchStats = isEnabled && (filters?.fetchStats ?? true);
 
   const {
     data: apiStatsData,
@@ -451,5 +456,69 @@ export function useGaleri(filters?: GaleriFilterParams) {
       updateMutation.isPending ||
       deleteMutation.isPending ||
       archiveMutation.isPending,
+  };
+}
+
+export interface PublicGaleriParams {
+  penempatan?: PenempatanMedia;
+  type?: MediaType;
+  currentPage?: number;
+  pageSize?: number;
+}
+
+const PUBLIC_API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
+
+/**
+ * Hook khusus halaman publik (Beranda / Galeri) untuk mengambil item galeri PUBLISHED
+ * tanpa mengirim fixed=all dan tanpa memanggil endpoint admin /galeri/stats.
+ */
+export function usePublicGaleri(params: PublicGaleriParams = {}) {
+  const {
+    penempatan,
+    type,
+    currentPage = 1,
+    pageSize = 6,
+  } = params;
+
+  const queryString = useMemo(() => {
+    const p = new URLSearchParams();
+    p.append("status", "PUBLISHED");
+    if (penempatan) p.append("penempatan", penempatan);
+    if (type && type !== "ALL") p.append("type", type);
+    p.append("currentPage", String(currentPage));
+    p.append("pageSize", String(pageSize));
+    return p.toString();
+  }, [penempatan, type, currentPage, pageSize]);
+
+  const query = useQuery({
+    queryKey: ["galeri", "public", queryString],
+    queryFn: async () => {
+      const res = await fetch(`${PUBLIC_API_BASE}/galeri?${queryString}`);
+      if (!res.ok) {
+        throw new Error(`Gagal memuat galeri publik (${res.status})`);
+      }
+      const json = (await res.json()) as GaleriApiResponse;
+      const result = Array.isArray(json?.data?.result) ? json.data.result : [];
+      return {
+        items: result.map((item) => ({
+          ...item,
+          tanggal: item.tanggal || "",
+          thumbnailUrl: getSafeImageSrc(item.thumbnailUrl),
+        })) as GaleriItem[],
+        total: json?.data?.pagination?.total ?? result.length,
+      };
+    },
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+
+  const items = useMemo(() => query.data?.items ?? [], [query.data]);
+
+  return {
+    items,
+    total: query.data?.total ?? 0,
+    isLoading: query.isLoading,
+    isError: query.isError,
   };
 }

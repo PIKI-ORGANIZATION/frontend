@@ -49,14 +49,27 @@ export interface MasterKabupaten {
   kode_provinsi: string;
 }
 
+export interface CabangMisiItem {
+  uuid: string;
+  teks: string;
+}
+
 export interface CabangItem {
   uuid: string;
   namaCabang: string;
   provinsi: string;
   kabupatenKota: string;
+  wilayah?: string | null;
   alamat?: string | null;
+  deskripsiCabang?: string;
+  visi?: string;
+  misi?: CabangMisiItem[];
   email: string;
   noWa: string;
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+  isCabang?: boolean;
   statusCabang: string;
   dpdId?: string | null;
   dpcId?: number | null;
@@ -71,6 +84,26 @@ export interface CabangItem {
     dpd?: string | null;
     kode_kabupaten?: string | null;
   } | null;
+}
+
+export interface CabangFormValues {
+  namaCabang: string;
+  provinsi: string;
+  kabupatenKota: string;
+  alamat?: string | null;
+  wilayah?: string | null;
+  deskripsiCabang: string;
+  visi: string;
+  misi: string[];
+  email: string;
+  noWa: string;
+  instagram: string;
+  facebook: string;
+  youtube: string;
+  statusCabang?: "ACTIVE" | "NON_ACTIVE";
+  isCabang?: boolean;
+  dpdId?: string | null;
+  dpcId?: number | null;
 }
 
 export interface RoleItem {

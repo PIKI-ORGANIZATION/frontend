@@ -9,6 +9,7 @@ import {
   MasterProvinsi,
   MasterKabupaten,
   CabangItem,
+  CabangFormValues,
   RoleItem,
   DpdFormValues,
   DpcFormValues,
@@ -20,10 +21,20 @@ import {
 interface ApiResponseWithPagination<T> {
   success?: boolean;
   message?: string;
-  data?: T[];
+  data?: T[] | { result?: T[] };
   result?: T[];
   meta?: PaginationMeta;
   pagination?: PaginationMeta;
+}
+
+function extractArrayData<T>(res: ApiResponseWithPagination<T> | null | undefined): T[] {
+  if (!res) return [];
+  if (Array.isArray(res.data)) return res.data;
+  if (res.data && !Array.isArray(res.data) && Array.isArray(res.data.result)) {
+    return res.data.result;
+  }
+  if (Array.isArray(res.result)) return res.result;
+  return [];
 }
 
 // -------------------------------------------------------------
@@ -34,10 +45,12 @@ export function useDpdList(params?: {
   search?: string;
   currentPage?: number;
   pageSize?: number;
+  enabled?: boolean;
 }) {
   const search = params?.search;
   const currentPage = params?.currentPage || 1;
   const pageSize = params?.pageSize || 10;
+  const enabled = params?.enabled ?? true;
 
   return useQuery({
     queryKey: ["wilayah", "dpd", { search, currentPage, pageSize }],
@@ -47,11 +60,10 @@ export function useDpdList(params?: {
       q.append("currentPage", String(currentPage));
       q.append("pageSize", String(pageSize));
 
-      const res = await apiFetch<any>(
+      const res = await apiFetch<ApiResponseWithPagination<DpdItem>>(
         `/dpd?${q.toString()}`,
       );
-      const raw = res?.data?.result ?? res?.data ?? res?.result ?? [];
-      const list = Array.isArray(raw) ? raw : [];
+      const list = [...extractArrayData(res)];
       // Urutkan default berdasarkan kode provinsi terkecil
       list.sort((a: DpdItem, b: DpdItem) => Number(a.kodeProvinsi) - Number(b.kodeProvinsi));
       const meta = res?.meta || res?.pagination || {
@@ -59,8 +71,9 @@ export function useDpdList(params?: {
         page: currentPage,
         limit: pageSize,
       };
-      return { data: list as DpdItem[], meta };
+      return { data: list, meta };
     },
+    enabled,
     staleTime: 30 * 1000,
   });
 }
@@ -145,11 +158,13 @@ export function useDpcList(params?: {
   kode_provinsi?: string;
   currentPage?: number;
   pageSize?: number;
+  enabled?: boolean;
 }) {
   const search = params?.search;
   const kode_provinsi = params?.kode_provinsi;
   const currentPage = params?.currentPage || 1;
   const pageSize = params?.pageSize || 10;
+  const enabled = params?.enabled ?? true;
 
   return useQuery({
     queryKey: ["wilayah", "dpc", { search, kode_provinsi, currentPage, pageSize }],
@@ -160,11 +175,10 @@ export function useDpcList(params?: {
       q.append("currentPage", String(currentPage));
       q.append("pageSize", String(pageSize));
 
-      const res = await apiFetch<any>(
+      const res = await apiFetch<ApiResponseWithPagination<DpcItem>>(
         `/dpd-dpc?${q.toString()}`,
       );
-      const raw = res?.data?.result ?? res?.data ?? res?.result ?? [];
-      const list = Array.isArray(raw) ? raw : [];
+      const list = [...extractArrayData(res)];
       // Urutkan default berdasarkan kode provinsi lalu kabupaten terkecil
       list.sort((a: DpcItem, b: DpcItem) => {
         const provDiff = Number(a.kode_provinsi) - Number(b.kode_provinsi);
@@ -176,8 +190,64 @@ export function useDpcList(params?: {
         page: currentPage,
         limit: pageSize,
       };
-      return { data: list as DpcItem[], meta };
+      return { data: list, meta };
     },
+    enabled,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useAllDpcList(enabled = true) {
+  return useQuery({
+    queryKey: ["wilayah", "dpc", "all"],
+    queryFn: async () => {
+      const pageSize = 100;
+      const firstRes = await apiFetch<ApiResponseWithPagination<DpcItem>>(
+        `/dpd-dpc?currentPage=1&pageSize=${pageSize}`,
+      );
+      const firstPageData = extractArrayData(firstRes);
+      const total = firstRes?.meta?.total ?? firstRes?.pagination?.total ?? firstPageData.length;
+      const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+
+      let combined = [...firstPageData];
+
+      if (totalPages > 1) {
+        const remainingRequests: Promise<ApiResponseWithPagination<DpcItem>>[] = [];
+        for (let page = 2; page <= totalPages; page++) {
+          remainingRequests.push(
+            apiFetch<ApiResponseWithPagination<DpcItem>>(
+              `/dpd-dpc?currentPage=${page}&pageSize=${pageSize}`,
+            ),
+          );
+        }
+        const remainingResponses = await Promise.all(remainingRequests);
+        for (const res of remainingResponses) {
+          combined = combined.concat(extractArrayData(res));
+        }
+      }
+
+      // Deduplikasi berdasarkan id untuk menjaga konsistensi lintas halaman
+      const dedupedMap = new Map<number, DpcItem>();
+      for (const item of combined) {
+        dedupedMap.set(item.id, item);
+      }
+
+      const list = Array.from(dedupedMap.values()).sort((a, b) => {
+        const provDiff = Number(a.kode_provinsi) - Number(b.kode_provinsi);
+        if (provDiff !== 0) return provDiff;
+        return Number(a.kode_kabupaten) - Number(b.kode_kabupaten);
+      });
+
+      return {
+        data: list,
+        meta: {
+          total: total || list.length,
+          page: 1,
+          limit: list.length,
+        },
+      };
+    },
+    enabled,
     staleTime: 30 * 1000,
   });
 }
@@ -257,7 +327,7 @@ export function useDeleteDpc() {
 // 3. MASTER WILAYAH HOOKS
 // -------------------------------------------------------------
 
-export function useMasterProvinsi() {
+export function useMasterProvinsi(enabled = true) {
   return useQuery({
     queryKey: ["master-wilayah", "provinsi"],
     queryFn: async () => {
@@ -272,6 +342,7 @@ export function useMasterProvinsi() {
         (a, b) => Number(a.kode_provinsi) - Number(b.kode_provinsi),
       );
     },
+    enabled,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -305,10 +376,12 @@ export function useCabangList(params?: {
   search?: string;
   currentPage?: number;
   pageSize?: number;
+  enabled?: boolean;
 }) {
   const search = params?.search;
   const currentPage = params?.currentPage || 1;
-  const pageSize = params?.pageSize || 100;
+  const pageSize = params?.pageSize || 500;
+  const enabled = params?.enabled ?? true;
 
   return useQuery({
     queryKey: ["wilayah", "cabang", { search, currentPage, pageSize }],
@@ -319,13 +392,94 @@ export function useCabangList(params?: {
       q.append("pageSize", String(pageSize));
       q.append("fixed", "all");
 
-      const res = await apiFetch<any>(`/cabang?${q.toString()}`);
+      const res = await apiFetch<ApiResponseWithPagination<CabangItem>>(
+        `/cabang?${q.toString()}`,
+      );
 
-      const raw = res?.data?.result ?? res?.result ?? res?.data ?? [];
-      const list = Array.isArray(raw) ? raw : [];
-      return list as CabangItem[];
+      return extractArrayData(res);
     },
+    enabled,
     staleTime: 30 * 1000,
+  });
+}
+
+export function useCreateCabang() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: CabangFormValues) => {
+      return apiFetch<{ message?: string; data?: { message?: string; total?: number } }>(
+        "/cabang",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["wilayah"] });
+      toast.success(
+        res?.data?.message || res?.message || "Profil Cabang berhasil ditambahkan",
+      );
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal menambahkan profil Cabang");
+    },
+  });
+}
+
+export function useUpdateCabang() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      uuid,
+      payload,
+    }: {
+      uuid: string;
+      payload: Partial<CabangFormValues>;
+    }) => {
+      return apiFetch<{ message?: string; data?: { message?: string } }>(
+        `/cabang/${uuid}/update`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["wilayah"] });
+      toast.success(
+        res?.data?.message || res?.message || "Profil Cabang berhasil diperbarui",
+      );
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal memperbarui profil Cabang");
+    },
+  });
+}
+
+export function useDeleteCabang() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (uuid: string) => {
+      return apiFetch<{ message?: string; data?: { message?: string } }>(
+        `/cabang/${uuid}/delete`,
+        {
+          method: "POST",
+        },
+      );
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["wilayah"] });
+      toast.success(
+        res?.data?.message || res?.message || "Profil Cabang berhasil dinonaktifkan",
+      );
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal menonaktifkan profil Cabang");
+    },
   });
 }
 
@@ -359,19 +513,16 @@ export function useTautkanCabang() {
 // 5. ROLE & AKUN ASSIGNMENT HOOKS
 // -------------------------------------------------------------
 
-export function useRolesList() {
+export function useRolesList(enabled = true) {
   return useQuery({
     queryKey: ["roles", "list"],
     queryFn: async () => {
-      const res = await apiFetch<{
-        success?: boolean;
-        message?: string;
-        data?: RoleItem[];
-        result?: RoleItem[];
-      }>("/roles?pageSize=100");
-      const list = res.data || res.result || [];
-      return list;
+      const res = await apiFetch<ApiResponseWithPagination<RoleItem>>(
+        "/roles?pageSize=100",
+      );
+      return extractArrayData(res);
     },
+    enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

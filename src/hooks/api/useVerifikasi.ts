@@ -49,13 +49,21 @@ export interface GetRegistrasiParams {
   search?: string;
   currentPage?: number;
   pageSize?: number;
+  enabled?: boolean;
 }
 
 export function useGetRegistrasiList(params: GetRegistrasiParams = {}) {
-  const { statusVerifikasi = "ALL", search, currentPage = 1, pageSize = 50 } = params;
+  const {
+    statusVerifikasi = "ALL",
+    search,
+    currentPage = 1,
+    pageSize = 50,
+    enabled = true,
+  } = params;
 
   return useQuery({
     queryKey: ["registrasi", statusVerifikasi, search, currentPage, pageSize],
+    enabled,
     queryFn: async () => {
       const queryParams = new URLSearchParams();
       if (statusVerifikasi && statusVerifikasi !== "ALL") {

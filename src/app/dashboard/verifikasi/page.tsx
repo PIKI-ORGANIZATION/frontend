@@ -45,6 +45,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { ReviewModal } from "./components/ReviewModal";
+import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { canAccessDashboardPath } from "@/lib/rbac";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -52,6 +55,8 @@ import { cn } from "@/lib/utils";
 type TabStatus = "ALL" | "PENDING" | "APPROVED" | "REJECTED";
 
 export default function VerifikasiPage() {
+  const { user, isReady } = useCurrentUser();
+  const canView = canAccessDashboardPath("/dashboard/verifikasi", user);
   const [activeTab, setActiveTab] = useState<TabStatus>("PENDING");
   const [searchTerm, setSearchTerm] = useState("");
   const [rowSelection, setRowSelection] = useState({});
@@ -60,6 +65,7 @@ export default function VerifikasiPage() {
   const { data, isLoading, error } = useGetRegistrasiList({
     statusVerifikasi: activeTab,
     search: searchTerm,
+    enabled: isReady && canView,
   });
 
   const { mutate: processVerifikasi, isPending } = useApproveRegistrasi();
@@ -425,6 +431,23 @@ export default function VerifikasiPage() {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
+
+  if (!isReady) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!canView) {
+    return (
+      <AccessDeniedState
+        title="Akses Verifikasi Pendaftar Ditolak"
+        description="Akun Anda tidak memiliki izin REGISTRASI_APPROVE untuk memverifikasi pendaftar anggota baru."
+      />
+    );
+  }
 
   if (error) {
     return (

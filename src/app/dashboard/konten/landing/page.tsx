@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   initialHeroContent,
@@ -13,6 +13,10 @@ import { AboutVisionTab } from "./components/AboutVisionTab";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { resolveLandingCmsAccess } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import {
   Globe,
@@ -21,6 +25,7 @@ import {
   Sparkles,
   Compass,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,7 +37,14 @@ const STORAGE_KEYS = {
 };
 
 export default function CmsLandingPage() {
-  const { events: historyEvents } = useSejarah({ fixed: "all" });
+  const { user, isReady } = useCurrentUser();
+  const access = useMemo(() => resolveLandingCmsAccess(user), [user]);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+
+  const { events: historyEvents } = useSejarah({
+    fixed: "all",
+    enabled: isReady && access.canView,
+  });
 
   const [heroContent, setHeroContent] = useState<HeroContent>(() => {
     if (typeof window === "undefined") return initialHeroContent;
@@ -71,18 +83,30 @@ export default function CmsLandingPage() {
   }, [aboutVisionContent]);
 
   const handleResetAll = () => {
-    if (
-      confirm(
-        "Apakah Anda yakin ingin mengembalikan form Hero dan Visi-Misi ke pengaturan bawaan default?",
-      )
-    ) {
-      setHeroContent(initialHeroContent);
-      setAboutVisionContent(initialAboutVisionContent);
-      localStorage.removeItem(STORAGE_KEYS.HERO);
-      localStorage.removeItem(STORAGE_KEYS.ABOUT_VISION);
-      toast.success("Data Hero dan Visi-Misi dikembalikan ke default.");
-    }
+    setHeroContent(initialHeroContent);
+    setAboutVisionContent(initialAboutVisionContent);
+    localStorage.removeItem(STORAGE_KEYS.HERO);
+    localStorage.removeItem(STORAGE_KEYS.ABOUT_VISION);
+    setShowResetDialog(false);
+    toast.success("Data Hero dan Visi-Misi dikembalikan ke default.");
   };
+
+  if (!isReady) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="size-7 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!access.canView) {
+    return (
+      <AccessDeniedState
+        title="Akses CMS Landing Page Ditolak"
+        description="Akun Anda tidak memiliki izin SEJARAH_MANAGE atau APP_SETTING_MANAGE untuk mengakses halaman manajemen konten beranda."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
@@ -105,16 +129,18 @@ export default function CmsLandingPage() {
 
         {/* Header Action Buttons */}
         <div className="flex items-center gap-2 self-end sm:self-center">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleResetAll}
-            title="Kembalikan semua form & linimasa ke data awal"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Reset Default
-          </Button>
+          {(access.canManagePageSettings || access.canManageSejarah) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowResetDialog(true)}
+              title="Kembalikan semua form & linimasa ke data awal"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset Default
+            </Button>
+          )}
 
           <Link
             href="/"
@@ -167,7 +193,10 @@ export default function CmsLandingPage() {
           value="history"
           className="focus-visible:outline-none space-y-4"
         >
-          <HistoryTab />
+          <HistoryTab
+            canManage={access.canManageSejarah}
+            enabled={isReady && access.canView}
+          />
         </TabsContent>
 
         {/* Tab 2: Hero Section */}
@@ -189,6 +218,17 @@ export default function CmsLandingPage() {
           />
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={showResetDialog}
+        onOpenChange={setShowResetDialog}
+        title="Kembalikan Pengaturan Default?"
+        description="Form Hero Section dan Visi-Misi akan dikembalikan ke konten bawaan default. Data Linimasa Sejarah di server tidak akan terhapus."
+        confirmText="Ya, Reset Default"
+        cancelText="Batal"
+        variant="destructive"
+        onConfirm={handleResetAll}
+      />
     </div>
   );
 }

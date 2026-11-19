@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 
 interface GaleriTableViewProps {
   items: GaleriItem[];
+  canManage?: boolean;
   onInspect: (item: GaleriItem) => void;
   onEdit: (item: GaleriItem) => void;
   onDelete: (id: string) => void;
@@ -34,6 +35,7 @@ interface GaleriTableViewProps {
 
 export function GaleriTableView({
   items,
+  canManage = true,
   onInspect,
   onEdit,
   onDelete,
@@ -150,14 +152,19 @@ export function GaleriTableView({
                 <TableCell className="py-3 text-center">
                   <button
                     type="button"
-                    onClick={() => onToggleStatus(item.id)}
-                    title="Klik untuk ubah status"
-                    className="cursor-pointer inline-flex"
+                    disabled={!canManage}
+                    onClick={() => canManage && onToggleStatus(item.id)}
+                    title={canManage ? "Klik untuk ubah status" : "Mode baca saja"}
+                    className={cn(
+                      "inline-flex",
+                      canManage ? "cursor-pointer" : "cursor-default",
+                    )}
                   >
                     <Badge
                       variant="secondary"
                       className={cn(
-                        "text-[10px] font-semibold border-0 transition-opacity hover:opacity-80",
+                        "text-[10px] font-semibold border-0 transition-opacity",
+                        canManage && "hover:opacity-80",
                         item.status === "PUBLISHED"
                           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                           : item.status === "ARCHIVED"
@@ -178,20 +185,28 @@ export function GaleriTableView({
                 <TableCell className="py-3 text-center">
                   <button
                     type="button"
-                    disabled={item.type !== "VIDEO" || item.status === "ARCHIVED"}
-                    onClick={() => onToggleFeatured(item.id)}
+                    disabled={
+                      !canManage ||
+                      item.type !== "VIDEO" ||
+                      item.status === "ARCHIVED"
+                    }
+                    onClick={() => canManage && onToggleFeatured(item.id)}
                     title={
-                      item.type !== "VIDEO"
-                        ? "Hanya video yang dapat dijadikan spotlight utama"
-                        : item.status === "ARCHIVED"
-                          ? "Item yang diarsipkan tidak dapat dijadikan spotlight"
-                          : item.featured
-                            ? "Hapus dari Spotlight Utama"
-                            : "Jadikan Spotlight Utama"
+                      !canManage
+                        ? "Mode baca saja"
+                        : item.type !== "VIDEO"
+                          ? "Hanya video yang dapat dijadikan spotlight utama"
+                          : item.status === "ARCHIVED"
+                            ? "Item yang diarsipkan tidak dapat dijadikan spotlight"
+                            : item.featured
+                              ? "Hapus dari Spotlight Utama"
+                              : "Jadikan Spotlight Utama"
                     }
                     className={cn(
                       "size-7 rounded-lg inline-flex items-center justify-center transition-colors",
-                      item.type !== "VIDEO" || item.status === "ARCHIVED"
+                      !canManage ||
+                        item.type !== "VIDEO" ||
+                        item.status === "ARCHIVED"
                         ? "opacity-25 cursor-not-allowed text-muted-foreground"
                         : item.featured
                           ? "text-amber-500 bg-amber-500/15 cursor-pointer"
@@ -219,24 +234,28 @@ export function GaleriTableView({
                     >
                       <Eye className="size-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(item)}
-                      title="Edit Media"
-                      className="size-8 rounded-lg text-muted-foreground hover:text-primary cursor-pointer"
-                    >
-                      <Edit2 className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(item.id)}
-                      title="Hapus Media"
-                      className="size-8 rounded-lg text-muted-foreground hover:text-rose-600 cursor-pointer"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    {canManage && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEdit(item)}
+                          title="Edit Media"
+                          className="size-8 rounded-lg text-muted-foreground hover:text-primary cursor-pointer"
+                        >
+                          <Edit2 className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDelete(item.id)}
+                          title="Hapus Media"
+                          className="size-8 rounded-lg text-muted-foreground hover:text-rose-600 cursor-pointer"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Building2,
   Loader2,
+  Info,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,23 +35,26 @@ import {
   useDeleteDpd,
   useTautkanCabang,
 } from "@/features/wilayah/hooks/useWilayah";
+import { WilayahAccess } from "@/lib/rbac";
 import { DpdEditorDialog } from "./DpdEditorDialog";
 import { LinkCabangDialog } from "./LinkCabangDialog";
 
 interface DpdTabProps {
   masterProvinsi: MasterProvinsi[];
   cabangList: CabangItem[];
+  access: WilayahAccess;
 }
 
-export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
+export function DpdTab({ masterProvinsi, cabangList, access }: DpdTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
   const { data: dpdResponse, isLoading } = useDpdList({
-    search: searchTerm,
+    search: access.scope === "DPP" ? searchTerm : undefined,
     currentPage,
     pageSize,
+    enabled: access.canViewDpd,
   });
 
   const dpdList = useMemo(() => dpdResponse?.data || [], [dpdResponse?.data]);
@@ -70,6 +74,10 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingDpd, setDeletingDpd] = useState<DpdItem | null>(null);
+
+  const hasAnyAction =
+    access.canManageCabangLink || access.canEditDpd || access.canDeleteDpd;
+  const colSpan = hasAnyAction ? 5 : 4;
 
   // Set kode provinsi yang sudah terdaftar
   const existingDpdCodes = useMemo(
@@ -103,12 +111,13 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
     setDeletingDpd(null);
   };
 
-  const handleSaveEditor = async (values: DpdFormValues) => {
+  const handleSaveEditor = async (values: Partial<DpdFormValues>) => {
     if (editingDpd) {
       await updateDpdMutation.mutateAsync({ id: editingDpd.id, payload: values });
-    } else {
-      await createDpdMutation.mutateAsync(values);
+    } else if (values.kodeProvinsi) {
+      await createDpdMutation.mutateAsync(values as DpdFormValues);
     }
+    setEditorOpen(false);
   };
 
   const handleSaveLink = async (cabangUuid: string | null) => {
@@ -119,6 +128,7 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
         cabangUuid: linkingDpd.cabang.uuid,
         dpdId: null,
       });
+      setLinkOpen(false);
       return;
     }
 
@@ -133,6 +143,7 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
         cabangUuid,
         dpdId: linkingDpd.id,
       });
+      setLinkOpen(false);
     }
   };
 
@@ -140,26 +151,39 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
 
   return (
     <div className="space-y-5">
-      {/* 1. Header Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <Input
-            placeholder="Cari provinsi, nama ketua..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="pl-10 text-sm h-10 bg-background"
-          />
-        </div>
+      {/* 1. Header Toolbar / Info Banner sesuai Role */}
+      {access.scope === "DPP" ? (
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Input
+              placeholder="Cari provinsi, nama ketua..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-10 text-sm h-10 bg-background"
+            />
+          </div>
 
-        <Button onClick={handleOpenAdd} className="h-10 px-4 text-sm font-medium gap-2 shrink-0">
-          <Plus className="w-4 h-4" />
-          <span>Tambah DPD</span>
-        </Button>
-      </div>
+          {access.canCreateDpd && (
+            <Button onClick={handleOpenAdd} className="h-10 px-4 text-sm font-medium gap-2 shrink-0">
+              <Plus className="w-4 h-4" />
+              <span>Tambah DPD</span>
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            {access.canEditDpd
+              ? "Menampilkan data DPD wilayah Anda. Anda dapat memperbarui nama ketua, nomor kontak, status kepengurusan, dan nomor SK."
+              : "Menampilkan data DPD wilayah Anda (mode lihat saja)."}
+          </p>
+        </div>
+      )}
 
       {/* 2. Data Table */}
       <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
@@ -170,13 +194,15 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
               <TableHead className="text-sm font-semibold py-3.5 px-4">Ketua / Kontak</TableHead>
               <TableHead className="text-sm font-semibold py-3.5 px-4">Status & SK</TableHead>
               <TableHead className="text-sm font-semibold py-3.5 px-4">Tautan Profil Cabang</TableHead>
-              <TableHead className="text-right text-sm font-semibold py-3.5 px-4">Aksi</TableHead>
+              {hasAnyAction && (
+                <TableHead className="text-right text-sm font-semibold py-3.5 px-4">Aksi</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-52 text-center">
+                <TableCell colSpan={colSpan} className="h-52 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                     <span className="text-sm">Memuat data DPD...</span>
@@ -185,13 +211,15 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
               </TableRow>
             ) : dpdList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-52 text-center text-muted-foreground text-sm">
+                <TableCell colSpan={colSpan} className="h-52 text-center text-muted-foreground text-sm">
                   <Building2 className="w-9 h-9 text-muted-foreground/40 mx-auto mb-2" />
                   <p className="font-semibold text-foreground">Belum ada data DPD.</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {searchTerm
                       ? "Tidak ada DPD yang sesuai dengan kata kunci pencarian."
-                      : "Klik tombol Tambah DPD untuk membentuk DPD pertama."}
+                      : access.canCreateDpd
+                      ? "Klik tombol Tambah DPD untuk membentuk DPD pertama."
+                      : "Data DPD wilayah Anda belum tersedia."}
                   </p>
                 </TableCell>
               </TableRow>
@@ -248,40 +276,48 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="py-4 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => handleOpenLink(item)}
-                        title="Tautkan Profil Cabang"
-                      >
-                        <Link2 className="w-4 h-4 text-primary" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleOpenEdit(item)}
-                        title="Edit DPD"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(item)}
-                        title="Nonaktifkan DPD"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {hasAnyAction && (
+                    <TableCell className="py-4 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {access.canManageCabangLink && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => handleOpenLink(item)}
+                            title="Tautkan Profil Cabang"
+                          >
+                            <Link2 className="w-4 h-4 text-primary" />
+                          </Button>
+                        )}
+                        {access.canEditDpd && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleOpenEdit(item)}
+                            title="Edit DPD"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {access.canDeleteDpd && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDelete(item)}
+                            title="Nonaktifkan DPD"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -290,27 +326,31 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
       </div>
 
       {/* 3. Reusable Pagination Component */}
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={meta.total}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        isFetching={isLoading}
-      />
+      {(access.scope === "DPP" || meta.total > pageSize) && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={meta.total}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          isFetching={isLoading}
+        />
+      )}
 
       {/* Dialogs */}
-      <DpdEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        dpd={editingDpd}
-        masterProvinsi={masterProvinsi}
-        existingDpdCodes={existingDpdCodes}
-        onSave={handleSaveEditor}
-        isSubmitting={createDpdMutation.isPending || updateDpdMutation.isPending}
-      />
+      {(access.canCreateDpd || access.canEditDpd) && (
+        <DpdEditorDialog
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          dpd={editingDpd}
+          masterProvinsi={masterProvinsi}
+          existingDpdCodes={existingDpdCodes}
+          onSave={handleSaveEditor}
+          isSubmitting={createDpdMutation.isPending || updateDpdMutation.isPending}
+        />
+      )}
 
-      {linkingDpd && (
+      {access.canManageCabangLink && linkingDpd && (
         <LinkCabangDialog
           open={linkOpen}
           onOpenChange={setLinkOpen}
@@ -325,16 +365,18 @@ export function DpdTab({ masterProvinsi, cabangList }: DpdTabProps) {
       )}
 
       {/* Confirmation Dialog Nonaktifkan DPD */}
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
-        title="Nonaktifkan DPD"
-        description={`Apakah Anda yakin ingin menonaktifkan DPD ${deletingDpd?.dpd}? Data ini akan dinonaktifkan dari struktur kepengurusan aktif.`}
-        confirmText="Ya, Nonaktifkan"
-        cancelText="Batal"
-        variant="destructive"
-        onConfirm={handleConfirmDelete}
-      />
+      {access.canDeleteDpd && (
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title="Nonaktifkan DPD"
+          description={`Apakah Anda yakin ingin menonaktifkan DPD ${deletingDpd?.dpd}? Data ini akan dinonaktifkan dari struktur kepengurusan aktif.`}
+          confirmText="Ya, Nonaktifkan"
+          cancelText="Batal"
+          variant="destructive"
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
   );
 }

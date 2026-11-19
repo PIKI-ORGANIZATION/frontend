@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { LogOut, Home } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -11,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { MinimalFooter } from "@/components/ui/minimal-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { logoutSession } from "@/lib/api";
 
 import {
   Navbar,
@@ -37,8 +36,8 @@ export default function PortalLayout({
     { name: "Profil Saya", link: "/portal/pengaturan" },
   ];
 
-  const handleLogout = () => {
-    Cookies.remove("token");
+  const handleLogout = async () => {
+    await logoutSession();
     toast.success("Berhasil Log Out");
     router.push("/login");
   };

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { decodeToken } from "@/lib/utils";
-import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
+import { canAccessDashboardPath, hasRole, ROLE_GROUPS } from "@/lib/rbac";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
-  const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
-  const isPortal = request.nextUrl.pathname.startsWith("/portal");
-  const isLogin = request.nextUrl.pathname === "/login";
+  const pathname = request.nextUrl.pathname;
+  const isDashboard = pathname.startsWith("/dashboard");
+  const isPortal = pathname.startsWith("/portal");
+  const isLogin = pathname === "/login";
 
   // Jika mencoba masuk ke area terproteksi tanpa token
   if ((isDashboard || isPortal) && !token) {
@@ -18,8 +19,22 @@ export function middleware(request: NextRequest) {
   if (token) {
     user = decodeToken(token);
 
+    // Deny-by-default: token rusak / gagal didekode dianggap tidak valid
+    if (!user) {
+      if (isDashboard || isPortal) {
+        const response = NextResponse.redirect(
+          new URL("/login?expired=true", request.url),
+        );
+        response.cookies.delete("token");
+        return response;
+      }
+      const response = NextResponse.next();
+      response.cookies.delete("token");
+      return response;
+    }
+
     // Cek apakah token sudah expired berdasarkan claim exp JWT (exp dalam detik)
-    if (user?.exp && Date.now() >= user.exp * 1000) {
+    if (user.exp && Date.now() >= user.exp * 1000) {
       if (isDashboard || isPortal) {
         const response = NextResponse.redirect(
           new URL("/login?expired=true", request.url),
@@ -45,7 +60,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // --- Route Protection & Isolation ---
+  // --- Route Protection, Isolation & Centralized Deny-by-Default RBAC ---
   if (token && user) {
     // 1. Block Members from Dashboard (Admin Area)
     if (isDashboard && !isAdmin) {
@@ -55,6 +70,16 @@ export function middleware(request: NextRequest) {
     // 2. Block Admins from Portal (Member Area)
     if (isPortal && isAdmin) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    // 3. Enforce Centralized Deny-by-Default Permission Policy on /dashboard/*
+    if (isDashboard && isAdmin && pathname !== "/dashboard") {
+      if (!canAccessDashboardPath(pathname, user)) {
+        const deniedUrl = new URL("/dashboard", request.url);
+        deniedUrl.searchParams.set("denied", "1");
+        deniedUrl.searchParams.set("from", pathname);
+        return NextResponse.redirect(deniedUrl);
+      }
     }
   }
 

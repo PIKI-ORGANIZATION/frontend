@@ -26,15 +26,23 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
 import { getSafeImageSrc } from "@/features/galeri/types";
 
 interface HistoryTabProps {
   events?: HistoryEvent[];
   setEvents?: React.Dispatch<React.SetStateAction<HistoryEvent[]>>;
+  canManage?: boolean;
+  enabled?: boolean;
 }
 
-export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
+export function HistoryTab({
+  events: propEvents,
+  setEvents,
+  canManage = true,
+  enabled = true,
+}: HistoryTabProps) {
   const {
     events: remoteEvents,
     isLoading,
@@ -42,7 +50,7 @@ export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
     updateEvent,
     deleteEvent,
     uploadFoto,
-  } = useSejarah({ fixed: "all", fallbackIfEmpty: false });
+  } = useSejarah({ fixed: "all", fallbackIfEmpty: false, enabled });
 
   // Gunakan propEvents jika disediakan, atau gunakan remoteEvents dari API
   const effectiveEvents = propEvents && setEvents ? propEvents : remoteEvents;
@@ -54,6 +62,10 @@ export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<HistoryEvent | null>(null);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string>("");
+  const [deletingTarget, setDeletingTarget] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   // Filtered dataset
   const filteredEvents = useMemo(() => {
@@ -81,16 +93,19 @@ export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
   }, [effectiveEvents, selectedPreviewId, filteredEvents]);
 
   const handleOpenAdd = () => {
+    if (!canManage) return;
     setEditingEvent(null);
     setEditorOpen(true);
   };
 
   const handleOpenEdit = (item: HistoryEvent) => {
+    if (!canManage) return;
     setEditingEvent(item);
     setEditorOpen(true);
   };
 
   const handleToggleStatus = async (item: HistoryEvent) => {
+    if (!canManage) return;
     const newStatus = item.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
     if (setEvents) {
       setEvents((prev) =>
@@ -109,20 +124,23 @@ export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
     }
   };
 
-  const handleDelete = async (id: string, title: string) => {
-    if (confirm(`Apakah Anda yakin ingin menonaktifkan peristiwa "${title}"?`)) {
-      if (setEvents) {
-        setEvents((prev) => prev.filter((item) => item.id !== id));
-      }
-      try {
-        await deleteEvent(id);
-      } catch {
-        // Toast error dikelola oleh hook
-      }
+  const handleConfirmDelete = async () => {
+    if (!canManage || !deletingTarget) return;
+    const { id } = deletingTarget;
+    if (setEvents) {
+      setEvents((prev) => prev.filter((item) => item.id !== id));
+    }
+    try {
+      await deleteEvent(id);
+    } catch {
+      // Toast error dikelola oleh hook
+    } finally {
+      setDeletingTarget(null);
     }
   };
 
   const handleSaveEvent = async (savedEvent: HistoryEvent) => {
+    if (!canManage) return;
     try {
       if (editingEvent) {
         await updateEvent(editingEvent.id, savedEvent);
@@ -179,10 +197,12 @@ export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
           </div>
         </div>
 
-        <Button onClick={handleOpenAdd} size="sm">
-          <Plus className="w-3.5 h-3.5" />
-          Tambah
-        </Button>
+        {canManage && (
+          <Button onClick={handleOpenAdd} size="sm">
+            <Plus className="w-3.5 h-3.5" />
+            Tambah
+          </Button>
+        )}
       </div>
 
       {/* 2. Content Layout: Data Table + Live Preview */}
@@ -285,56 +305,58 @@ export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
                     </div>
 
                     {/* Aksi Baris */}
-                    <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleStatus(item);
-                        }}
-                        title={
-                          item.status === "PUBLISHED"
-                            ? "Jadikan Draf"
-                            : "Tayangkan ke Landing Page"
-                        }
-                      >
-                        <CheckCircle2
-                          className={`w-3.5 h-3.5 ${
+                    {canManage && (
+                      <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleStatus(item);
+                          }}
+                          title={
                             item.status === "PUBLISHED"
-                              ? "text-emerald-500"
-                              : "text-muted-foreground/50"
-                          }`}
-                        />
-                      </Button>
+                              ? "Jadikan Draf"
+                              : "Tayangkan ke Landing Page"
+                          }
+                        >
+                          <CheckCircle2
+                            className={`w-3.5 h-3.5 ${
+                              item.status === "PUBLISHED"
+                                ? "text-emerald-500"
+                                : "text-muted-foreground/50"
+                            }`}
+                          />
+                        </Button>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEdit(item);
-                        }}
-                        title="Edit Peristiwa"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEdit(item);
+                          }}
+                          title="Edit Peristiwa"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(item.id, item.title);
-                        }}
-                        title="Hapus Peristiwa"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                      </Button>
-                    </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingTarget({ id: item.id, title: item.title });
+                          }}
+                          title="Hapus Peristiwa"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -356,13 +378,28 @@ export function HistoryTab({ events: propEvents, setEvents }: HistoryTabProps) {
       </div>
 
       {/* Editor Modal Dialog */}
-      <HistoryEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        event={editingEvent}
-        onSave={handleSaveEvent}
-        onUploadPhoto={uploadFoto}
-      />
+      {canManage && (
+        <HistoryEditorDialog
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          event={editingEvent}
+          onSave={handleSaveEvent}
+          onUploadPhoto={uploadFoto}
+        />
+      )}
+
+      {canManage && (
+        <ConfirmDialog
+          open={Boolean(deletingTarget)}
+          onOpenChange={(open) => !open && setDeletingTarget(null)}
+          title="Nonaktifkan Peristiwa Sejarah?"
+          description={`Peristiwa "${deletingTarget?.title || ""}" akan dinonaktifkan dari linimasa publik PIKI.`}
+          confirmText="Ya, Nonaktifkan"
+          cancelText="Batal"
+          variant="destructive"
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
   );
 }

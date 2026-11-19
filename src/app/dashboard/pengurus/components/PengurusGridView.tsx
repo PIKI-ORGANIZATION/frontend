@@ -18,6 +18,7 @@ function getInitials(name: string) {
 interface PengurusGridViewProps {
   items: PengurusItem[];
   isLoaded: boolean;
+  canManage?: boolean;
   activeId?: string | null;
   onSelect: (item: PengurusItem) => void;
   onEdit: (item: PengurusItem, e: React.MouseEvent) => void;
@@ -28,6 +29,7 @@ interface PengurusGridViewProps {
 export function PengurusGridView({
   items,
   isLoaded,
+  canManage = true,
   activeId,
   onSelect,
   onEdit,
@@ -133,14 +135,26 @@ export function PengurusGridView({
             <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={(e) => onToggleStatus(item.id, e)}
-                title="Klik untuk mengubah status tayang"
-                className="inline-flex items-center gap-1 cursor-pointer group/status"
+                disabled={!canManage}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (canManage) onToggleStatus(item.id, e);
+                }}
+                title={
+                  canManage
+                    ? "Klik untuk mengubah status tayang"
+                    : "Mode baca saja"
+                }
+                className={cn(
+                  "inline-flex items-center gap-1 group/status",
+                  canManage ? "cursor-pointer" : "cursor-default",
+                )}
               >
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[10px] py-0.5 transition-colors cursor-pointer",
+                    "text-[10px] py-0.5 transition-colors",
+                    canManage ? "cursor-pointer" : "cursor-default",
                     item.status === "PUBLISHED"
                       ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 group-hover/status:bg-emerald-500/20"
                       : "text-amber-600 bg-amber-500/10 border-amber-500/20 group-hover/status:bg-amber-500/20",
@@ -173,24 +187,28 @@ export function PengurusGridView({
                 >
                   <Eye className="w-3.5 h-3.5" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => onEdit(item, e)}
-                  title="Ubah data pengurus"
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => onDelete(item.id, e)}
-                  title="Hapus pengurus"
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
+                {canManage && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => onEdit(item, e)}
+                      title="Ubah data pengurus"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => onDelete(item.id, e)}
+                      title="Hapus pengurus"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>

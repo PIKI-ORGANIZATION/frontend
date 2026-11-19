@@ -23,7 +23,7 @@ interface DpcEditorDialogProps {
   dpc: DpcItem | null;
   masterProvinsi: MasterProvinsi[];
   existingDpcCodes: Set<string>;
-  onSave: (payload: DpcFormValues) => Promise<unknown>;
+  onSave: (payload: Partial<DpcFormValues>) => Promise<unknown>;
   isSubmitting: boolean;
 }
 
@@ -31,7 +31,7 @@ interface DpcFormInnerProps {
   dpc: DpcItem | null;
   masterProvinsi: MasterProvinsi[];
   existingDpcCodes: Set<string>;
-  onSave: (payload: DpcFormValues) => Promise<unknown>;
+  onSave: (payload: Partial<DpcFormValues>) => Promise<unknown>;
   onCancel: () => void;
   isSubmitting: boolean;
 }
@@ -77,7 +77,7 @@ function DpcFormInner({
   );
 
   const { data: kabupatenList = [], isLoading: isLoadingKab } =
-    useMasterKabupaten(selectedProvinsi || null);
+    useMasterKabupaten(isEditing ? null : selectedProvinsi || null);
 
   // Filter kabupaten yang belum terdaftar di DPC, urutkan berdasarkan kode terkecil
   const availableKabupaten = useMemo(() => {
@@ -110,6 +110,18 @@ function DpcFormInner({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Saat mode edit, jangan kirim kode_kabupaten agar lolos validasi .strict() backend untuk Admin DPC
+    if (isEditing) {
+      await onSave({
+        pengurus: pengurus.trim(),
+        no_handphone: noHandphone.trim(),
+        keterangan: keterangan.trim(),
+        penerbitan_sk: penerbitanSk.trim(),
+      });
+      return;
+    }
+
     if (!kodeKabupaten) return;
 
     await onSave({
@@ -126,7 +138,7 @@ function DpcFormInner({
       {/* 1. Pilih Provinsi Induk */}
       <div className="space-y-2">
         <Label htmlFor="dpc-provinsi" className="text-sm font-medium text-foreground">
-          Provinsi Induk <span className="text-destructive">*</span>
+          Provinsi Induk {!isEditing && <span className="text-destructive">*</span>}
         </Label>
         {isEditing ? (
           <Input
@@ -153,14 +165,19 @@ function DpcFormInner({
       {/* 2. Pilih Kabupaten/Kota */}
       <div className="space-y-2">
         <Label htmlFor="kabupaten" className="text-sm font-medium text-foreground">
-          Kabupaten / Kota (DPC) <span className="text-destructive">*</span>
+          Kabupaten / Kota (DPC) {!isEditing && <span className="text-destructive">*</span>}
         </Label>
         {isEditing ? (
-          <Input
-            value={`DPC ${dpc?.dpc}`}
-            disabled
-            className="h-10 text-sm bg-muted text-muted-foreground font-medium"
-          />
+          <div className="space-y-1.5">
+            <Input
+              value={`DPC ${dpc?.dpc}`}
+              disabled
+              className="h-10 text-sm bg-muted text-muted-foreground font-medium"
+            />
+            <p className="text-xs text-muted-foreground">
+              Wilayah kabupaten/kota terkunci. Anda dapat memperbarui data ketua, kontak, status, dan nomor SK.
+            </p>
+          </div>
         ) : (
           <SearchableSelect
             id="kabupaten"
@@ -255,7 +272,7 @@ function DpcFormInner({
         </Button>
         <Button
           type="submit"
-          disabled={isSubmitting || !kodeKabupaten}
+          disabled={isSubmitting || (!isEditing && !kodeKabupaten)}
           className="h-10 px-5 text-sm font-medium"
         >
           {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

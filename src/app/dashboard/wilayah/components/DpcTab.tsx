@@ -13,6 +13,7 @@ import {
   Building,
   Loader2,
   Filter,
+  Info,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -36,25 +37,37 @@ import {
   useDeleteDpc,
   useTautkanCabang,
 } from "@/features/wilayah/hooks/useWilayah";
+import { WilayahAccess } from "@/lib/rbac";
 import { DpcEditorDialog } from "./DpcEditorDialog";
 import { LinkCabangDialog } from "./LinkCabangDialog";
 
 interface DpcTabProps {
   masterProvinsi: MasterProvinsi[];
   cabangList: CabangItem[];
+  allDpcList?: DpcItem[];
+  access: WilayahAccess;
 }
 
-export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
+export function DpcTab({
+  masterProvinsi,
+  cabangList,
+  allDpcList,
+  access,
+}: DpcTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProvinsi, setSelectedProvinsi] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
   const { data: dpcResponse, isLoading } = useDpcList({
-    search: searchTerm,
-    kode_provinsi: selectedProvinsi === "ALL" ? undefined : selectedProvinsi,
+    search: access.scope !== "DPC" ? searchTerm : undefined,
+    kode_provinsi:
+      access.canFilterProvinsi && selectedProvinsi !== "ALL"
+        ? selectedProvinsi
+        : undefined,
     currentPage,
     pageSize,
+    enabled: access.canViewDpc,
   });
 
   const dpcList = useMemo(() => dpcResponse?.data || [], [dpcResponse?.data]);
@@ -75,10 +88,14 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingDpc, setDeletingDpc] = useState<DpcItem | null>(null);
 
-  const existingDpcCodes = useMemo(
-    () => new Set(dpcList.map((d) => d.kode_kabupaten)),
-    [dpcList],
-  );
+  const hasAnyAction =
+    access.canManageCabangLink || access.canEditDpc || access.canDeleteDpc;
+  const colSpan = hasAnyAction ? 6 : 5;
+
+  const existingDpcCodes = useMemo(() => {
+    const source = allDpcList && allDpcList.length > 0 ? allDpcList : dpcList;
+    return new Set(source.map((d) => d.kode_kabupaten));
+  }, [allDpcList, dpcList]);
 
   // Urutkan provinsi berdasarkan kode terkecil, dan tampilkan nama tanpa kode
   const provinsiFilterOptions = useMemo(() => {
@@ -121,12 +138,13 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
     setDeletingDpc(null);
   };
 
-  const handleSaveEditor = async (values: DpcFormValues) => {
+  const handleSaveEditor = async (values: Partial<DpcFormValues>) => {
     if (editingDpc) {
       await updateDpcMutation.mutateAsync({ id: editingDpc.id, payload: values });
-    } else {
-      await createDpcMutation.mutateAsync(values);
+    } else if (values.kode_kabupaten) {
+      await createDpcMutation.mutateAsync(values as DpcFormValues);
     }
+    setEditorOpen(false);
   };
 
   const handleSaveLink = async (cabangUuid: string | null) => {
@@ -137,6 +155,7 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
         cabangUuid: linkingDpc.cabang.uuid,
         dpcId: null,
       });
+      setLinkOpen(false);
       return;
     }
 
@@ -151,6 +170,7 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
         cabangUuid,
         dpcId: linkingDpc.id,
       });
+      setLinkOpen(false);
     }
   };
 
@@ -158,43 +178,70 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
 
   return (
     <div className="space-y-5">
-      {/* 1. Header Toolbar with Filter Provinsi */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-        <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-xl">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <Input
-              placeholder="Cari kabupaten, kota, atau nama ketua..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="pl-10 text-sm h-10 bg-background"
-            />
-          </div>
-
-          <div className="w-full sm:w-64 shrink-0">
-            <SearchableSelect
-              value={selectedProvinsi}
-              onValueChange={(val) => {
-                setSelectedProvinsi(val);
-                setCurrentPage(1);
-              }}
-              options={provinsiFilterOptions}
-              placeholder="Saring Provinsi"
-              searchPlaceholder="Cari provinsi..."
-              emptyMessage="Provinsi tidak ditemukan"
-              icon={<Filter className="w-4 h-4 text-muted-foreground mr-0.5" />}
-            />
-          </div>
+      {/* Contextual Info Banner untuk Admin DPD (Read-Only) atau Admin DPC (Self-Edit) */}
+      {access.scope === "DPD" && (
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            Menampilkan seluruh DPC di wilayah provinsi Anda (hanya baca). Perubahan data DPC dikelola oleh DPP atau admin DPC terkait.
+          </p>
         </div>
+      )}
 
-        <Button onClick={handleOpenAdd} className="h-10 px-4 text-sm font-medium gap-2 shrink-0">
-          <Plus className="w-4 h-4" />
-          <span>Tambah DPC</span>
-        </Button>
-      </div>
+      {access.scope === "DPC" && (
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            {access.canEditDpc
+              ? "Menampilkan data DPC wilayah Anda. Anda dapat memperbarui nama ketua, nomor kontak, status kepengurusan, dan nomor SK."
+              : "Menampilkan data DPC wilayah Anda (mode lihat saja)."}
+          </p>
+        </div>
+      )}
+
+      {/* 1. Header Toolbar (DPP: Search + Filter Provinsi + Tambah; DPD: Search saja; DPC: tanpa toolbar) */}
+      {access.scope !== "DPC" && (
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-xl">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Input
+                placeholder="Cari kabupaten, kota, atau nama ketua..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-10 text-sm h-10 bg-background"
+              />
+            </div>
+
+            {access.canFilterProvinsi && (
+              <div className="w-full sm:w-64 shrink-0">
+                <SearchableSelect
+                  value={selectedProvinsi}
+                  onValueChange={(val) => {
+                    setSelectedProvinsi(val);
+                    setCurrentPage(1);
+                  }}
+                  options={provinsiFilterOptions}
+                  placeholder="Saring Provinsi"
+                  searchPlaceholder="Cari provinsi..."
+                  emptyMessage="Provinsi tidak ditemukan"
+                  icon={<Filter className="w-4 h-4 text-muted-foreground mr-0.5" />}
+                />
+              </div>
+            )}
+          </div>
+
+          {access.canCreateDpc && (
+            <Button onClick={handleOpenAdd} className="h-10 px-4 text-sm font-medium gap-2 shrink-0">
+              <Plus className="w-4 h-4" />
+              <span>Tambah DPC</span>
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* 2. Data Table */}
       <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
@@ -206,13 +253,15 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
               <TableHead className="text-sm font-semibold py-3.5 px-4">Ketua / Kontak</TableHead>
               <TableHead className="text-sm font-semibold py-3.5 px-4">Status & SK</TableHead>
               <TableHead className="text-sm font-semibold py-3.5 px-4">Tautan Profil Cabang</TableHead>
-              <TableHead className="text-right text-sm font-semibold py-3.5 px-4">Aksi</TableHead>
+              {hasAnyAction && (
+                <TableHead className="text-right text-sm font-semibold py-3.5 px-4">Aksi</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-52 text-center">
+                <TableCell colSpan={colSpan} className="h-52 text-center">
                   <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                     <Loader2 className="w-6 h-6 animate-spin text-primary" />
                     <span className="text-sm">Memuat data DPC...</span>
@@ -221,13 +270,15 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
               </TableRow>
             ) : dpcList.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-52 text-center text-muted-foreground text-sm">
+                <TableCell colSpan={colSpan} className="h-52 text-center text-muted-foreground text-sm">
                   <Building className="w-9 h-9 text-muted-foreground/40 mx-auto mb-2" />
                   <p className="font-semibold text-foreground">Belum ada data DPC.</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {searchTerm || selectedProvinsi !== "ALL"
                       ? "Tidak ada DPC yang sesuai dengan filter pencarian."
-                      : "Klik tombol Tambah DPC untuk membentuk DPC pertama."}
+                      : access.canCreateDpc
+                      ? "Klik tombol Tambah DPC untuk membentuk DPC pertama."
+                      : "Belum ada DPC yang terdaftar di cakupan wilayah Anda."}
                   </p>
                 </TableCell>
               </TableRow>
@@ -289,40 +340,48 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="py-4 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => handleOpenLink(item)}
-                        title="Tautkan Profil Cabang"
-                      >
-                        <Link2 className="w-4 h-4 text-primary" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => handleOpenEdit(item)}
-                        title="Edit DPC"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(item)}
-                        title="Nonaktifkan DPC"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {hasAnyAction && (
+                    <TableCell className="py-4 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {access.canManageCabangLink && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => handleOpenLink(item)}
+                            title="Tautkan Profil Cabang"
+                          >
+                            <Link2 className="w-4 h-4 text-primary" />
+                          </Button>
+                        )}
+                        {access.canEditDpc && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleOpenEdit(item)}
+                            title="Edit DPC"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {access.canDeleteDpc && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDelete(item)}
+                            title="Nonaktifkan DPC"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -331,27 +390,31 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
       </div>
 
       {/* 3. Reusable Pagination Component */}
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={meta.total}
-        pageSize={pageSize}
-        onPageChange={setCurrentPage}
-        isFetching={isLoading}
-      />
+      {(access.scope !== "DPC" || meta.total > pageSize) && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={meta.total}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          isFetching={isLoading}
+        />
+      )}
 
       {/* Dialogs */}
-      <DpcEditorDialog
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        dpc={editingDpc}
-        masterProvinsi={masterProvinsi}
-        existingDpcCodes={existingDpcCodes}
-        onSave={handleSaveEditor}
-        isSubmitting={createDpcMutation.isPending || updateDpcMutation.isPending}
-      />
+      {(access.canCreateDpc || access.canEditDpc) && (
+        <DpcEditorDialog
+          open={editorOpen}
+          onOpenChange={setEditorOpen}
+          dpc={editingDpc}
+          masterProvinsi={masterProvinsi}
+          existingDpcCodes={existingDpcCodes}
+          onSave={handleSaveEditor}
+          isSubmitting={createDpcMutation.isPending || updateDpcMutation.isPending}
+        />
+      )}
 
-      {linkingDpc && (
+      {access.canManageCabangLink && linkingDpc && (
         <LinkCabangDialog
           open={linkOpen}
           onOpenChange={setLinkOpen}
@@ -366,16 +429,18 @@ export function DpcTab({ masterProvinsi, cabangList }: DpcTabProps) {
       )}
 
       {/* Confirmation Dialog Nonaktifkan DPC */}
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
-        title="Nonaktifkan DPC"
-        description={`Apakah Anda yakin ingin menonaktifkan DPC ${deletingDpc?.dpc}? Data ini akan dinonaktifkan dari struktur kepengurusan aktif.`}
-        confirmText="Ya, Nonaktifkan"
-        cancelText="Batal"
-        variant="destructive"
-        onConfirm={handleConfirmDelete}
-      />
+      {access.canDeleteDpc && (
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title="Nonaktifkan DPC"
+          description={`Apakah Anda yakin ingin menonaktifkan DPC ${deletingDpc?.dpc}? Data ini akan dinonaktifkan dari struktur kepengurusan aktif.`}
+          confirmText="Ya, Nonaktifkan"
+          cancelText="Batal"
+          variant="destructive"
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
   );
 }

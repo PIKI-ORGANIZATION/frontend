@@ -1,23 +1,21 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import {
   NewsItem,
   NewsPagination,
+  NewsScope,
   resolveNewsScope,
   unwrapNewsDetail,
   unwrapNewsList,
 } from "@/lib/news";
-import { decodeToken } from "@/lib/utils";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-export function useNewsScope() {
-  const [scope, setScope] = useState<ReturnType<typeof resolveNewsScope> | null>(null);
-  useEffect(() => {
-    setScope(resolveNewsScope(decodeToken(Cookies.get("token") || "")));
-  }, []);
-  return scope;
+export function useNewsScope(): NewsScope | null {
+  const { user, isReady } = useCurrentUser();
+  return useMemo(() => (isReady ? resolveNewsScope(user) : null), [isReady, user]);
 }
 
 export interface NewsQueryParams {
@@ -89,9 +87,13 @@ export function usePublicNews(params?: NewsQueryParams) {
   });
 }
 
-export function useAdminNews(params?: NewsQueryParams) {
+export function useAdminNews(
+  params?: NewsQueryParams,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ["news", "admin", params],
+    enabled: options?.enabled ?? true,
     queryFn: () => fetchNews({ ...params, fixed: params?.fixed ?? "all" }, true),
   });
 }
@@ -110,10 +112,13 @@ export function usePublicNewsBySlug(slug: string) {
   });
 }
 
-export function useAdminNewsById(uuid: string) {
+export function useAdminNewsById(
+  uuid: string,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ["news", "admin", uuid],
-    enabled: Boolean(uuid),
+    enabled: Boolean(uuid) && (options?.enabled ?? true),
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/news-utama/${uuid}`, {
         headers: authHeaders(),
@@ -224,6 +229,55 @@ export function useArchiveNews() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["news"] });
+    },
+  });
+}
+
+export function useCreateNewsKategori() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      nama: string;
+      slug: string;
+      deskripsi?: string;
+    }) => {
+      const res = await fetch(`${API_BASE}/news-kategori/`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) await readError(res);
+      const json = await res.json();
+      return (json?.data ?? json) as {
+        uuid: string;
+        nama_kategori: string;
+        slug: string;
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["news", "taxonomy"] });
+    },
+  });
+}
+
+export function useCreateNewsTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { nama_tag: string }) => {
+      const res = await fetch(`${API_BASE}/news-tags/`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) await readError(res);
+      const json = await res.json();
+      return (json?.data ?? json) as {
+        uuid: string;
+        nama_tag: string;
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["news", "taxonomy"] });
     },
   });
 }

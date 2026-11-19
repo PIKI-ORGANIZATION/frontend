@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { UserPayload } from "@/lib/utils";
+import { isSuperAdmin } from "@/lib/rbac";
 
 export type TingkatOrganisasi = "DPP" | "DPD" | "DPC";
 export type NewsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
@@ -70,32 +71,89 @@ export function tingkatLabel(tingkat: TingkatOrganisasi) {
   return "DPC Kab/Kota";
 }
 
-export function resolveNewsScope(user: UserPayload | null | undefined) {
+export interface NewsScope {
+  isManageAll: boolean;
+  tingkat: TingkatOrganisasi;
+  cabangId: string | null;
+  cabangName: string;
+  hasCabangBinding: boolean;
+  permissions: string[];
+  canRead: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canArchive: boolean;
+  canWrite: boolean;
+  canCreateKategori: boolean;
+  canCreateTag: boolean;
+}
+
+export function resolveNewsScope(user: UserPayload | null | undefined): NewsScope {
   const permissions = Array.isArray(user?.permissions)
     ? (user.permissions as string[])
     : [];
-  const roles = Array.isArray(user?.roles) ? user.roles : [];
-  const isManageAll =
-    permissions.includes("MANAGE_ALL_CABANG") ||
-    roles.some((role) => ["SUPER_ADMIN", "ADMIN_DPP"].includes(role.toUpperCase()));
+  const isManageAll = isSuperAdmin(user);
   const cabangName = typeof user?.cabang === "string" ? user.cabang : "";
-  const isCabang = user?.isCabang === true;
-  const tingkat: TingkatOrganisasi =
-    isManageAll || !isCabang ? "DPP" : tingkatFromCabangName(cabangName, true);
+  const cabangId =
+    typeof user?.cabangId === "string" && user.cabangId.trim().length > 0
+      ? user.cabangId.trim()
+      : null;
+
+  let tingkat: TingkatOrganisasi;
+  if (isManageAll) {
+    tingkat = "DPP";
+  } else if (user?.tingkat === "DPD") {
+    tingkat = "DPD";
+  } else if (user?.tingkat === "DPC") {
+    tingkat = "DPC";
+  } else {
+    const inferred = tingkatFromCabangName(cabangName, true);
+    tingkat = inferred === "DPP" ? "DPC" : inferred;
+  }
+
+  const canCreate = isManageAll || permissions.includes("NEWS_UTAMA_CREATE");
+  const canUpdate = isManageAll || permissions.includes("NEWS_UTAMA_UPDATE");
+  const canArchive = isManageAll || permissions.includes("NEWS_UTAMA_ARCHIVE");
+  const canCreateKategori =
+    isManageAll || permissions.includes("NEWS_KATEGORI_CREATE");
+  const canCreateTag = isManageAll || permissions.includes("NEWS_TAG_CREATE");
+  const canRead =
+    isManageAll ||
+    permissions.includes("NEWS_UTAMA_READ") ||
+    canCreate ||
+    canUpdate;
 
   return {
     isManageAll,
     tingkat,
-    cabangId: typeof user?.cabangId === "string" ? user.cabangId : null,
+    cabangId,
     cabangName,
+    hasCabangBinding: isManageAll || Boolean(cabangId),
     permissions,
-    canArchive:
-      isManageAll || permissions.includes("NEWS_UTAMA_ARCHIVE"),
-    canWrite:
-      isManageAll ||
-      permissions.includes("NEWS_UTAMA_CREATE") ||
-      permissions.includes("NEWS_UTAMA_UPDATE"),
+    canRead,
+    canCreate,
+    canUpdate,
+    canArchive,
+    canWrite: canCreate || canUpdate,
+    canCreateKategori,
+    canCreateTag,
   };
+}
+
+/**
+ * Resource/Cabang-level authorization check (Deny-by-Default) untuk satu item berita.
+ * Selaras dengan backend newsUtama.controller.ts:
+ * - Admin DPP (MANAGE_ALL_CABANG) dapat mengelola berita cabang mana pun.
+ * - Admin DPD/DPC hanya dapat mengelola berita yang `cabangUuid === scope.cabangId`.
+ * - Jika `scope` kosong atau non-DPP tidak terikat ke cabang (`!cabangId`) -> DITOLAK.
+ */
+export function canManageNewsItem(
+  scope: NewsScope | null | undefined,
+  item: Pick<NewsItem, "cabangUuid"> | null | undefined,
+): boolean {
+  if (!scope || !item) return false;
+  if (scope.isManageAll) return true;
+  if (!scope.cabangId) return false;
+  return item.cabangUuid === scope.cabangId;
 }
 
 export function toNewsDatetimeLocal(value?: string | null) {
@@ -147,44 +205,67 @@ export function sanitizeNewsHtml(html: string) {
     .replace(/javascript:/gi, "");
 }
 
-export function normalizeNews(raw: any): NewsItem {
-  const tags = Array.isArray(raw?.tags)
-    ? raw.tags
-        .map((item: any) => item?.tag ?? item)
-        .filter((item: any) => item && (item.uuid || item.nama_tag))
-    : [];
-  const kategori = Array.isArray(raw?.kategori)
-    ? raw.kategori
-        .map((item: any) => item?.kategori ?? item)
-        .filter((item: any) => item && (item.uuid || item.nama_kategori))
-    : [];
+type UnknownRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): UnknownRecord {
+  return value && typeof value === "object" ? (value as UnknownRecord) : {};
+}
+
+export function normalizeNews(raw: unknown): NewsItem {
+  const rec = asRecord(raw);
+  const rawTags = Array.isArray(rec.tags) ? rec.tags : [];
+  const rawKategori = Array.isArray(rec.kategori) ? rec.kategori : [];
+
+  const tags = rawTags
+    .map((item) => {
+      const entry = asRecord(item);
+      return (entry.tag ?? item) as NewsTaxonomy;
+    })
+    .filter((item): item is NewsTaxonomy =>
+      Boolean(item && (item.uuid || item.nama_tag)),
+    );
+
+  const kategori = rawKategori
+    .map((item) => {
+      const entry = asRecord(item);
+      return (entry.kategori ?? item) as NewsTaxonomy;
+    })
+    .filter((item): item is NewsTaxonomy =>
+      Boolean(item && (item.uuid || item.nama_kategori)),
+    );
 
   return {
-    ...raw,
+    ...(rec as unknown as NewsItem),
     tags,
     kategori,
-    jumlah_dibaca: Number(raw?.jumlah_dibaca || 0),
+    jumlah_dibaca: Number(rec.jumlah_dibaca || 0),
   };
 }
 
-export function unwrapNewsList(payload: any): {
+export function unwrapNewsList(payload: unknown): {
   items: NewsItem[];
   pagination: NewsPagination;
 } {
-  const items = payload?.data?.result ?? payload?.result ?? [];
-  const pagination = payload?.data?.pagination ??
-    payload?.pagination ?? {
-      currentPage: 1,
-      pageSize: 10,
-      total: Array.isArray(items) ? items.length : 0,
-    };
+  const rec = asRecord(payload);
+  const data = asRecord(rec.data);
+  const items = data.result ?? rec.result ?? [];
+  const rawPagination = (data.pagination ?? rec.pagination) as
+    | NewsPagination
+    | undefined;
+  const pagination: NewsPagination = rawPagination ?? {
+    currentPage: 1,
+    pageSize: 10,
+    total: Array.isArray(items) ? items.length : 0,
+  };
   return {
     items: (Array.isArray(items) ? items : []).map(normalizeNews),
     pagination,
   };
 }
 
-export function unwrapNewsDetail(payload: any): NewsItem {
-  const raw = payload?.data?.result ?? payload?.result ?? payload?.data ?? payload;
+export function unwrapNewsDetail(payload: unknown): NewsItem {
+  const rec = asRecord(payload);
+  const data = asRecord(rec.data);
+  const raw = data.result ?? rec.result ?? rec.data ?? payload;
   return normalizeNews(raw);
 }

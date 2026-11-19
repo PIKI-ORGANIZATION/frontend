@@ -51,6 +51,11 @@ function statusLabel(s: string | null | undefined) {
       color:
         "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-400",
     },
+    MEMBER: {
+      label: "Aktif",
+      color:
+        "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-400",
+    },
     NON_MEMBER: {
       label: "Non-Aktif",
       color: "text-zinc-600 bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-400",
@@ -96,15 +101,22 @@ export function PublicAnggotaProfileView({ anggota }: Props) {
   const isKtaActive = anggota.statusKta === "ACTIVE";
   const verifikasiStatus = anggota.registrasi?.statusVerifikasi;
   const isVerified =
-    verifikasiStatus === "APPROVED_DPP" ||
-    anggota.statusKeanggotaan === "AKTIF";
+    Boolean(verifikasiStatus?.startsWith("APPROVED")) ||
+    anggota.statusKeanggotaan === "AKTIF" ||
+    anggota.statusKeanggotaan === "MEMBER" ||
+    isKtaActive;
 
   const membership = statusLabel(anggota.statusKeanggotaan);
-  const verifikasiInfo = statusLabel(verifikasiStatus);
 
   const joinedDate = formatDate(anggota.insert_at);
   const ktaActiveDate = formatDate(anggota.tglAktivasiKta);
-  const approvedDate = formatDate(anggota.registrasi?.tglPersetujuanPdp);
+  const approvedDate = formatDate(
+    anggota.registrasi?.tglVerifikasi ||
+      anggota.approvedAtDPP ||
+      anggota.approvedAtDPC ||
+      anggota.tglAktivasiKta ||
+      anggota.registrasi?.tglPersetujuanPdp,
+  );
 
   const initials = anggota.namaLengkap
     .split(" ")
@@ -322,7 +334,7 @@ export function PublicAnggotaProfileView({ anggota }: Props) {
                 {approvedDate && (
                   <InfoRow
                     icon={CheckCircle2}
-                    label="Disetujui DPP"
+                    label="Disetujui"
                     value={approvedDate}
                   />
                 )}

@@ -9,12 +9,16 @@ import {
   Unlink,
   Search,
   Loader2,
+  Plus,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Table,
   TableBody,
@@ -32,13 +36,26 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { CabangItem, DpdItem, DpcItem } from "@/features/wilayah/types";
-import { useTautkanCabang } from "@/features/wilayah/hooks/useWilayah";
+import {
+  CabangItem,
+  CabangFormValues,
+  DpdItem,
+  DpcItem,
+  MasterProvinsi,
+} from "@/features/wilayah/types";
+import {
+  useCreateCabang,
+  useUpdateCabang,
+  useDeleteCabang,
+  useTautkanCabang,
+} from "@/features/wilayah/hooks/useWilayah";
+import { CabangEditorDialog } from "./CabangEditorDialog";
 
 interface CabangTabProps {
   cabangList: CabangItem[];
   dpdList: DpdItem[];
   dpcList: DpcItem[];
+  masterProvinsi: MasterProvinsi[];
   isLoading: boolean;
 }
 
@@ -52,19 +69,30 @@ export function CabangTab({
   cabangList,
   dpdList,
   dpcList,
+  masterProvinsi,
   isLoading,
 }: CabangTabProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
+  // State Quick Link Dialog
   const [selectedCabang, setSelectedCabang] = useState<CabangItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  // Form states in Dialog
   const [linkType, setLinkType] = useState<"NONE" | "DPD" | "DPC">("NONE");
   const [targetId, setTargetId] = useState<string>("");
 
+  // State Editor Dialog (Create / Edit)
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingCabang, setEditingCabang] = useState<CabangItem | null>(null);
+
+  // State Delete Confirm Dialog
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingCabang, setDeletingCabang] = useState<CabangItem | null>(null);
+
+  const createCabangMutation = useCreateCabang();
+  const updateCabangMutation = useUpdateCabang();
+  const deleteCabangMutation = useDeleteCabang();
   const tautkanCabangMutation = useTautkanCabang();
 
   const safeCabangList = useMemo(
@@ -79,7 +107,8 @@ export function CabangTab({
         !q ||
         c.namaCabang.toLowerCase().includes(q) ||
         c.provinsi.toLowerCase().includes(q) ||
-        c.kabupatenKota.toLowerCase().includes(q)
+        c.kabupatenKota.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q)
       );
     });
   }, [safeCabangList, searchTerm]);
@@ -90,31 +119,88 @@ export function CabangTab({
     return filteredCabang.slice(start, start + pageSize);
   }, [filteredCabang, currentPage, pageSize]);
 
-  // Urutkan DPD berdasarkan kode terkecil, dan tampilkan nama tanpa kode
+  // Filter DPD yang belum dipakai cabang lain (kecuali cabang yang sedang diatur)
   const dpdOptions = useMemo(() => {
-    const sorted = [...dpdList].sort(
-      (a, b) => Number(a.kodeProvinsi) - Number(b.kodeProvinsi)
+    const usedDpdIds = new Set(
+      safeCabangList
+        .filter((c) => c.dpdId && c.uuid !== selectedCabang?.uuid)
+        .map((c) => c.dpdId as string),
     );
+
+    const sorted = [...dpdList]
+      .filter(
+        (d) =>
+          !usedDpdIds.has(d.id) &&
+          (!d.cabang || d.cabang.uuid === selectedCabang?.uuid),
+      )
+      .sort((a, b) => Number(a.kodeProvinsi) - Number(b.kodeProvinsi));
+
     return sorted.map((d) => ({
       value: d.id,
       label: `DPD ${d.dpd}`,
       searchKey: `DPD ${d.dpd}`,
     }));
-  }, [dpdList]);
+  }, [dpdList, safeCabangList, selectedCabang?.uuid]);
 
-  // Urutkan DPC berdasarkan kode terkecil, dan tampilkan nama tanpa kode
+  // Filter DPC yang belum dipakai cabang lain (kecuali cabang yang sedang diatur)
   const dpcOptions = useMemo(() => {
-    const sorted = [...dpcList].sort((a, b) => {
-      const p = Number(a.kode_provinsi) - Number(b.kode_provinsi);
-      if (p !== 0) return p;
-      return Number(a.kode_kabupaten) - Number(b.kode_kabupaten);
-    });
+    const usedDpcIds = new Set(
+      safeCabangList
+        .filter((c) => c.dpcId && c.uuid !== selectedCabang?.uuid)
+        .map((c) => c.dpcId as number),
+    );
+
+    const sorted = [...dpcList]
+      .filter(
+        (d) =>
+          !usedDpcIds.has(d.id) &&
+          (!d.cabang || d.cabang.uuid === selectedCabang?.uuid),
+      )
+      .sort((a, b) => {
+        const p = Number(a.kode_provinsi) - Number(b.kode_provinsi);
+        if (p !== 0) return p;
+        return Number(a.kode_kabupaten) - Number(b.kode_kabupaten);
+      });
+
     return sorted.map((d) => ({
       value: String(d.id),
       label: `DPC ${d.dpc} (${d.dpd})`,
       searchKey: `DPC ${d.dpc} ${d.dpd}`,
     }));
-  }, [dpcList]);
+  }, [dpcList, safeCabangList, selectedCabang?.uuid]);
+
+  const handleOpenAdd = () => {
+    setEditingCabang(null);
+    setEditorOpen(true);
+  };
+
+  const handleOpenEdit = (cabang: CabangItem) => {
+    setEditingCabang(cabang);
+    setEditorOpen(true);
+  };
+
+  const handleOpenDelete = (cabang: CabangItem) => {
+    setDeletingCabang(cabang);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingCabang) return;
+    await deleteCabangMutation.mutateAsync(deletingCabang.uuid);
+    setDeletingCabang(null);
+  };
+
+  const handleSaveEditor = async (values: CabangFormValues) => {
+    if (editingCabang) {
+      await updateCabangMutation.mutateAsync({
+        uuid: editingCabang.uuid,
+        payload: values,
+      });
+    } else {
+      await createCabangMutation.mutateAsync(values);
+    }
+    setEditorOpen(false);
+  };
 
   const handleOpenManageLink = (cabang: CabangItem) => {
     setSelectedCabang(cabang);
@@ -165,7 +251,7 @@ export function CabangTab({
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <Input
-            placeholder="Cari profil cabang, provinsi, kota..."
+            placeholder="Cari profil cabang, provinsi, kota, email..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -174,6 +260,14 @@ export function CabangTab({
             className="pl-10 text-sm h-10 bg-background"
           />
         </div>
+
+        <Button
+          onClick={handleOpenAdd}
+          className="h-10 px-4 text-sm font-medium gap-2 shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Tambah Profil Cabang</span>
+        </Button>
       </div>
 
       {/* 2. Data Table */}
@@ -182,7 +276,7 @@ export function CabangTab({
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="text-sm font-semibold py-3.5 px-4">Nama Profil Cabang</TableHead>
-              <TableHead className="text-sm font-semibold py-3.5 px-4">Lokasi & Domisili</TableHead>
+              <TableHead className="text-sm font-semibold py-3.5 px-4">Lokasi &amp; Domisili</TableHead>
               <TableHead className="text-sm font-semibold py-3.5 px-4">Status Publik</TableHead>
               <TableHead className="text-sm font-semibold py-3.5 px-4">Tautan Kepengurusan</TableHead>
               <TableHead className="text-right text-sm font-semibold py-3.5 px-4">Aksi</TableHead>
@@ -206,7 +300,7 @@ export function CabangTab({
                   <p className="text-xs text-muted-foreground mt-1">
                     {searchTerm
                       ? "Coba sesuaikan kata kunci pencarian Anda."
-                      : "Belum ada profil cabang publik yang terdaftar dalam sistem."}
+                      : "Klik tombol Tambah Profil Cabang untuk membuat profil cabang pertama."}
                   </p>
                 </TableCell>
               </TableRow>
@@ -243,7 +337,7 @@ export function CabangTab({
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {item.statusCabang}
+                        {item.statusCabang === "ACTIVE" ? "Aktif" : "Nonaktif"}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-4 px-4">
@@ -270,16 +364,40 @@ export function CabangTab({
                       )}
                     </TableCell>
                     <TableCell className="py-4 px-4 text-right">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenManageLink(item)}
-                        className="h-9 px-3 text-xs sm:text-sm font-medium gap-1.5"
-                      >
-                        <Link2 className="w-4 h-4 text-primary" />
-                        <span>Atur Tautan</span>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => handleOpenManageLink(item)}
+                          title="Atur Tautan Wilayah"
+                        >
+                          <Link2 className="w-4 h-4 text-primary" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleOpenEdit(item)}
+                          title="Edit Profil Cabang"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        {item.statusCabang === "ACTIVE" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleOpenDelete(item)}
+                            title="Nonaktifkan Profil Cabang"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -299,7 +417,20 @@ export function CabangTab({
         isFetching={isLoading}
       />
 
-      {/* Dialog Atur Tautan Cabang */}
+      {/* Dialog Tambah / Edit Profil Cabang */}
+      <CabangEditorDialog
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        cabang={editingCabang}
+        cabangList={safeCabangList}
+        dpdList={dpdList}
+        dpcList={dpcList}
+        masterProvinsi={masterProvinsi}
+        onSave={handleSaveEditor}
+        isSubmitting={createCabangMutation.isPending || updateCabangMutation.isPending}
+      />
+
+      {/* Dialog Atur Tautan Cabang Cepat */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md p-6">
           <DialogHeader>
@@ -340,9 +471,9 @@ export function CabangTab({
                   value={targetId}
                   onValueChange={(val) => setTargetId(val)}
                   options={dpdOptions}
-                  placeholder="Pilih DPD..."
+                  placeholder="Pilih DPD yang belum tertaut..."
                   searchPlaceholder="Cari nama provinsi / DPD..."
-                  emptyMessage="DPD tidak ditemukan"
+                  emptyMessage="Semua DPD sudah tertaut atau tidak ditemukan"
                 />
               </div>
             )}
@@ -357,9 +488,9 @@ export function CabangTab({
                   value={targetId}
                   onValueChange={(val) => setTargetId(val)}
                   options={dpcOptions}
-                  placeholder="Pilih DPC..."
+                  placeholder="Pilih DPC yang belum tertaut..."
                   searchPlaceholder="Cari kabupaten/kota / DPC..."
-                  emptyMessage="DPC tidak ditemukan"
+                  emptyMessage="Semua DPC sudah tertaut atau tidak ditemukan"
                 />
               </div>
             )}
@@ -388,6 +519,18 @@ export function CabangTab({
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog Nonaktifkan Profil Cabang */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Nonaktifkan Profil Cabang"
+        description={`Apakah Anda yakin ingin menonaktifkan profil cabang "${deletingCabang?.namaCabang}"? Status cabang akan diubah menjadi Nonaktif.`}
+        confirmText="Ya, Nonaktifkan"
+        cancelText="Batal"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

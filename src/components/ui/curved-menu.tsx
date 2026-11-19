@@ -68,8 +68,7 @@ const defaultNavItems: iNavItem[] = [
     subItems: [
       { heading: "Berita", href: "/berita" },
       { heading: "Jurnal Ilmiah", href: "/jurnal" },
-      { heading: "Galeri Foto", href: "/galeri" },
-      { heading: "Galeri Video", href: "/galeri" },
+      { heading: "Galeri", href: "/galeri" },
       { heading: "Agenda", href: "/agenda" },
     ],
   },
@@ -241,7 +240,7 @@ const NavLink: React.FC<iNavLinkProps> = ({
 
 const Curve: React.FC = () => {
   const [windowHeight, setWindowHeight] = useState(() =>
-    typeof window !== "undefined" ? window.innerHeight : 0
+    typeof window !== "undefined" ? window.innerHeight : 0,
   );
 
   useEffect(() => {

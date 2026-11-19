@@ -20,6 +20,7 @@ export interface SejarahFilterParams {
   pageSize?: number;
   fixed?: "all";
   fallbackIfEmpty?: boolean;
+  enabled?: boolean;
 }
 
 interface UploadResponse {
@@ -39,6 +40,7 @@ export function useSejarah(filters?: SejarahFilterParams) {
   const currentPage = filters?.currentPage;
   const pageSize = filters?.pageSize;
   const fallbackIfEmpty = filters?.fallbackIfEmpty;
+  const isEnabled = filters?.enabled ?? true;
 
   const queryParams = useMemo(() => {
     const p = new URLSearchParams();
@@ -66,6 +68,7 @@ export function useSejarah(filters?: SejarahFilterParams) {
     refetch,
   } = useQuery<SejarahApiResponse>({
     queryKey: ["sejarah", queryParams],
+    enabled: isEnabled,
     queryFn: async () => {
       const endpoint = queryParams ? `/sejarah?${queryParams}` : "/sejarah";
       const res = await apiFetch<SejarahApiResponse>(endpoint);

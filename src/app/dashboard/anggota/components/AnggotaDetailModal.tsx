@@ -27,6 +27,8 @@ import {
   Shield,
 } from "lucide-react";
 import { AssignAdminCabangDialog } from "./AssignAdminCabangDialog";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { hasPermission, isSuperAdmin } from "@/lib/rbac";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -74,10 +76,11 @@ const InfoItem = ({
 );
 
 export function AnggotaDetailModal({ uuid, onClose }: AnggotaDetailModalProps) {
+  const { user } = useCurrentUser();
+  const canAssignAdmin =
+    isSuperAdmin(user) || hasPermission(user, "AKUN_UPDATE");
   const { data, isLoading, error } = useGetAnggotaDetail(uuid);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-
-  console.log("DATA >>>>>", data);
 
   // Backend might return { data: ... } or just the object itself
   const anggota =
@@ -232,8 +235,8 @@ export function AnggotaDetailModal({ uuid, onClose }: AnggotaDetailModalProps) {
                     </div>
                   </div>
 
-                  {/* Tombol Penetapan Admin Wilayah */}
-                  {anggota.akun && (
+                  {/* Tombol Penetapan Admin Wilayah (Khusus DPP / Pemegang AKUN_UPDATE) */}
+                  {canAssignAdmin && anggota.akun && (
                     <Button
                       type="button"
                       variant="outline"
@@ -583,11 +586,13 @@ export function AnggotaDetailModal({ uuid, onClose }: AnggotaDetailModalProps) {
           </div>
         </div>
       </DialogContent>
-      <AssignAdminCabangDialog
-        open={assignDialogOpen}
-        onOpenChange={setAssignDialogOpen}
-        anggota={anggota}
-      />
+      {canAssignAdmin && (
+        <AssignAdminCabangDialog
+          open={assignDialogOpen}
+          onOpenChange={setAssignDialogOpen}
+          anggota={anggota}
+        />
+      )}
     </Dialog>
   );
 }

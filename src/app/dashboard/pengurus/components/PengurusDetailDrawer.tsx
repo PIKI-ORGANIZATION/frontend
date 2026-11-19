@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 interface PengurusDetailDrawerProps {
   item: PengurusItem | null;
   allItems: PengurusItem[];
+  canManage?: boolean;
   onClose: () => void;
   onEdit: (item: PengurusItem) => void;
   onDelete: (id: string) => void;
@@ -36,6 +37,7 @@ const emptySubscribe = () => () => {};
 export function PengurusDetailDrawer({
   item,
   allItems,
+  canManage = true,
   onClose,
   onEdit,
   onDelete,
@@ -469,53 +471,55 @@ export function PengurusDetailDrawer({
         </div>
 
         {/* 3. Footer Action Bar */}
-        <div className="p-4 sm:p-5 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-between gap-2 mt-auto shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              handleClose();
-              onDelete(activeMember.id);
-            }}
-            className="text-destructive hover:bg-destructive/10 cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4 mr-1.5" />
-            Hapus Pengurus
-          </Button>
-
-          <div className="flex items-center gap-2">
+        {canManage && (
+          <div className="p-4 sm:p-5 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-between gap-2 mt-auto shrink-0">
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onToggleStatus(activeMember.id)}
-              className="cursor-pointer"
-            >
-              {activeMember.status === "PUBLISHED" ? (
-                <>
-                  <EyeOff className="w-3.5 h-3.5 mr-1.5" />
-                  Jadikan Draf
-                </>
-              ) : (
-                <>
-                  <Eye className="w-3.5 h-3.5 mr-1.5" />
-                  Tayangkan
-                </>
-              )}
-            </Button>
-
-            <Button
+              variant="ghost"
               size="sm"
               onClick={() => {
                 handleClose();
-                onEdit(activeMember);
+                onDelete(activeMember.id);
               }}
-              className="cursor-pointer"
+              className="text-destructive hover:bg-destructive/10 cursor-pointer"
             >
-              <Edit2 className="w-3.5 h-3.5 mr-1.5" />
-              Ubah Data
+              <Trash2 className="w-4 h-4 mr-1.5" />
+              Hapus Pengurus
             </Button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onToggleStatus(activeMember.id)}
+                className="cursor-pointer"
+              >
+                {activeMember.status === "PUBLISHED" ? (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5 mr-1.5" />
+                    Jadikan Draf
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-3.5 h-3.5 mr-1.5" />
+                    Tayangkan
+                  </>
+                )}
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={() => {
+                  handleClose();
+                  onEdit(activeMember);
+                }}
+                className="cursor-pointer"
+              >
+                <Edit2 className="w-3.5 h-3.5 mr-1.5" />
+                Ubah Data
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

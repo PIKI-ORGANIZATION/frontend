@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   useAdminNews,
@@ -25,6 +26,7 @@ import {
   useNewsScope,
 } from "@/hooks/api/useNews";
 import {
+  canManageNewsItem,
   formatNewsDate,
   formatViewers,
   tingkatFromCabangName,
@@ -46,13 +48,20 @@ export function NewsAdminList() {
   const cabangQuery = useNewsCabangOptions(Boolean(scope?.isManageAll));
   const archiveNews = useArchiveNews();
 
-  const query = useAdminNews({
-    search: debouncedSearch || undefined,
-    statusNewsUtama: status || undefined,
-    cabangUuid: cabangUuid || undefined,
-    currentPage: 1,
-    pageSize: 100,
-  });
+  const canFetchNews = Boolean(
+    scope && scope.canRead && scope.hasCabangBinding,
+  );
+
+  const query = useAdminNews(
+    {
+      search: debouncedSearch || undefined,
+      statusNewsUtama: status || undefined,
+      cabangUuid: scope?.isManageAll ? cabangUuid || undefined : undefined,
+      currentPage: 1,
+      pageSize: 100,
+    },
+    { enabled: canFetchNews },
+  );
 
   const items = (query.data?.items ?? []).filter((item) =>
     tingkat === "SEMUA" ? true : tingkatOf(item) === tingkat,
@@ -76,6 +85,34 @@ export function NewsAdminList() {
     };
   }, [cabangQuery.data]);
 
+  if (!scope) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!scope.canRead) {
+    return (
+      <AccessDeniedState
+        title="Akses CMS Berita Ditolak"
+        description="Akun Anda tidak memiliki izin untuk membuka manajemen berita. Hubungi Administrator DPP untuk meminta hak akses redaksi."
+        scopeLabel={`Cakupan: ${tingkatLabel(scope.tingkat)}`}
+      />
+    );
+  }
+
+  if (!scope.hasCabangBinding) {
+    return (
+      <AccessDeniedState
+        title="Akun Belum Terhubung ke Cabang"
+        description="Akun admin DPD/DPC Anda belum terhubung ke profil cabang mana pun sehingga berita tidak dapat dimuat atau dikelola. Hubungi Administrator DPP untuk menautkan akun ke cabang."
+        scopeLabel={`Cakupan: ${tingkatLabel(scope.tingkat)}`}
+      />
+    );
+  }
+
   return (
     <section className="mx-auto flex max-w-7xl flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -94,7 +131,7 @@ export function NewsAdminList() {
                 : `Admin ${tingkatLabel(scope.tingkat)} hanya mengelola berita ${scope.cabangName || "cabang sendiri"}. Berita pusat dan cabang lain tidak ditampilkan.`}
           </p>
         </div>
-        {scope?.canWrite && (
+        {scope.canCreate && (
           <Button
             className="h-11"
             nativeButton={false}
@@ -246,25 +283,29 @@ export function NewsAdminList() {
                     Lihat
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  nativeButton={false}
-                  render={<Link href={`/dashboard/berita/${item.uuid}/edit`} />}
-                >
-                  <Pencil className="h-4 w-4" />
-                  Ubah
-                </Button>
-                {scope?.canArchive && item.statusNewsUtama !== "ARCHIVED" && (
+                {scope.canUpdate && canManageNewsItem(scope, item) && (
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
-                    onClick={() => setArchiveId(item.uuid)}
+                    nativeButton={false}
+                    render={<Link href={`/dashboard/berita/${item.uuid}/edit`} />}
                   >
-                    <Archive className="h-4 w-4" />
-                    Arsip
+                    <Pencil className="h-4 w-4" />
+                    Ubah
                   </Button>
                 )}
+                {scope.canArchive &&
+                  canManageNewsItem(scope, item) &&
+                  item.statusNewsUtama !== "ARCHIVED" && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setArchiveId(item.uuid)}
+                    >
+                      <Archive className="h-4 w-4" />
+                      Arsip
+                    </Button>
+                  )}
               </div>
             </div>
           ))}

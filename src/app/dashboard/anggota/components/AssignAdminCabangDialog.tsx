@@ -253,7 +253,7 @@ export function AssignAdminCabangDialog({
   anggota,
 }: AssignAdminCabangDialogProps) {
   const { data: cabangList = [], isLoading: isLoadingCabang } = useCabangList();
-  const { data: roleList = [], isLoading: isLoadingRoles } = useRolesList();
+  const { data: roleList = [], isLoading: isLoadingRoles } = useRolesList(open);
   const assignMutation = useAssignAkunCabang();
 
   const hasAkun = Boolean(anggota?.akun?.uuid);

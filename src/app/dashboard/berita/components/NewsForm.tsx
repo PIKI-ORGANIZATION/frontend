@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,12 +30,15 @@ const NewsEditor = dynamic(
 );
 import {
   useCreateNews,
+  useCreateNewsKategori,
+  useCreateNewsTag,
   useNewsCabangOptions,
   useNewsScope,
   useNewsTaxonomy,
   useUpdateNews,
 } from "@/hooks/api/useNews";
 import {
+  canManageNewsItem,
   NewsItem,
   plainNewsText,
   slugifyJudul,
@@ -57,6 +60,13 @@ export function NewsForm({
   const cabangQuery = useNewsCabangOptions(Boolean(scope?.isManageAll));
   const createNews = useCreateNews();
   const updateNews = useUpdateNews(initial?.uuid || "new");
+  const createKategori = useCreateNewsKategori();
+  const createTag = useCreateNewsTag();
+
+  const [showNewKategori, setShowNewKategori] = useState(false);
+  const [newKategoriName, setNewKategoriName] = useState("");
+  const [showNewTag, setShowNewTag] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
 
   const [judul, setJudul] = useState(initial?.judul || "");
   const [slug, setSlug] = useState(initial?.slug || "");
@@ -68,22 +78,17 @@ export function NewsForm({
   const [publishedAt, setPublishedAt] = useState(
     toNewsDatetimeLocal(initial?.published_at),
   );
-  const [cabangUuid, setCabangUuid] = useState(initial?.cabangUuid || "");
+  const [selectedCabangUuid, setSelectedCabangUuid] = useState<string | null>(
+    initial?.cabangUuid ?? null,
+  );
+  const effectiveCabangUuid =
+    selectedCabangUuid !== null ? selectedCabangUuid : (scope?.cabangId ?? "");
   const [kategori, setKategori] = useState<string[]>(
     initial?.kategori.map((item) => item.uuid) || [],
   );
   const [tags, setTags] = useState<string[]>(
     initial?.tags.map((item) => item.uuid) || [],
   );
-
-  useEffect(() => {
-    if (!slugTouched) setSlug(slugifyJudul(judul));
-  }, [judul, slugTouched]);
-
-  useEffect(() => {
-    if (initial?.cabangUuid || !scope?.cabangId) return;
-    setCabangUuid((current) => current || scope.cabangId || "");
-  }, [initial?.cabangUuid, scope?.cabangId]);
 
   const cabangItems = useMemo(() => {
     const labels: Record<string, string> = {
@@ -103,7 +108,7 @@ export function NewsForm({
         : cabang.namaCabang;
     }
     return labels;
-  }, [cabangQuery.data, initial, scope?.cabangId, scope?.cabangName]);
+  }, [cabangQuery.data, initial, scope]);
 
   const groupedCabang = useMemo(() => {
     const items = cabangQuery.data ?? [];
@@ -135,8 +140,79 @@ export function NewsForm({
     );
   };
 
+  const handleAddKategori = () => {
+    const nama = newKategoriName.trim();
+    if (nama.length < 3) {
+      toast.error("Nama kategori minimal 3 karakter");
+      return;
+    }
+    const generatedSlug = slugifyJudul(nama);
+    if (generatedSlug.length < 3) {
+      toast.error("Nama kategori harus mengandung huruf atau angka yang valid");
+      return;
+    }
+    createKategori.mutate(
+      { nama, slug: generatedSlug },
+      {
+        onSuccess: (created) => {
+          toast.success(`Kategori "${nama}" ditambahkan`);
+          if (created?.uuid) {
+            setKategori((prev) =>
+              prev.includes(created.uuid) ? prev : [...prev, created.uuid],
+            );
+          }
+          setNewKategoriName("");
+          setShowNewKategori(false);
+        },
+        onError: (err) => toast.error(err.message),
+      },
+    );
+  };
+
+  const handleAddTag = () => {
+    const nama_tag = newTagName.trim();
+    if (nama_tag.length < 2) {
+      toast.error("Nama tag minimal 2 karakter");
+      return;
+    }
+    if (!/^[a-zA-Z0-9\s-]+$/.test(nama_tag)) {
+      toast.error("Nama tag hanya boleh huruf, angka, spasi, dan tanda hubung");
+      return;
+    }
+    createTag.mutate(
+      { nama_tag },
+      {
+        onSuccess: (created) => {
+          toast.success(`Tag "${nama_tag}" ditambahkan`);
+          if (created?.uuid) {
+            setTags((prev) =>
+              prev.includes(created.uuid) ? prev : [...prev, created.uuid],
+            );
+          }
+          setNewTagName("");
+          setShowNewTag(false);
+        },
+        onError: (err) => toast.error(err.message),
+      },
+    );
+  };
+
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
+    if (!scope || !scope.hasCabangBinding) {
+      return toast.error("Akun Anda belum memiliki cakupan cabang yang valid.");
+    }
+    if (mode === "create" && !scope.canCreate) {
+      return toast.error("Anda tidak memiliki izin untuk membuat berita baru.");
+    }
+    if (
+      mode === "edit" &&
+      (!scope.canUpdate || !canManageNewsItem(scope, initial))
+    ) {
+      return toast.error(
+        "Anda tidak memiliki izin untuk mengubah berita milik cabang ini.",
+      );
+    }
     if (judul.trim().length < 5) return toast.error("Judul minimal 5 karakter");
     if (!/^[a-z0-9-]{5,}$/.test(slug)) {
       return toast.error("Slug hanya huruf kecil, angka, dan tanda hubung");
@@ -172,7 +248,9 @@ export function NewsForm({
       durasi_baca: Math.max(1, Math.ceil(words / 200)),
       kategori,
       tags,
-      ...(scope?.isManageAll ? { cabangUuid: cabangUuid || null } : {}),
+      ...(scope?.isManageAll
+        ? { cabangUuid: effectiveCabangUuid || null }
+        : {}),
     };
 
     const action = mode === "create" ? createNews.mutate : updateNews.mutate;
@@ -219,7 +297,11 @@ export function NewsForm({
         <Field label="Judul" className="md:col-span-2">
           <Input
             value={judul}
-            onChange={(event) => setJudul(event.target.value)}
+            onChange={(event) => {
+              const nextJudul = event.target.value;
+              setJudul(nextJudul);
+              if (!slugTouched) setSlug(slugifyJudul(nextJudul));
+            }}
             placeholder="Judul berita"
           />
         </Field>
@@ -284,9 +366,9 @@ export function NewsForm({
           <Field label="Pemilik berita" className="md:col-span-2">
             <Select
               items={cabangItems}
-              value={cabangUuid || "__akun__"}
+              value={effectiveCabangUuid || "__akun__"}
               onValueChange={(value) =>
-                setCabangUuid(!value || value === "__akun__" ? "" : value)
+                setSelectedCabangUuid(!value || value === "__akun__" ? "" : value)
               }
             >
               <SelectTrigger size="lg">
@@ -310,7 +392,7 @@ export function NewsForm({
           </Field>
         )}
         <Field label="Kategori" className="md:col-span-2">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {(taxonomy.data?.kategori ?? []).map((item) => (
               <ToggleChip
                 key={item.uuid}
@@ -320,10 +402,61 @@ export function NewsForm({
                 {item.nama_kategori}
               </ToggleChip>
             ))}
+            {scope?.canCreateKategori && !showNewKategori && (
+              <button
+                type="button"
+                onClick={() => setShowNewKategori(true)}
+                className="inline-flex items-center gap-1 rounded-full border border-dashed border-primary/50 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Kategori baru
+              </button>
+            )}
           </div>
+          {scope?.canCreateKategori && showNewKategori && (
+            <div className="mt-1 flex max-w-md items-center gap-2">
+              <Input
+                value={newKategoriName}
+                onChange={(e) => setNewKategoriName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddKategori();
+                  }
+                }}
+                placeholder="Nama kategori baru (mis. Kajian Strategis)"
+                className="h-9 text-xs"
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={createKategori.isPending}
+                onClick={handleAddKategori}
+                className="h-9 px-3 text-xs"
+              >
+                {createKategori.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  "Simpan"
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowNewKategori(false);
+                  setNewKategoriName("");
+                }}
+                className="h-9 px-2 text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </Field>
         <Field label="Tag" className="md:col-span-2">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {(taxonomy.data?.tags ?? []).map((item) => (
               <ToggleChip
                 key={item.uuid}
@@ -333,7 +466,58 @@ export function NewsForm({
                 {item.nama_tag}
               </ToggleChip>
             ))}
+            {scope?.canCreateTag && !showNewTag && (
+              <button
+                type="button"
+                onClick={() => setShowNewTag(true)}
+                className="inline-flex items-center gap-1 rounded-full border border-dashed border-primary/50 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Tag baru
+              </button>
+            )}
           </div>
+          {scope?.canCreateTag && showNewTag && (
+            <div className="mt-1 flex max-w-md items-center gap-2">
+              <Input
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+                placeholder="Nama tag baru (mis. Sumatera Utara)"
+                className="h-9 text-xs"
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={createTag.isPending}
+                onClick={handleAddTag}
+                className="h-9 px-3 text-xs"
+              >
+                {createTag.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  "Simpan"
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowNewTag(false);
+                  setNewTagName("");
+                }}
+                className="h-9 px-2 text-muted-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </Field>
         <Field label="Isi berita" className="md:col-span-2">
           <NewsEditor value={konten} onChange={setKonten} />

@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import React, { Suspense, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   User,
@@ -32,8 +31,36 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { logoutSession } from "@/lib/api";
 import { UserPayload } from "@/lib/utils";
-import { isSuperAdmin } from "@/lib/rbac";
+import { canAccessDashboardPath, isSuperAdmin } from "@/lib/rbac";
+
+function AccessDeniedNotice() {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const denied = searchParams.get("denied");
+  const from = searchParams.get("from");
+
+  useEffect(() => {
+    if (denied !== "1") return;
+    toast.error("Akses halaman ditolak", {
+      description: from
+        ? `Akun Anda tidak memiliki izin untuk mengakses ${from}.`
+        : "Akun Anda tidak memiliki izin untuk mengakses halaman tersebut.",
+    });
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("denied");
+    nextParams.delete("from");
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+      scroll: false,
+    });
+  }, [denied, from, pathname, router, searchParams]);
+
+  return null;
+}
 
 interface DashboardHeaderProps {
   user?: UserPayload | null;
@@ -65,8 +92,8 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     return "PK";
   };
 
-  const handleLogout = () => {
-    Cookies.remove("token");
+  const handleLogout = async () => {
+    await logoutSession();
     toast.success("Anda berhasil keluar dari sistem");
     router.push("/login");
   };
@@ -135,15 +162,84 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
 
     if (pathname.startsWith("/dashboard/berita")) {
       const isNew = pathname.includes("/baru");
+      const isEdit = pathname.endsWith("/edit");
       return (
         <>
           <BreadcrumbItem className="hidden sm:block">
-            <span className="text-muted-foreground">Publikasi</span>
+            <span className="text-muted-foreground">Manajemen Konten</span>
           </BreadcrumbItem>
           <BreadcrumbSeparator className="hidden sm:block" />
           <BreadcrumbItem>
             <BreadcrumbPage className="font-semibold text-foreground">
-              {isNew ? "Tulis Berita Baru" : "Kelola Berita"}
+              {isNew
+                ? "Tulis Berita Baru"
+                : isEdit
+                  ? "Sunting Berita"
+                  : "CMS Berita"}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </>
+      );
+    }
+
+    if (pathname.startsWith("/dashboard/galeri")) {
+      return (
+        <>
+          <BreadcrumbItem className="hidden sm:block">
+            <span className="text-muted-foreground">Manajemen Konten</span>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:block" />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold text-foreground">
+              CMS Galeri
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </>
+      );
+    }
+
+    if (pathname.startsWith("/dashboard/pengurus")) {
+      return (
+        <>
+          <BreadcrumbItem className="hidden sm:block">
+            <span className="text-muted-foreground">Manajemen Konten</span>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:block" />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold text-foreground">
+              CMS Data Pengurus
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </>
+      );
+    }
+
+    if (pathname.startsWith("/dashboard/wilayah")) {
+      return (
+        <>
+          <BreadcrumbItem className="hidden sm:block">
+            <span className="text-muted-foreground">Manajemen</span>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:block" />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold text-foreground">
+              Wilayah &amp; Cabang
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </>
+      );
+    }
+
+    if (pathname.startsWith("/dashboard/akun")) {
+      return (
+        <>
+          <BreadcrumbItem className="hidden sm:block">
+            <span className="text-muted-foreground">Manajemen</span>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:block" />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold text-foreground">
+              Manajemen Akun
             </BreadcrumbPage>
           </BreadcrumbItem>
         </>
@@ -171,8 +267,17 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     );
   };
 
+  const canAccessAnggota = canAccessDashboardPath("/dashboard/anggota", user);
+  const canAccessVerifikasi = canAccessDashboardPath(
+    "/dashboard/verifikasi",
+    user,
+  );
+
   return (
     <>
+      <Suspense fallback={null}>
+        <AccessDeniedNotice />
+      </Suspense>
       <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border/80 bg-background/95 backdrop-blur-md px-4 transition-all">
         {/* Left: Sidebar trigger & Dynamic Breadcrumb */}
         <div className="flex items-center gap-3">
@@ -237,24 +342,28 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                 <span>Dashboard Satu Data</span>
               </DropdownMenuItem>
 
-              <DropdownMenuItem
-                onClick={() => router.push("/dashboard/anggota")}
-                className="cursor-pointer text-xs font-medium py-1.5"
-              >
-                <Users className="mr-2 h-4 w-4 text-blue-500" />
-                <span>Daftar Anggota</span>
-              </DropdownMenuItem>
+              {canAccessAnggota && (
+                <DropdownMenuItem
+                  onClick={() => router.push("/dashboard/anggota")}
+                  className="cursor-pointer text-xs font-medium py-1.5"
+                >
+                  <Users className="mr-2 h-4 w-4 text-blue-500" />
+                  <span>Daftar Anggota</span>
+                </DropdownMenuItem>
+              )}
+
+              {canAccessVerifikasi && (
+                <DropdownMenuItem
+                  onClick={() => router.push("/dashboard/verifikasi")}
+                  className="cursor-pointer text-xs font-medium py-1.5"
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-500" />
+                  <span>Verifikasi Pendaftar</span>
+                </DropdownMenuItem>
+              )}
 
               <DropdownMenuItem
-                onClick={() => router.push("/dashboard/verifikasi")}
-                className="cursor-pointer text-xs font-medium py-1.5"
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-500" />
-                <span>Verifikasi Pendaftar</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => router.push("/portal/pengaturan")}
+                onClick={() => router.push("/dashboard/pengaturan")}
                 className="cursor-pointer text-xs font-medium py-1.5"
               >
                 <User className="mr-2 h-4 w-4 text-muted-foreground" />

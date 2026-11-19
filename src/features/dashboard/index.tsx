@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDashboardStats } from "@/hooks/api/useDashboardStats";
 import { useGetDaftarAnggota } from "@/hooks/api/useAnggota";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { hasAnyPermission, isSuperAdmin } from "@/lib/rbac";
 import {
   RotateCcw,
   Sparkles,
@@ -24,6 +26,13 @@ import {
 } from "lucide-react";
 
 export function DashboardFeature() {
+  const { user, isReady } = useCurrentUser();
+  const canReadAnggota = hasAnyPermission(user, [
+    "ANGGOTA_READ",
+    "SENIOR_READ",
+    "MANAGE_ALL_CABANG",
+  ]);
+
   const {
     data: stats,
     isLoading: isStatsLoading,
@@ -31,10 +40,21 @@ export function DashboardFeature() {
     isRefetching,
   } = useDashboardStats();
 
-  const { data: activeKtaData } = useGetDaftarAnggota({
-    statusKta: "ACTIVE",
-    pageSize: 1,
-  });
+  const { data: activeKtaData } = useGetDaftarAnggota(
+    {
+      statusKta: "ACTIVE",
+      pageSize: 1,
+    },
+    { enabled: isReady && canReadAnggota },
+  );
+
+  const scopeBadgeLabel = isSuperAdmin(user)
+    ? "Nasional (DPP)"
+    : user?.tingkat === "DPD"
+      ? `DPD ${user.cabang || ""}`.trim()
+      : user?.tingkat === "DPC"
+        ? `DPC ${user.cabang || ""}`.trim()
+        : "Nasional v2.4";
 
   const totalAnggota = stats?.totalAnggota || 0;
   const pendingVerifikasi = stats?.pendingApprovalCount || 0;
@@ -56,7 +76,7 @@ export function DashboardFeature() {
               className="gap-1 border-primary/30 bg-primary/10 text-primary font-medium text-[11px] py-0.5"
             >
               <Sparkles className="h-3 w-3" />
-              Nasional v2.4
+              {scopeBadgeLabel}
             </Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground">
@@ -78,7 +98,7 @@ export function DashboardFeature() {
             />
             <span className="hidden sm:inline">Segarkan</span>
           </Button>
-          <DataExportDialog />
+          {canReadAnggota && <DataExportDialog />}
         </div>
       </div>
 

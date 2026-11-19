@@ -12,8 +12,32 @@ import {
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
+
+function resolveProfileImageUrl(src?: string | null): string | null {
+  if (!src || typeof src !== "string") return null;
+  const trimmed = src.trim();
+  if (!trimmed) return null;
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:")
+  ) {
+    return trimmed;
+  }
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") || "";
+  if (trimmed.startsWith("/uploads")) {
+    return `${baseUrl}${trimmed}`;
+  }
+  if (trimmed.startsWith("/")) {
+    return trimmed;
+  }
+  return null;
+}
 
 interface DigitalKTAProps {
   namaLengkap?: string;
@@ -75,6 +99,7 @@ export default function DigitalKTA({
   };
 
   const qrUrl = `${process.env.NEXT_PUBLIC_APP_URL}/anggota/${uuid}`;
+  const safeProfileImg = resolveProfileImageUrl(profileImg);
 
   const handleDownload = async () => {
     try {
@@ -94,7 +119,11 @@ export default function DigitalKTA({
       );
 
       if (!res.ok) {
-        throw new Error("Gagal mengunduh KTA");
+        const errBody = await res.json().catch(() => null);
+        throw new Error(
+          errBody?.message ||
+            "Gagal mengunduh KTA. Pastikan profil dan KTA Anda sudah aktif.",
+        );
       }
 
       const blob = await res.blob();
@@ -108,10 +137,14 @@ export default function DigitalKTA({
       window.URL.revokeObjectURL(url);
 
       setIsDownloaded(true);
+      toast.success("KTA Digital berhasil diunduh");
       setTimeout(() => setIsDownloaded(false), 3000);
     } catch (error) {
-      console.error("Failed to download KTA", error);
-      alert("Gagal mengunduh KTA. Pastikan profil Anda sudah lengkap.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Gagal mengunduh KTA. Pastikan profil Anda sudah lengkap.",
+      );
     } finally {
       setIsDownloading(false);
     }
@@ -124,11 +157,12 @@ export default function DigitalKTA({
         <div className="absolute inset-0 top-[20%] sm:top-[22%] md:top-[24%] flex flex-col items-center z-10 w-full px-5 sm:px-6 pb-4 sm:pb-6">
           {/* Photo */}
           <div className="w-[100px] h-[120px] sm:w-[120px] sm:h-[140px] md:w-[135px] md:h-[155px] rounded-lg overflow-hidden relative shrink-0 mx-auto">
-            {profileImg ? (
+            {safeProfileImg ? (
               <Image
-                src={profileImg}
+                src={safeProfileImg}
                 alt={namaLengkap}
                 fill
+                unoptimized
                 className="object-cover"
               />
             ) : (
@@ -184,11 +218,12 @@ export default function DigitalKTA({
         <div className="absolute inset-0 flex items-center justify-between px-5 sm:px-8 md:px-10 pt-5 sm:pt-6 md:pt-8 z-10">
           {/* Photo */}
           <div className="w-[75px] h-[100px] sm:w-[90px] sm:h-[115px] md:w-[100px] md:h-[130px] ml-1 sm:ml-2 md:ml-4 shrink-0 rounded-md sm:rounded-lg relative overflow-hidden">
-            {profileImg ? (
+            {safeProfileImg ? (
               <Image
-                src={profileImg}
+                src={safeProfileImg}
                 alt={namaLengkap}
                 fill
+                unoptimized
                 className="object-cover"
               />
             ) : (

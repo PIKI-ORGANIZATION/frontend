@@ -39,6 +39,10 @@ export function AnggotaDashboardView() {
     profile?.namaLengkap ||
     profile?.username ||
     "Anggota";
+  const isAccountActive =
+    profile?.statusAkun === "ACTIVE" ||
+    profile?.statusAkun === "VERIFIED" ||
+    Boolean(profile?.noKta);
 
   if (isError) {
     return (
@@ -116,7 +120,7 @@ export function AnggotaDashboardView() {
               <h2 className="text-lg font-bold">KTA Digital</h2>
               <p className="text-sm text-muted-foreground">
                 Kartu Tanda Anggota Anda{" "}
-                {profile?.statusAkun === "VERIFIED"
+                {isAccountActive
                   ? "sudah aktif dan dapat digunakan."
                   : "sedang dalam proses verifikasi."}
               </p>
@@ -150,12 +154,14 @@ export function AnggotaDashboardView() {
                 ) : (
                   <span
                     className={`px-2.5 py-1 text-xs font-semibold rounded-full uppercase tracking-wider  ${
-                      profile?.statusAkun === "VERIFIED"
+                      isAccountActive
                         ? "bg-green-500/10 text-green-600 dark:text-green-400"
                         : "bg-orange-500/10 text-orange-600 dark:text-orange-400"
                     }`}
                   >
-                    {profile?.statusAkun || "MENUNGGU"}
+                    {isAccountActive
+                      ? "AKTIF"
+                      : profile?.statusAkun || "MENUNGGU"}
                   </span>
                 )}
               </div>

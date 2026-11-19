@@ -27,6 +27,9 @@ import {
 } from "@/components/data-table";
 import { useGetDaftarAnggota, AnggotaItem } from "@/hooks/api/useAnggota";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { canAccessDashboardPath } from "@/lib/rbac";
+import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
 import { AnggotaDetailModal } from "./AnggotaDetailModal";
 import {
   Loader2,
@@ -40,6 +43,8 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
 export function DaftarAnggotaView() {
+  const { user, isReady } = useCurrentUser();
+  const canView = canAccessDashboardPath("/dashboard/anggota", user);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAnggotaUuid, setSelectedAnggotaUuid] = useState<string | null>(
     null,
@@ -67,12 +72,15 @@ export function DaftarAnggotaView() {
     return undefined;
   }, [statusFilter]);
 
-  const { data, isLoading, error, isFetching } = useGetDaftarAnggota({
-    search: debouncedSearch,
-    statusKta: statusKtaParam,
-    currentPage,
-    pageSize,
-  });
+  const { data, isLoading, error, isFetching } = useGetDaftarAnggota(
+    {
+      search: debouncedSearch,
+      statusKta: statusKtaParam,
+      currentPage,
+      pageSize,
+    },
+    { enabled: isReady && canView },
+  );
 
   const anggotaList = data?.data || [];
   const pagination = data?.pagination;
@@ -297,6 +305,23 @@ export function DaftarAnggotaView() {
     { label: "Aktif", value: "ACTIVE" },
     { label: "Non-Aktif", value: "INACTIVE" },
   ];
+
+  if (!isReady) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!canView) {
+    return (
+      <AccessDeniedState
+        title="Akses Daftar Anggota Ditolak"
+        description="Akun Anda tidak memiliki izin untuk membuka database anggota."
+      />
+    );
+  }
 
   if (error) {
     return (

@@ -18,6 +18,7 @@ import {
   Search,
   ChevronRight,
   Settings,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -36,7 +37,13 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { cn, UserPayload } from "@/lib/utils";
-import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
+import {
+  canAccessDashboardPath,
+  hasAnyPermission,
+  hasRole,
+  isSuperAdmin,
+  ROLE_GROUPS,
+} from "@/lib/rbac";
 import { LottiePlayer } from "@/components/ui/lottie-player";
 import ModalSearchMenu from "./ModalSearcMenu";
 
@@ -46,6 +53,8 @@ export type NavSubItem = {
   icon?: React.ElementType;
   badge?: string | number;
   isUnderDevelopment?: boolean;
+  requiredPermissions?: string[];
+  requireSuperAdmin?: boolean;
 };
 
 export type NavItemData = {
@@ -56,6 +65,8 @@ export type NavItemData = {
   badge?: string | number;
   items?: NavSubItem[];
   isUnderDevelopment?: boolean;
+  requiredPermissions?: string[];
+  requireSuperAdmin?: boolean;
 };
 
 export type NavGroupData = {
@@ -118,11 +129,17 @@ const adminNavGroups: NavGroupData[] = [
             title: "Daftar Anggota",
             url: "/dashboard/anggota",
             icon: Users,
+            requiredPermissions: [
+              "ANGGOTA_READ",
+              "SENIOR_READ",
+              "MANAGE_ALL_CABANG",
+            ],
           },
           {
             title: "Verifikasi Pendaftar",
             url: "/dashboard/verifikasi",
             icon: UserCheck,
+            requiredPermissions: ["REGISTRASI_APPROVE"],
           },
         ],
       },
@@ -131,6 +148,14 @@ const adminNavGroups: NavGroupData[] = [
         title: "Wilayah & Cabang",
         icon: Network,
         url: "/dashboard/wilayah",
+        requiredPermissions: ["MANAGE_ALL_CABANG", "CABANG_READ", "CABANG_UPDATE"],
+      },
+      {
+        id: "manajemen-akun",
+        title: "Manajemen Akun",
+        icon: KeyRound,
+        url: "/dashboard/akun",
+        requiredPermissions: ["AKUN_CREATE", "AKUN_UPDATE"],
       },
       {
         id: "manajemen-konten",
@@ -141,21 +166,25 @@ const adminNavGroups: NavGroupData[] = [
             title: "CMS Landing Page",
             url: "/dashboard/konten/landing",
             icon: Globe,
+            requiredPermissions: ["SEJARAH_MANAGE", "APP_SETTING_MANAGE", "MANAGE_ALL_CABANG"],
           },
           {
             title: "CMS Berita",
             url: "/dashboard/berita",
             icon: FileText,
+            requiredPermissions: ["NEWS_UTAMA_READ", "NEWS_UTAMA_CREATE", "NEWS_UTAMA_UPDATE"],
           },
           {
             title: "CMS Data Pengurus",
             url: "/dashboard/pengurus",
             icon: UserCog,
+            requiredPermissions: ["STRUKTUR_READ", "STRUKTUR_UPDATE", "MANAGE_ALL_CABANG"],
           },
           {
             title: "CMS Galeri",
             url: "/dashboard/galeri",
             icon: ImageIcon,
+            requiredPermissions: ["GALERI_MANAGE", "GALERI_READ", "MANAGE_ALL_CABANG"],
           },
           {
             title: "CMS Program Kerja",
@@ -434,13 +463,64 @@ function NavSingleItem({
   );
 }
 
+function canAccessNavEntry(
+  entry: {
+    url?: string;
+    requiredPermissions?: string[];
+    requireSuperAdmin?: boolean;
+  },
+  user: UserPayload | null | undefined,
+): boolean {
+  if (entry.requireSuperAdmin && !isSuperAdmin(user)) {
+    return false;
+  }
+  // Single source of truth: delegasikan semua rute /dashboard* ke centralized policy
+  if (entry.url && entry.url.startsWith("/dashboard")) {
+    return canAccessDashboardPath(entry.url, user);
+  }
+  if (entry.requiredPermissions && entry.requiredPermissions.length > 0) {
+    return hasAnyPermission(user, entry.requiredPermissions);
+  }
+  return true;
+}
+
+function filterNavGroupsByPermission(
+  groups: NavGroupData[],
+  user: UserPayload | null | undefined,
+): NavGroupData[] {
+  return groups
+    .map((group) => {
+      const visibleItems = group.items
+        .map((item) => {
+          if (!canAccessNavEntry(item, user)) return null;
+
+          if (item.items && item.items.length > 0) {
+            const visibleSubItems = item.items.filter((sub) =>
+              canAccessNavEntry(sub, user),
+            );
+            if (visibleSubItems.length === 0) return null;
+            return { ...item, items: visibleSubItems };
+          }
+
+          return item;
+        })
+        .filter((item): item is NavItemData => item !== null);
+
+      return { ...group, items: visibleItems };
+    })
+    .filter((group) => group.items.length > 0);
+}
+
 export function AppSidebar({ user }: { user?: UserPayload | null }) {
   const pathname = usePathname();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const isAdmin = hasRole(user, ROLE_GROUPS.ADMINS);
-  const navGroups = isAdmin ? adminNavGroups : memberNavGroups;
+  const navGroups = useMemo(() => {
+    if (!isAdmin) return memberNavGroups;
+    return filterNavGroupsByPermission(adminNavGroups, user);
+  }, [isAdmin, user]);
 
   // Flattened searchable navigation list for Command Palette
   const allSearchableItems = useMemo(() => {

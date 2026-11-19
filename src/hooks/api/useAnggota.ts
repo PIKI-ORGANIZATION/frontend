@@ -24,15 +24,19 @@ export interface AnggotaItem {
   insert_at?: string;
 }
 
-export function useGetDaftarAnggota(params?: {
-  search?: string;
-  cabangUuid?: string;
-  statusKta?: string;
-  currentPage?: number;
-  pageSize?: number;
-}) {
+export function useGetDaftarAnggota(
+  params?: {
+    search?: string;
+    cabangUuid?: string;
+    statusKta?: string;
+    currentPage?: number;
+    pageSize?: number;
+  },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ["anggota", "list", params],
+    enabled: options?.enabled ?? true,
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const token = Cookies.get("token");

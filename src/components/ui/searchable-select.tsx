@@ -80,16 +80,11 @@ export function SearchableSelect({
                 triggerClassName
               )}
             >
-              <div className="flex items-center gap-2 truncate text-left">
+              <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
                 {icon && <span className="shrink-0">{icon}</span>}
                 <span className="truncate">
                   {selectedOption ? selectedOption.label : placeholder}
                 </span>
-                {selectedOption?.subLabel && (
-                  <span className="text-xs text-muted-foreground truncate hidden sm:inline">
-                    ({selectedOption.subLabel})
-                  </span>
-                )}
               </div>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -98,7 +93,7 @@ export function SearchableSelect({
         <PopoverContent
           align="start"
           className={cn(
-            "w-[var(--radix-popover-trigger-width,340px)] min-w-[260px] p-0 z-[100] shadow-md border border-border bg-popover rounded-md overflow-hidden",
+            "w-[var(--anchor-width,300px)] min-w-[260px] p-0 z-[100] shadow-md border border-border bg-popover rounded-md overflow-hidden",
             contentClassName
           )}
         >
@@ -128,22 +123,24 @@ export function SearchableSelect({
                         onValueChange(opt.value);
                         setOpen(false);
                       }}
-                      className="cursor-pointer text-sm py-2.5 px-3 flex items-center justify-between"
+                      className="cursor-pointer text-sm py-2.5 px-3 flex items-start gap-2.5"
                     >
-                      <div className="flex items-center min-w-0">
-                        <Check
-                          className={cn(
-                            "mr-2.5 h-4 w-4 shrink-0 text-primary transition-opacity",
-                            isSelected ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        <span className="truncate">{opt.label}</span>
-                      </div>
-                      {opt.subLabel && (
-                        <span className="text-xs text-muted-foreground shrink-0 ml-2">
-                          {opt.subLabel}
+                      <Check
+                        className={cn(
+                          "mt-0.5 h-4 w-4 shrink-0 text-primary transition-opacity",
+                          isSelected ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="truncate font-medium text-foreground">
+                          {opt.label}
                         </span>
-                      )}
+                        {opt.subLabel && (
+                          <span className="text-xs text-muted-foreground truncate mt-0.5">
+                            {opt.subLabel}
+                          </span>
+                        )}
+                      </div>
                     </CommandItem>
                   );
                 })}

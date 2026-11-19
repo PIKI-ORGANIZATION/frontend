@@ -15,11 +15,28 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, UserCheck, Clock, ShieldCheck } from "lucide-react";
 import { useGetDaftarAnggota } from "@/hooks/api/useAnggota";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { canAccessDashboardPath, hasAnyPermission } from "@/lib/rbac";
 
 export function RecentRegistrations() {
-  const { data, isLoading } = useGetDaftarAnggota({
-    pageSize: 5,
-  });
+  const { user, isReady } = useCurrentUser();
+  const canReadAnggota = hasAnyPermission(user, [
+    "ANGGOTA_READ",
+    "SENIOR_READ",
+    "MANAGE_ALL_CABANG",
+  ]);
+  const canAccessVerifikasi = canAccessDashboardPath(
+    "/dashboard/verifikasi",
+    user,
+  );
+  const canAccessAnggota = canAccessDashboardPath("/dashboard/anggota", user);
+
+  const { data, isLoading } = useGetDaftarAnggota(
+    {
+      pageSize: 5,
+    },
+    { enabled: isReady && canReadAnggota },
+  );
 
   const anggotaList = data?.data || [];
 
@@ -36,12 +53,14 @@ export function RecentRegistrations() {
               5 Pengajuan KTA dan pendaftar yang baru masuk
             </CardDescription>
           </div>
-          <Link href="/dashboard/verifikasi">
-            <Button variant="ghost" size="xs" className="text-xs gap-1">
-              Verifikasi
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
+          {canAccessVerifikasi && (
+            <Link href="/dashboard/verifikasi">
+              <Button variant="ghost" size="xs" className="text-xs gap-1">
+                Verifikasi
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          )}
         </div>
       </CardHeader>
 
@@ -127,18 +146,20 @@ export function RecentRegistrations() {
           </div>
         )}
 
-        <div className="pt-3 border-t border-border/60 mt-3">
-          <Link href="/dashboard/anggota" className="block">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full text-xs font-medium justify-between"
-            >
-              <span>Buka Seluruh Database Anggota</span>
-              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-            </Button>
-          </Link>
-        </div>
+        {canAccessAnggota && (
+          <div className="pt-3 border-t border-border/60 mt-3">
+            <Link href="/dashboard/anggota" className="block">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs font-medium justify-between"
+              >
+                <span>Buka Seluruh Database Anggota</span>
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

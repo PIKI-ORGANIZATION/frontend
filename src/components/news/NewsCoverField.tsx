@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Cookies from "js-cookie";
 import { ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -102,12 +102,14 @@ export function NewsCoverField({
   onChange: (url: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [prevValue, setPrevValue] = useState(value);
   const [draft, setDraft] = useState(value);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
+  if (value !== prevValue) {
+    setPrevValue(value);
     setDraft(value);
-  }, [value]);
+  }
 
   const applyUrl = async () => {
     const next = draft.trim();

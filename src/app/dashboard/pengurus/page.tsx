@@ -41,8 +41,12 @@ import {
   Users,
   LayoutGrid,
   List,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { resolvePengurusCmsAccess } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 
 type FilterKategori = "ALL" | KategoriPengurus;
@@ -55,6 +59,9 @@ const STATUS_FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
 ];
 
 export default function PengurusCMSPage() {
+  const { user, isReady } = useCurrentUser();
+  const access = useMemo(() => resolvePengurusCmsAccess(user), [user]);
+
   const {
     items,
     isLoaded,
@@ -113,17 +120,20 @@ export default function PengurusCMSPage() {
   }, [items, selectedKategori, selectedStatus, searchQuery]);
 
   const handleOpenAdd = () => {
+    if (!access.canManage) return;
     setEditingItem(null);
     setIsEditorOpen(true);
   };
 
   const handleOpenEdit = (item: PengurusItem, e?: React.MouseEvent) => {
     e?.stopPropagation();
+    if (!access.canManage) return;
     setEditingItem(item);
     setIsEditorOpen(true);
   };
 
   const handleSave = (form: PengurusFormValues) => {
+    if (!access.canManage) return;
     if (editingItem) {
       updatePengurus(editingItem.id, form);
       if (inspectorItem?.id === editingItem.id) {
@@ -138,7 +148,7 @@ export default function PengurusCMSPage() {
   };
 
   const handleDeleteConfirm = () => {
-    if (!deletingId) return;
+    if (!access.canManage || !deletingId) return;
     deletePengurus(deletingId);
     if (inspectorItem?.id === deletingId) {
       setInspectorItem(null);
@@ -148,6 +158,7 @@ export default function PengurusCMSPage() {
   };
 
   const handleReset = () => {
+    if (!access.canManage) return;
     resetToDefault();
     setInspectorItem(null);
     setIsResetConfirmOpen(false);
@@ -158,37 +169,61 @@ export default function PengurusCMSPage() {
     STATUS_FILTER_OPTIONS.find((opt) => opt.value === selectedStatus)?.label ||
     "Semua Status";
 
+  if (!isReady) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="size-7 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!access.canView) {
+    return (
+      <AccessDeniedState
+        title="Akses CMS Data Pengurus Ditolak"
+        description="Akun Anda tidak memiliki izin STRUKTUR_READ atau STRUKTUR_UPDATE untuk membuka halaman manajemen pengurus."
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
       {/* 1. Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 ">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               CMS Data Pengurus
             </h1>
+            {!access.canManage && (
+              <Badge variant="secondary" className="text-xs font-medium">
+                Mode Baca Saja
+              </Badge>
+            )}
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Kelola pimpinan inti DPP, dewan pengurus, dan dewan penasehat .
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Button
-            variant="outline"
-            onClick={() => setIsResetConfirmOpen(true)}
-            title="Kembalikan data ke dummy bawaan awal"
-            className="cursor-pointer"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Reset Data
-          </Button>
+        {access.canManage && (
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsResetConfirmOpen(true)}
+              title="Kembalikan data ke dummy bawaan awal"
+              className="cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset Data
+            </Button>
 
-          <Button onClick={handleOpenAdd} className="cursor-pointer">
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Pengurus
-          </Button>
-        </div>
+            <Button onClick={handleOpenAdd} className="cursor-pointer">
+              <Plus className="w-4 h-4 mr-2" />
+              Tambah Pengurus
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* 3. Search Bar, Category Tabs & Status Filter */}
@@ -528,8 +563,10 @@ export default function PengurusCMSPage() {
                         <td className="py-3.5 px-3.5 text-center">
                           <button
                             type="button"
+                            disabled={!access.canManage}
                             onClick={(e) => {
                               e.stopPropagation();
+                              if (!access.canManage) return;
                               toggleStatus(item.id);
                               if (inspectorItem?.id === item.id) {
                                 setInspectorItem((prev) =>
@@ -552,8 +589,17 @@ export default function PengurusCMSPage() {
                                 }`,
                               );
                             }}
-                            title="Klik untuk mengubah status tayang"
-                            className="inline-flex items-center gap-1 cursor-pointer group/toggle"
+                            title={
+                              access.canManage
+                                ? "Klik untuk mengubah status tayang"
+                                : "Mode baca saja"
+                            }
+                            className={cn(
+                              "inline-flex items-center gap-1 group/toggle",
+                              access.canManage
+                                ? "cursor-pointer"
+                                : "cursor-default",
+                            )}
                           >
                             <Badge
                               variant="outline"
@@ -594,27 +640,31 @@ export default function PengurusCMSPage() {
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => handleOpenEdit(item, e)}
-                              title="Ubah data pengurus"
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeletingId(item.id);
-                              }}
-                              title="Hapus pengurus"
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            {access.canManage && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => handleOpenEdit(item, e)}
+                                  title="Ubah data pengurus"
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletingId(item.id);
+                                  }}
+                                  title="Hapus pengurus"
+                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -628,15 +678,17 @@ export default function PengurusCMSPage() {
           <PengurusGridView
             items={filteredItems}
             isLoaded={isLoaded}
+            canManage={access.canManage}
             activeId={inspectorItem?.id}
             onSelect={(item) => setInspectorItem(item)}
             onEdit={handleOpenEdit}
             onDelete={(id, e) => {
               e.stopPropagation();
-              setDeletingId(id);
+              if (access.canManage) setDeletingId(id);
             }}
             onToggleStatus={(id, e) => {
               e.stopPropagation();
+              if (!access.canManage) return;
               toggleStatus(id);
               if (inspectorItem?.id === id) {
                 setInspectorItem((prev) =>
@@ -677,10 +729,12 @@ export default function PengurusCMSPage() {
       <PengurusDetailDrawer
         item={inspectorItem}
         allItems={filteredItems}
+        canManage={access.canManage}
         onClose={() => setInspectorItem(null)}
         onEdit={(item) => handleOpenEdit(item)}
-        onDelete={(id) => setDeletingId(id)}
+        onDelete={(id) => access.canManage && setDeletingId(id)}
         onToggleStatus={(id) => {
+          if (!access.canManage) return;
           toggleStatus(id);
           if (inspectorItem?.id === id) {
             setInspectorItem((prev) =>
@@ -698,12 +752,14 @@ export default function PengurusCMSPage() {
       />
 
       {/* Editor Modal Dialog */}
-      <PengurusEditorDialog
-        open={isEditorOpen}
-        onOpenChange={setIsEditorOpen}
-        initialData={editingItem}
-        onSave={handleSave}
-      />
+      {access.canManage && (
+        <PengurusEditorDialog
+          open={isEditorOpen}
+          onOpenChange={setIsEditorOpen}
+          initialData={editingItem}
+          onSave={handleSave}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog

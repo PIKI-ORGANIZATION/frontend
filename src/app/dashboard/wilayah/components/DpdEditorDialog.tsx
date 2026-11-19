@@ -22,7 +22,7 @@ interface DpdEditorDialogProps {
   dpd: DpdItem | null;
   masterProvinsi: MasterProvinsi[];
   existingDpdCodes: Set<string>;
-  onSave: (payload: DpdFormValues) => Promise<unknown>;
+  onSave: (payload: Partial<DpdFormValues>) => Promise<unknown>;
   isSubmitting: boolean;
 }
 
@@ -30,7 +30,7 @@ interface DpdFormInnerProps {
   dpd: DpdItem | null;
   masterProvinsi: MasterProvinsi[];
   existingDpdCodes: Set<string>;
-  onSave: (payload: DpdFormValues) => Promise<unknown>;
+  onSave: (payload: Partial<DpdFormValues>) => Promise<unknown>;
   onCancel: () => void;
   isSubmitting: boolean;
 }
@@ -83,6 +83,18 @@ function DpdFormInner({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Saat mode edit, jangan kirim kodeProvinsi agar lolos validasi .strict() backend untuk Admin DPD
+    if (isEditing) {
+      await onSave({
+        pengurus: pengurus.trim(),
+        noHandphone: noHandphone.trim(),
+        keterangan: keterangan.trim(),
+        penerbitanSk: penerbitanSk.trim(),
+      });
+      return;
+    }
+
     if (!kodeProvinsi) return;
 
     await onSave({
@@ -99,14 +111,19 @@ function DpdFormInner({
       {/* 1. Pilih Provinsi */}
       <div className="space-y-2">
         <Label htmlFor="provinsi" className="text-sm font-medium text-foreground">
-          Provinsi (DPD) <span className="text-destructive">*</span>
+          Provinsi (DPD) {!isEditing && <span className="text-destructive">*</span>}
         </Label>
         {isEditing ? (
-          <Input
-            value={`DPD ${dpd?.dpd}`}
-            disabled
-            className="h-10 text-sm bg-muted text-muted-foreground font-medium"
-          />
+          <div className="space-y-1.5">
+            <Input
+              value={`DPD ${dpd?.dpd}`}
+              disabled
+              className="h-10 text-sm bg-muted text-muted-foreground font-medium"
+            />
+            <p className="text-xs text-muted-foreground">
+              Wilayah provinsi terkunci. Anda dapat memperbarui data ketua, kontak, status, dan nomor SK.
+            </p>
+          </div>
         ) : (
           <SearchableSelect
             id="provinsi"
@@ -191,7 +208,7 @@ function DpdFormInner({
         </Button>
         <Button
           type="submit"
-          disabled={isSubmitting || !kodeProvinsi}
+          disabled={isSubmitting || (!isEditing && !kodeProvinsi)}
           className="h-10 px-5 text-sm font-medium"
         >
           {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

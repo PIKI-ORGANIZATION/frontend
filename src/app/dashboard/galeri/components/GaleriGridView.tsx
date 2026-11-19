@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 
 interface GaleriGridViewProps {
   items: GaleriItem[];
+  canManage?: boolean;
   onInspect: (item: GaleriItem) => void;
   onEdit: (item: GaleriItem) => void;
   onDelete: (id: string) => void;
@@ -31,6 +32,7 @@ interface GaleriGridViewProps {
 
 export function GaleriGridView({
   items,
+  canManage = true,
   onInspect,
   onEdit,
   onDelete,
@@ -158,54 +160,58 @@ export function GaleriGridView({
               <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
                 {/* Left Quick Actions */}
                 <div className="flex items-center gap-1">
-                  {/* Toggle Spotlight Button - Khusus Video */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    disabled={item.type !== "VIDEO" || item.status === "ARCHIVED"}
-                    onClick={() => onToggleFeatured(item.id)}
-                    title={
-                      item.type !== "VIDEO"
-                        ? "Hanya video yang dapat dijadikan spotlight utama"
-                        : item.status === "ARCHIVED"
-                          ? "Item yang diarsipkan tidak dapat dijadikan spotlight"
-                          : item.featured
-                            ? "Hapus dari Spotlight Utama"
-                            : "Jadikan Spotlight Utama"
-                    }
-                    className={cn(
-                      "size-8 rounded-lg transition-colors",
-                      item.type !== "VIDEO" || item.status === "ARCHIVED"
-                        ? "opacity-30 cursor-not-allowed text-muted-foreground"
-                        : item.featured
-                          ? "text-amber-500 hover:text-amber-600 bg-amber-500/10 cursor-pointer"
-                          : "text-muted-foreground hover:text-foreground cursor-pointer",
-                    )}
-                  >
-                    <Star
-                      className={cn(
-                        "size-4",
-                        item.featured && "fill-amber-500",
-                      )}
-                    />
-                  </Button>
+                  {canManage && (
+                    <>
+                      {/* Toggle Spotlight Button - Khusus Video */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={item.type !== "VIDEO" || item.status === "ARCHIVED"}
+                        onClick={() => onToggleFeatured(item.id)}
+                        title={
+                          item.type !== "VIDEO"
+                            ? "Hanya video yang dapat dijadikan spotlight utama"
+                            : item.status === "ARCHIVED"
+                              ? "Item yang diarsipkan tidak dapat dijadikan spotlight"
+                              : item.featured
+                                ? "Hapus dari Spotlight Utama"
+                                : "Jadikan Spotlight Utama"
+                        }
+                        className={cn(
+                          "size-8 rounded-lg transition-colors",
+                          item.type !== "VIDEO" || item.status === "ARCHIVED"
+                            ? "opacity-30 cursor-not-allowed text-muted-foreground"
+                            : item.featured
+                              ? "text-amber-500 hover:text-amber-600 bg-amber-500/10 cursor-pointer"
+                              : "text-muted-foreground hover:text-foreground cursor-pointer",
+                        )}
+                      >
+                        <Star
+                          className={cn(
+                            "size-4",
+                            item.featured && "fill-amber-500",
+                          )}
+                        />
+                      </Button>
 
-                  {/* Toggle Status Button */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onToggleStatus(item.id)}
-                    title={
-                      item.status === "PUBLISHED"
-                        ? "Ubah jadi Draf"
-                        : item.status === "ARCHIVED"
-                          ? "Terbitkan dari Arsip"
-                          : "Terbitkan ke Publik"
-                    }
-                    className="size-8 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
-                    <Eye className="size-4" />
-                  </Button>
+                      {/* Toggle Status Button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onToggleStatus(item.id)}
+                        title={
+                          item.status === "PUBLISHED"
+                            ? "Ubah jadi Draf"
+                            : item.status === "ARCHIVED"
+                              ? "Terbitkan dari Arsip"
+                              : "Terbitkan ke Publik"
+                        }
+                        className="size-8 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        <Eye className="size-4" />
+                      </Button>
+                    </>
+                  )}
 
                   {/* Detail Inspector Button */}
                   <Button
@@ -220,26 +226,28 @@ export function GaleriGridView({
                 </div>
 
                 {/* Right Edit & Delete Buttons */}
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onEdit(item)}
-                    title="Edit Media"
-                    className="size-8 rounded-lg text-muted-foreground hover:text-primary cursor-pointer"
-                  >
-                    <Edit2 className="size-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDelete(item.id)}
-                    title="Hapus Media"
-                    className="size-8 rounded-lg text-muted-foreground hover:text-rose-600 cursor-pointer"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
+                {canManage && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(item)}
+                      title="Edit Media"
+                      className="size-8 rounded-lg text-muted-foreground hover:text-primary cursor-pointer"
+                    >
+                      <Edit2 className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDelete(item.id)}
+                      title="Hapus Media"
+                      className="size-8 rounded-lg text-muted-foreground hover:text-rose-600 cursor-pointer"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

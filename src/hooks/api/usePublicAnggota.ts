@@ -10,9 +10,11 @@ export interface PublicAnggotaProfile {
   noWa: string | null;
   provinsi: string | null;
   kotaDomisili: string | null;
-  statusKeanggotaan: string; // "AKTIF" | "NON_MEMBER" | dll
+  statusKeanggotaan: string; // "AKTIF" | "MEMBER" | "NON_MEMBER" | dll
   statusKta: string | null; // "ACTIVE" | "INACTIVE"
   tglAktivasiKta: string | null; // Tanggal aktivasi (berlaku sejak)
+  approvedAtDPP?: string | null;
+  approvedAtDPC?: string | null;
   email: string | null;
   insert_at: string; // Bergabung sejak
   cabang: {
@@ -31,6 +33,7 @@ export interface PublicAnggotaProfile {
     langkahSekarang: number;
     dpd: string | null;
     dpc: string | null;
+    tglVerifikasi?: string | null;
     tglPersetujuanPdp: string | null;
   } | null;
 }
