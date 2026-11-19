@@ -40,6 +40,7 @@ interface GaleriDetailDrawerProps {
   item: GaleriItem | null;
   allItems?: GaleriItem[];
   canManage?: boolean;
+  canManageItem?: (item: GaleriItem) => boolean;
   onClose: () => void;
   onEdit: (item: GaleriItem) => void;
   onDelete: (id: string) => void;
@@ -54,6 +55,7 @@ export function GaleriDetailDrawer({
   item,
   allItems = [],
   canManage = true,
+  canManageItem,
   onClose,
   onEdit,
   onDelete,
@@ -615,7 +617,7 @@ export function GaleriDetailDrawer({
         </div>
 
         {/* 3. Footer Action Bar */}
-        {canManage && (
+        {canManage && (canManageItem ? canManageItem(activeItem) : true) && (
           <div className="p-4 sm:p-5 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-between gap-2 mt-auto shrink-0">
             <Button
               variant="ghost"

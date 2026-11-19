@@ -68,6 +68,8 @@ interface GaleriEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingItem: GaleriItem | null;
+  canSelectCabang?: boolean;
+  cabangOptions?: { uuid: string; namaCabang: string }[];
   onSave: (values: GaleriFormValues) => void;
 }
 
@@ -104,12 +106,16 @@ function normalizeInstagramUrl(rawUrl: string): {
 
 interface GaleriEditorFormProps {
   editingItem: GaleriItem | null;
+  canSelectCabang?: boolean;
+  cabangOptions?: { uuid: string; namaCabang: string }[];
   onSave: (values: GaleriFormValues) => void;
   onCancel: () => void;
 }
 
 function GaleriEditorForm({
   editingItem,
+  canSelectCabang = false,
+  cabangOptions = [],
   onSave,
   onCancel,
 }: GaleriEditorFormProps) {
@@ -159,6 +165,10 @@ function GaleriEditorForm({
   const [penempatan, setPenempatan] = useState<PenempatanMedia[]>(
     editingItem?.penempatan || ["GALERI"],
   );
+  const [cabangUuid, setCabangUuid] = useState<string | null>(
+    editingItem?.cabangUuid ?? null,
+  );
+  const [openCabangPopover, setOpenCabangPopover] = useState(false);
 
   // Upload & Preview states
   const [isUploading, setIsUploading] = useState(false);
@@ -437,9 +447,10 @@ function GaleriEditorForm({
           : undefined,
       sumberVideo: type === "VIDEO" ? sumberVideo : null,
       instagramUrl: type === "INSTAGRAM" ? finalUrl : undefined,
-      penempatan,
+      penempatan: canSelectCabang ? penempatan : ["GALERI"],
       featured: finalFeatured,
       status,
+      ...(canSelectCabang ? { cabangUuid } : {}),
     };
 
     onSave(payload);
@@ -1132,59 +1143,61 @@ function GaleriEditorForm({
         </div>
       </div>
 
-      {/* 4. Controls: Penempatan, Spotlight Highlight & Publication Status */}
+      {/* 4. Controls: Penempatan (DPP), Spotlight Highlight & Publication Status */}
       <div className="space-y-4 pt-3 border-t border-border">
-        {/* Penempatan Tampil */}
-        <div className="space-y-2">
-          <Label className="text-xs font-medium text-foreground">
-            Penempatan Tampil Konten
-          </Label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => togglePenempatan("GALERI")}
-              className={cn(
-                "p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between",
-                penempatan.includes("GALERI")
-                  ? "border-primary bg-primary/10 text-primary font-medium"
-                  : "border-border bg-card text-muted-foreground",
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <Globe className="size-4 shrink-0" />
-                <span className="text-xs">Halaman Galeri Publik</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={penempatan.includes("GALERI")}
-                readOnly
-                className="size-4 rounded accent-primary pointer-events-none"
-              />
-            </button>
+        {/* Penempatan Tampil (Khusus SuperAdmin DPP agar beranda nasional tetap terkurasi) */}
+        {canSelectCabang && (
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-foreground">
+              Penempatan Tampil Konten
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => togglePenempatan("GALERI")}
+                className={cn(
+                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between",
+                  penempatan.includes("GALERI")
+                    ? "border-primary bg-primary/10 text-primary font-medium"
+                    : "border-border bg-card text-muted-foreground",
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Globe className="size-4 shrink-0" />
+                  <span className="text-xs">Halaman Galeri Publik</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={penempatan.includes("GALERI")}
+                  readOnly
+                  className="size-4 rounded accent-primary pointer-events-none"
+                />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => togglePenempatan("BERANDA")}
-              className={cn(
-                "p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between",
-                penempatan.includes("BERANDA")
-                  ? "border-primary bg-primary/10 text-primary font-medium"
-                  : "border-border bg-card text-muted-foreground",
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles className="size-4 shrink-0" />
-                <span className="text-xs">Beranda Utama (Landing)</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={penempatan.includes("BERANDA")}
-                readOnly
-                className="size-4 rounded accent-primary pointer-events-none"
-              />
-            </button>
+              <button
+                type="button"
+                onClick={() => togglePenempatan("BERANDA")}
+                className={cn(
+                  "p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between",
+                  penempatan.includes("BERANDA")
+                    ? "border-primary bg-primary/10 text-primary font-medium"
+                    : "border-border bg-card text-muted-foreground",
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 shrink-0" />
+                  <span className="text-xs">Beranda Utama (Landing)</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={penempatan.includes("BERANDA")}
+                  readOnly
+                  className="size-4 rounded accent-primary pointer-events-none"
+                />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Spotlight & Status Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1289,6 +1302,86 @@ function GaleriEditorForm({
             </div>
           </div>
         </div>
+
+        {/* Wilayah / Cabang Pemilik (Khusus DPP SuperAdmin) */}
+        {canSelectCabang && (
+          <div className="p-3.5 rounded-xl border border-border/80 bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <span className="text-xs font-semibold text-foreground">
+                Wilayah / Cabang Pemilik
+              </span>
+              <p className="text-[11px] text-muted-foreground">
+                Tentukan apakah dokumentasi ini milik Pusat (DPP) atau cabang DPD/DPC tertentu.
+              </p>
+            </div>
+            <Popover open={openCabangPopover} onOpenChange={setOpenCabangPopover}>
+              <PopoverTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openCabangPopover}
+                    className="justify-between min-w-[220px] font-normal cursor-pointer"
+                  >
+                    <span className="truncate">
+                      {cabangUuid
+                        ? cabangOptions.find((c) => c.uuid === cabangUuid)?.namaCabang ||
+                          "Cabang Terpilih"
+                        : "Pusat / Nasional (DPP)"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
+                  </Button>
+                }
+              />
+              <PopoverContent className="w-72 p-0" align="end">
+                <Command>
+                  <CommandInput placeholder="Cari cabang..." />
+                  <CommandList>
+                    <CommandEmpty>Cabang tidak ditemukan.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="Pusat / Nasional (DPP)"
+                        onSelect={() => {
+                          setCabangUuid(null);
+                          setOpenCabangPopover(false);
+                        }}
+                        className="cursor-pointer flex items-center justify-between"
+                      >
+                        <span>Pusat / Nasional (DPP)</span>
+                        <Check
+                          className={cn(
+                            "size-3.5 text-primary",
+                            cabangUuid === null ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+                      </CommandItem>
+                      {cabangOptions.map((c) => (
+                        <CommandItem
+                          key={c.uuid}
+                          value={c.namaCabang}
+                          onSelect={() => {
+                            setCabangUuid(c.uuid);
+                            setOpenCabangPopover(false);
+                          }}
+                          className="cursor-pointer flex items-center justify-between"
+                        >
+                          <span className="truncate">{c.namaCabang}</span>
+                          <Check
+                            className={cn(
+                              "size-3.5 text-primary",
+                              cabangUuid === c.uuid ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
       </div>
 
       <DialogFooter className="pt-4 border-t border-border flex items-center justify-end gap-2">
@@ -1323,6 +1416,8 @@ export function GaleriEditorDialog({
   open,
   onOpenChange,
   editingItem,
+  canSelectCabang = false,
+  cabangOptions = [],
   onSave,
 }: GaleriEditorDialogProps) {
   return (
@@ -1341,6 +1436,8 @@ export function GaleriEditorDialog({
           <GaleriEditorForm
             key={editingItem?.id || "create-new"}
             editingItem={editingItem}
+            canSelectCabang={canSelectCabang}
+            cabangOptions={cabangOptions}
             onSave={(values) => {
               onSave(values);
               onOpenChange(false);

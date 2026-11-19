@@ -25,6 +25,7 @@ export interface GaleriFilterParams {
   status?: StatusPublikasi | "ALL";
   search?: string;
   penempatan?: "BERANDA" | "GALERI";
+  cabangUuid?: string;
   currentPage?: number;
   pageSize?: number;
   fixed?: "all";
@@ -59,6 +60,9 @@ export function useGaleri(filters?: GaleriFilterParams) {
     }
     if (filters?.penempatan) {
       p.append("penempatan", filters.penempatan);
+    }
+    if (filters?.cabangUuid && filters.cabangUuid !== "ALL") {
+      p.append("cabangUuid", filters.cabangUuid);
     }
     if (filters?.currentPage) {
       p.append("currentPage", filters.currentPage.toString());

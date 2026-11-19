@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 interface GaleriGridViewProps {
   items: GaleriItem[];
   canManage?: boolean;
+  canManageItem?: (item: GaleriItem) => boolean;
+  cabangNameMap?: Record<string, string>;
   onInspect: (item: GaleriItem) => void;
   onEdit: (item: GaleriItem) => void;
   onDelete: (id: string) => void;
@@ -33,6 +35,8 @@ interface GaleriGridViewProps {
 export function GaleriGridView({
   items,
   canManage = true,
+  canManageItem,
+  cabangNameMap,
   onInspect,
   onEdit,
   onDelete,
@@ -57,6 +61,11 @@ export function GaleriGridView({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.map((item) => {
+        const itemCanManage =
+          canManage && (canManageItem ? canManageItem(item) : true);
+        const cabangLabel = item.cabangUuid
+          ? cabangNameMap?.[item.cabangUuid] || "Wilayah Cabang"
+          : "Pusat (DPP)";
         return (
           <Card
             key={item.id}
@@ -156,11 +165,19 @@ export function GaleriGridView({
                 </div>
               )}
 
+              {cabangNameMap && (
+                <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                  <Badge variant="outline" className="text-[10px] font-normal max-w-full truncate">
+                    {cabangLabel}
+                  </Badge>
+                </div>
+              )}
+
               {/* 3. Action Buttons Footer */}
               <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
                 {/* Left Quick Actions */}
                 <div className="flex items-center gap-1">
-                  {canManage && (
+                  {itemCanManage && (
                     <>
                       {/* Toggle Spotlight Button - Khusus Video */}
                       <Button
@@ -226,7 +243,7 @@ export function GaleriGridView({
                 </div>
 
                 {/* Right Edit & Delete Buttons */}
-                {canManage && (
+                {itemCanManage && (
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"

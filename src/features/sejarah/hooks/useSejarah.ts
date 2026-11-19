@@ -23,6 +23,8 @@ export interface SejarahFilterParams {
   status?: HistoryStatus;
   fallbackIfEmpty?: boolean;
   enabled?: boolean;
+  /** Mode publik: tidak mengirim token Authorization dan hanya mengambil status PUBLISHED */
+  publicMode?: boolean;
 }
 
 interface UploadResponse {
@@ -44,13 +46,16 @@ export function useSejarah(filters?: SejarahFilterParams) {
   const pageSize = filters?.pageSize;
   const fallbackIfEmpty = filters?.fallbackIfEmpty;
   const isEnabled = filters?.enabled ?? true;
+  const publicMode = filters?.publicMode ?? false;
 
   const queryParams = useMemo(() => {
     const p = new URLSearchParams();
-    if (fixed) {
+    if (!publicMode && fixed) {
       p.append("fixed", fixed);
     }
-    if (status) {
+    if (publicMode) {
+      p.append("status", "PUBLISHED");
+    } else if (status) {
       p.append("status", status);
     }
     if (search?.trim()) {
@@ -63,7 +68,7 @@ export function useSejarah(filters?: SejarahFilterParams) {
       p.append("pageSize", String(pageSize));
     }
     return p.toString();
-  }, [fixed, status, search, currentPage, pageSize]);
+  }, [fixed, status, search, currentPage, pageSize, publicMode]);
 
   // 1. Fetch Daftar Sejarah
   const {
@@ -73,11 +78,13 @@ export function useSejarah(filters?: SejarahFilterParams) {
     error,
     refetch,
   } = useQuery<SejarahApiResponse>({
-    queryKey: ["sejarah", queryParams],
+    queryKey: ["sejarah", publicMode ? "public" : "admin", queryParams],
     enabled: isEnabled,
     queryFn: async () => {
       const endpoint = queryParams ? `/sejarah?${queryParams}` : "/sejarah";
-      const res = await apiFetch<SejarahApiResponse>(endpoint);
+      const res = await apiFetch<SejarahApiResponse>(endpoint, {
+        skipAuth: publicMode,
+      });
       return res;
     },
     staleTime: 30 * 1000,

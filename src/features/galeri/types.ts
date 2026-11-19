@@ -36,6 +36,7 @@ export interface GaleriItem {
   featured?: boolean;
   urutan?: number | null;
   status: StatusPublikasi;
+  cabangUuid?: string | null;
   publishedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -59,6 +60,7 @@ export interface GaleriFormValues {
   featured?: boolean;
   urutan?: number | null;
   status: StatusPublikasi;
+  cabangUuid?: string | null;
 }
 
 export interface GaleriStats {

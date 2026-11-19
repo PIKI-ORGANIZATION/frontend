@@ -12,6 +12,8 @@ import {
   Check,
   ChevronDown,
   Loader2,
+  AlertCircle,
+  Building2,
 } from "lucide-react";
 import { FaInstagram } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
@@ -45,7 +47,8 @@ import { GaleriDeleteDialog } from "./components/GaleriDeleteDialog";
 import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
 import { Badge } from "@/components/ui/badge";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { resolveGaleriAccess } from "@/lib/rbac";
+import { resolveGaleriAccess, canWriteCabangItem } from "@/lib/rbac";
+import { useCabangList } from "@/features/wilayah/hooks/useWilayah";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -62,6 +65,29 @@ export default function GaleriCMSPage() {
   const { user, isReady } = useCurrentUser();
   const access = useMemo(() => resolveGaleriAccess(user), [user]);
 
+  const [selectedCabang, setSelectedCabang] = useState<string>("ALL");
+  const [openCabangPopover, setOpenCabangPopover] = useState(false);
+
+  const { data: cabangList = [] } = useCabangList({
+    pageSize: 500,
+    enabled: isReady && access.canView && access.scope !== "DPC",
+  });
+
+  const cabangNameMap = useMemo(() => {
+    if (access.scope === "DPC") return undefined;
+    const map: Record<string, string> = {};
+    cabangList.forEach((c) => {
+      map[c.uuid] = c.namaCabang;
+    });
+    return map;
+  }, [access.scope, cabangList]);
+
+  const canManageItem = useMemo(
+    () => (item: GaleriItem) =>
+      access.canManage && canWriteCabangItem(user, item.cabangUuid),
+    [access.canManage, user],
+  );
+
   const {
     items,
     stats,
@@ -74,6 +100,9 @@ export default function GaleriCMSPage() {
   } = useGaleri({
     enabled: isReady && access.canView,
     fetchStats: isReady && access.canViewStats,
+    ...(access.canSelectCabang && selectedCabang !== "ALL"
+      ? { cabangUuid: selectedCabang }
+      : {}),
   });
 
   // Filter States
@@ -125,14 +154,14 @@ export default function GaleriCMSPage() {
 
   // Handler: Open Add Dialog
   const handleOpenAdd = () => {
-    if (!access.canManage) return;
+    if (!access.canManage || access.isUnlinkedBranchAdmin) return;
     setEditingItem(null);
     setIsEditorOpen(true);
   };
 
   // Handler: Open Edit Dialog
   const handleOpenEdit = (item: GaleriItem) => {
-    if (!access.canManage) return;
+    if (!canManageItem(item)) return;
     setEditingItem(item);
     setIsEditorOpen(true);
   };
@@ -141,18 +170,21 @@ export default function GaleriCMSPage() {
   const handleSave = async (values: GaleriFormValues) => {
     if (!access.canManage) return;
     if (editingItem) {
+      if (!canManageItem(editingItem)) return;
       const updated = await updateMedia(editingItem.id, values);
       if (inspectingItem?.id === editingItem.id) {
         setInspectingItem(updated || { ...editingItem, ...values });
       }
     } else {
+      if (access.isUnlinkedBranchAdmin) return;
       const created = await addMedia(values);
       if (created) setInspectingItem(created);
     }
   };
 
   const handleToggleStatus = async (id: string) => {
-    if (!access.canManage) return;
+    const target = items.find((i) => i.id === id);
+    if (!target || !canManageItem(target)) return;
     const updated = await toggleStatus(id);
     if (inspectingItem?.id === id) {
       setInspectingItem((prev) =>
@@ -179,9 +211,9 @@ export default function GaleriCMSPage() {
   }, [items]);
 
   const handleToggleFeatured = async (id: string) => {
-    if (!access.canManage) return;
     const target = items.find((i) => i.id === id);
-    if (target && target.type !== "VIDEO") {
+    if (!target || !canManageItem(target)) return;
+    if (target.type !== "VIDEO") {
       toast.error(
         "Hanya dokumentasi video yang dapat dijadikan spotlight utama.",
       );
@@ -243,13 +275,29 @@ export default function GaleriCMSPage() {
 
         {access.canManage && (
           <div className="flex items-center gap-2.5 shrink-0">
-            <Button onClick={handleOpenAdd} className="cursor-pointer">
+            <Button
+              onClick={handleOpenAdd}
+              disabled={access.isUnlinkedBranchAdmin}
+              className="cursor-pointer"
+            >
               <Plus className="size-4 mr-2" />
               <span>Tambah Dokumentasi</span>
             </Button>
           </div>
         )}
       </div>
+
+      {access.isUnlinkedBranchAdmin && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-3 text-sm text-amber-800 dark:text-amber-200">
+          <AlertCircle className="size-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">Akun admin wilayah belum ditautkan ke Cabang</p>
+            <p className="text-xs opacity-90 mt-0.5">
+              Hubungi Superadmin DPP untuk menautkan akun Anda ke profil Cabang agar dapat menambah dan mengelola dokumentasi galeri.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 3. Toolbar: Media Type Tabs, Search, Popover Filters & View Switcher */}
       <div className="flex flex-col gap-3">
@@ -510,6 +558,85 @@ export default function GaleriCMSPage() {
                 </div>
               </PopoverContent>
             </Popover>
+
+            {/* Filter Wilayah / Cabang (Khusus DPP SuperAdmin) */}
+            {access.canSelectCabang && (
+              <Popover
+                open={openCabangPopover}
+                onOpenChange={setOpenCabangPopover}
+              >
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openCabangPopover}
+                      className="justify-between min-w-[170px] max-w-[230px] font-normal cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Building2 className="size-3.5 text-muted-foreground shrink-0" />
+                        <span className="truncate">
+                          {selectedCabang === "ALL"
+                            ? "Semua Wilayah"
+                            : cabangList.find((c) => c.uuid === selectedCabang)
+                                ?.namaCabang || "Wilayah Terpilih"}
+                        </span>
+                      </div>
+                      <ChevronDown className="ml-2 size-3.5 shrink-0 opacity-50" />
+                    </Button>
+                  }
+                />
+                <PopoverContent className="w-72 p-0" align="end">
+                  <Command>
+                    <CommandInput placeholder="Cari cabang / wilayah..." />
+                    <CommandList>
+                      <CommandEmpty>Cabang tidak ditemukan.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="Semua Wilayah"
+                          onSelect={() => {
+                            setSelectedCabang("ALL");
+                            setOpenCabangPopover(false);
+                          }}
+                          className="cursor-pointer flex items-center justify-between"
+                        >
+                          <span>Semua Wilayah</span>
+                          <Check
+                            className={cn(
+                              "size-3.5 text-primary",
+                              selectedCabang === "ALL"
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                        </CommandItem>
+                        {cabangList.map((c) => (
+                          <CommandItem
+                            key={c.uuid}
+                            value={c.namaCabang}
+                            onSelect={() => {
+                              setSelectedCabang(c.uuid);
+                              setOpenCabangPopover(false);
+                            }}
+                            className="cursor-pointer flex items-center justify-between"
+                          >
+                            <span className="truncate">{c.namaCabang}</span>
+                            <Check
+                              className={cn(
+                                "size-3.5 text-primary",
+                                selectedCabang === c.uuid
+                                  ? "opacity-100"
+                                  : "opacity-0",
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </div>
       </div>
@@ -536,7 +663,7 @@ export default function GaleriCMSPage() {
                 ? "Coba sesuaikan kata kunci pencarian atau ganti filter kategori kegiatan."
                 : "Belum ada arsip dokumentasi media. Mulai tambahkan dokumentasi baru."}
             </p>
-            {access.canManage && (
+            {access.canManage && !access.isUnlinkedBranchAdmin && (
               <Button onClick={handleOpenAdd} className="mt-5 cursor-pointer">
                 <Plus className="size-4 mr-2" />
                 <span>Tambah Dokumentasi Baru</span>
@@ -547,6 +674,8 @@ export default function GaleriCMSPage() {
           <GaleriGridView
             items={filteredItems}
             canManage={access.canManage}
+            canManageItem={canManageItem}
+            cabangNameMap={cabangNameMap}
             onInspect={setInspectingItem}
             onEdit={handleOpenEdit}
             onDelete={setDeletingId}
@@ -557,6 +686,8 @@ export default function GaleriCMSPage() {
           <GaleriTableView
             items={filteredItems}
             canManage={access.canManage}
+            canManageItem={canManageItem}
+            cabangNameMap={cabangNameMap}
             onInspect={setInspectingItem}
             onEdit={handleOpenEdit}
             onDelete={setDeletingId}
@@ -572,6 +703,8 @@ export default function GaleriCMSPage() {
           open={isEditorOpen}
           onOpenChange={setIsEditorOpen}
           editingItem={editingItem}
+          canSelectCabang={access.canSelectCabang}
+          cabangOptions={cabangList}
           onSave={handleSave}
         />
       )}
@@ -581,6 +714,7 @@ export default function GaleriCMSPage() {
         item={inspectingItem}
         allItems={filteredItems}
         canManage={access.canManage}
+        canManageItem={canManageItem}
         onClose={() => setInspectingItem(null)}
         onEdit={handleOpenEdit}
         onDelete={setDeletingId}

@@ -13,7 +13,7 @@ export function HistorySection() {
   const progressRef = useRef<HTMLDivElement>(null);
 
   // Ambil data sejarah aktif dari API backend dengan fallback otomatis
-  const { events } = useSejarah({ fallbackIfEmpty: true });
+  const { events } = useSejarah({ fallbackIfEmpty: true, publicMode: true });
 
   useEffect(() => {
     if (events.length === 0) return;

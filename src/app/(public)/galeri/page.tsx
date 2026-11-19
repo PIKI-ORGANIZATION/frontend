@@ -14,7 +14,7 @@ import {
   MEDIA_FILTERS,
   SPOTLIGHT_HERO_IMAGES,
 } from "./data/galeriData";
-import { useGaleri } from "@/features/galeri/hooks/useGaleri";
+import { usePublicGaleri } from "@/features/galeri/hooks/useGaleri";
 import { getSafeImageSrc } from "@/features/galeri/types";
 import { GaleriSpotlight } from "./components/GaleriSpotlight";
 import { GaleriCategoryFilter } from "./components/GaleriCategoryFilter";
@@ -39,7 +39,7 @@ const DEFAULT_SPOTLIGHT_FALLBACK: MediaItem = {
 };
 
 export default function GaleriPage() {
-  const { items: allItems, isLoading } = useGaleri({ fetchStats: false });
+  const { items: allItems, isLoading } = usePublicGaleri({ pageSize: 100 });
 
   const [selectedMediaType, setSelectedMediaType] = useState<MediaType>("ALL");
   const [selectedCategory, setSelectedCategory] =

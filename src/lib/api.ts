@@ -15,23 +15,29 @@ export class ApiError extends Error {
   }
 }
 
+export interface ApiFetchOptions extends RequestInit {
+  /** Jika true, header Authorization tidak disisipkan (untuk endpoint/halaman publik) */
+  skipAuth?: boolean;
+}
+
 /**
  * Client fetch terpusat untuk komunikasi dengan backend API PIKI.
- * - Otomatis menyisipkan header Authorization: Bearer <token>.
+ * - Otomatis menyisipkan header Authorization: Bearer <token> (kecuali skipAuth: true).
  * - Mendukung FormData (Content-Type dibiarkan otomatis browser).
  * - Menangani 401 Unauthorized secara global: hapus cookie & redirect ke /login?expired=true.
  * - Menangani 403 Forbidden dengan pesan izin akses.
  */
 export async function apiFetch<T>(
   endpoint: string,
-  options: RequestInit = {},
+  options: ApiFetchOptions = {},
 ): Promise<T> {
-  const token = Cookies.get("token");
+  const { skipAuth = false, ...fetchOptions } = options;
+  const token = skipAuth ? undefined : Cookies.get("token");
 
-  const headers = new Headers(options.headers || {});
+  const headers = new Headers(fetchOptions.headers || {});
 
   // Jangan set Content-Type jika body adalah FormData (biarkan browser set boundary)
-  if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
+  if (!headers.has("Content-Type") && !(fetchOptions.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -45,7 +51,7 @@ export async function apiFetch<T>(
     : `${API_BASE}${cleanEndpoint}`;
 
   const res = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 

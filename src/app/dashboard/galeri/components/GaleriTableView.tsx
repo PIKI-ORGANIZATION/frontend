@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 interface GaleriTableViewProps {
   items: GaleriItem[];
   canManage?: boolean;
+  canManageItem?: (item: GaleriItem) => boolean;
+  cabangNameMap?: Record<string, string>;
   onInspect: (item: GaleriItem) => void;
   onEdit: (item: GaleriItem) => void;
   onDelete: (id: string) => void;
@@ -36,6 +38,8 @@ interface GaleriTableViewProps {
 export function GaleriTableView({
   items,
   canManage = true,
+  canManageItem,
+  cabangNameMap,
   onInspect,
   onEdit,
   onDelete,
@@ -72,6 +76,11 @@ export function GaleriTableView({
         </TableHeader>
         <TableBody>
           {items.map((item) => {
+            const itemCanManage =
+              canManage && (canManageItem ? canManageItem(item) : true);
+            const cabangLabel = item.cabangUuid
+              ? cabangNameMap?.[item.cabangUuid] || "Wilayah Cabang"
+              : "Pusat (DPP)";
             return (
               <TableRow key={item.id} className="hover:bg-muted/40 transition-colors">
                 {/* Thumbnail */}
@@ -99,10 +108,15 @@ export function GaleriTableView({
                     >
                       {item.title}
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <Badge variant="outline" className="text-[10px] font-normal">
                         {item.kategoriKegiatan}
                       </Badge>
+                      {cabangNameMap && (
+                        <Badge variant="secondary" className="text-[10px] font-normal">
+                          {cabangLabel}
+                        </Badge>
+                      )}
                       {item.duration && (
                         <span className="text-[11px] font-mono text-muted-foreground">
                           {item.duration}
@@ -152,19 +166,19 @@ export function GaleriTableView({
                 <TableCell className="py-3 text-center">
                   <button
                     type="button"
-                    disabled={!canManage}
-                    onClick={() => canManage && onToggleStatus(item.id)}
-                    title={canManage ? "Klik untuk ubah status" : "Mode baca saja"}
+                    disabled={!itemCanManage}
+                    onClick={() => itemCanManage && onToggleStatus(item.id)}
+                    title={itemCanManage ? "Klik untuk ubah status" : "Mode baca saja"}
                     className={cn(
                       "inline-flex",
-                      canManage ? "cursor-pointer" : "cursor-default",
+                      itemCanManage ? "cursor-pointer" : "cursor-default",
                     )}
                   >
                     <Badge
                       variant="secondary"
                       className={cn(
                         "text-[10px] font-semibold border-0 transition-opacity",
-                        canManage && "hover:opacity-80",
+                        itemCanManage && "hover:opacity-80",
                         item.status === "PUBLISHED"
                           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                           : item.status === "ARCHIVED"
@@ -186,13 +200,13 @@ export function GaleriTableView({
                   <button
                     type="button"
                     disabled={
-                      !canManage ||
+                      !itemCanManage ||
                       item.type !== "VIDEO" ||
                       item.status === "ARCHIVED"
                     }
-                    onClick={() => canManage && onToggleFeatured(item.id)}
+                    onClick={() => itemCanManage && onToggleFeatured(item.id)}
                     title={
-                      !canManage
+                      !itemCanManage
                         ? "Mode baca saja"
                         : item.type !== "VIDEO"
                           ? "Hanya video yang dapat dijadikan spotlight utama"
@@ -204,7 +218,7 @@ export function GaleriTableView({
                     }
                     className={cn(
                       "size-7 rounded-lg inline-flex items-center justify-center transition-colors",
-                      !canManage ||
+                      !itemCanManage ||
                         item.type !== "VIDEO" ||
                         item.status === "ARCHIVED"
                         ? "opacity-25 cursor-not-allowed text-muted-foreground"
@@ -234,7 +248,7 @@ export function GaleriTableView({
                     >
                       <Eye className="size-4" />
                     </Button>
-                    {canManage && (
+                    {itemCanManage && (
                       <>
                         <Button
                           variant="ghost"

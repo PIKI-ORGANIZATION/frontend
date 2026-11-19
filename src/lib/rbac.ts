@@ -260,12 +260,31 @@ export interface GaleriAccess {
   canView: boolean;
   canManage: boolean;
   canViewStats: boolean;
+  canSelectCabang: boolean;
+  isUnlinkedBranchAdmin: boolean;
+}
+
+/**
+ * Mengecek apakah admin yang sedang login berhak mengubah/menghapus item milik `targetCabangUuid`.
+ * Selaras dengan backend `assertCanWriteCabangItem`:
+ * - SuperAdmin (DPP): bebas mengelola seluruh item (Pusat, DPD, DPC).
+ * - Admin DPD / DPC: hanya boleh mengelola item milik cabangnya sendiri (`targetCabangUuid === user.cabangId`).
+ */
+export function canWriteCabangItem(
+  user: UserPayload | null | undefined,
+  targetCabangUuid?: string | null,
+): boolean {
+  if (!user || !hasRole(user, ROLE_GROUPS.ADMINS)) return false;
+  if (isSuperAdmin(user)) return true;
+  return Boolean(user.cabangId && targetCabangUuid === user.cabangId);
 }
 
 /**
  * Matriks hak akses CMS Galeri selaras dengan backend (/api/v1/galeri).
- * Galeri bersifat nasional (tanpa cabangUuid): DPP, Admin DPD, dan Admin DPC
- * yang memiliki GALERI_MANAGE dapat mengelola penuh; GALERI_READ bersifat read-only.
+ * - SuperAdmin (DPP): melihat & mengelola semua galeri (Pusat, DPD, DPC).
+ * - Admin DPD: melihat galeri miliknya + DPC se-provinsinya, namun hanya bisa mengubah miliknya sendiri.
+ * - Admin DPC: melihat & mengelola galeri milik cabangnya sendiri (wajib tertaut ke Cabang).
+ * - GALERI_READ: mode baca saja.
  */
 export function resolveGaleriAccess(
   user: UserPayload | null | undefined,
@@ -276,18 +295,24 @@ export function resolveGaleriAccess(
       canView: false,
       canManage: false,
       canViewStats: false,
+      canSelectCabang: false,
+      isUnlinkedBranchAdmin: false,
     };
   }
 
   const scope = resolveAdminScope(user);
-  const canManage = isSuperAdmin(user) || hasPermission(user, "GALERI_MANAGE");
+  const superAdmin = isSuperAdmin(user);
+  const canManage = superAdmin || hasPermission(user, "GALERI_MANAGE");
   const canView = canManage || hasPermission(user, "GALERI_READ");
+  const isUnlinkedBranchAdmin = !superAdmin && canManage && !user.cabangId;
 
   return {
     scope,
     canView,
     canManage,
     canViewStats: canManage,
+    canSelectCabang: superAdmin,
+    isUnlinkedBranchAdmin,
   };
 }
 
