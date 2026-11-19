@@ -9,6 +9,7 @@ import {
   SejarahFormValues,
   SejarahApiResponse,
   HistoryEvent,
+  HistoryStatus,
   toHistoryEvent,
   toSejarahPayload,
   DEFAULT_FALLBACK_HISTORY,
@@ -19,6 +20,7 @@ export interface SejarahFilterParams {
   currentPage?: number;
   pageSize?: number;
   fixed?: "all";
+  status?: HistoryStatus;
   fallbackIfEmpty?: boolean;
   enabled?: boolean;
 }
@@ -36,6 +38,7 @@ export function useSejarah(filters?: SejarahFilterParams) {
   const queryClient = useQueryClient();
 
   const fixed = filters?.fixed;
+  const status = filters?.status;
   const search = filters?.search;
   const currentPage = filters?.currentPage;
   const pageSize = filters?.pageSize;
@@ -47,6 +50,9 @@ export function useSejarah(filters?: SejarahFilterParams) {
     if (fixed) {
       p.append("fixed", fixed);
     }
+    if (status) {
+      p.append("status", status);
+    }
     if (search?.trim()) {
       p.append("search", search.trim());
     }
@@ -57,7 +63,7 @@ export function useSejarah(filters?: SejarahFilterParams) {
       p.append("pageSize", String(pageSize));
     }
     return p.toString();
-  }, [fixed, search, currentPage, pageSize]);
+  }, [fixed, status, search, currentPage, pageSize]);
 
   // 1. Fetch Daftar Sejarah
   const {
@@ -171,7 +177,49 @@ export function useSejarah(filters?: SejarahFilterParams) {
     },
   });
 
-  // 4. Mutasi Delete Sejarah (Soft Delete -> NON_ACTIVE)
+  // 4. Mutasi Toggle Status (PUBLISHED <-> DRAFT; ARCHIVED -> PUBLISHED)
+  const toggleStatusMutation = useMutation({
+    mutationFn: async (uuid: string) => {
+      const res = await apiFetch<{ message: string; data: SejarahItem }>(
+        `/sejarah/${uuid}/toggle-status`,
+        {
+          method: "POST",
+        },
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      invalidateSejarah();
+      const label =
+        data?.statusSejarah === "PUBLISHED" ? "Tayang (Published)" : "Draf (Draft)";
+      toast.success(`Status diubah menjadi ${label}.`);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal mengubah status tonggak sejarah");
+    },
+  });
+
+  // 5. Mutasi Arsipkan Sejarah (ARCHIVED)
+  const archiveMutation = useMutation({
+    mutationFn: async (uuid: string) => {
+      const res = await apiFetch<{ message: string; data: SejarahItem }>(
+        `/sejarah/${uuid}/archive`,
+        {
+          method: "POST",
+        },
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateSejarah();
+      toast.success("Tonggak sejarah berhasil diarsipkan.");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal mengarsipkan tonggak sejarah");
+    },
+  });
+
+  // 6. Mutasi Delete Sejarah (Soft Delete -> deleted_at)
   const deleteMutation = useMutation({
     mutationFn: async (uuid: string) => {
       const res = await apiFetch<{ message: string }>(
@@ -184,7 +232,7 @@ export function useSejarah(filters?: SejarahFilterParams) {
     },
     onSuccess: () => {
       invalidateSejarah();
-      toast.success("Tonggak sejarah berhasil dinonaktifkan.");
+      toast.success("Tonggak sejarah berhasil dihapus.");
     },
     onError: (err: Error) => {
       toast.error(err.message || "Gagal menghapus tonggak sejarah");
@@ -228,6 +276,20 @@ export function useSejarah(filters?: SejarahFilterParams) {
     [updateMutation],
   );
 
+  const toggleStatusEvent = useCallback(
+    (id: string) => {
+      return toggleStatusMutation.mutateAsync(id);
+    },
+    [toggleStatusMutation],
+  );
+
+  const archiveEvent = useCallback(
+    (id: string) => {
+      return archiveMutation.mutateAsync(id);
+    },
+    [archiveMutation],
+  );
+
   const deleteEvent = useCallback(
     (id: string) => {
       return deleteMutation.mutateAsync(id);
@@ -244,11 +306,15 @@ export function useSejarah(filters?: SejarahFilterParams) {
     refetch,
     addEvent,
     updateEvent,
+    toggleStatusEvent,
+    archiveEvent,
     deleteEvent,
     uploadFoto,
     isSubmitting:
       addMutation.isPending ||
       updateMutation.isPending ||
+      toggleStatusMutation.isPending ||
+      archiveMutation.isPending ||
       deleteMutation.isPending,
   };
 }

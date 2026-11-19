@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { HistoryEvent } from "../types";
+import { HistoryEvent, HistoryStatus } from "../types";
 import { toast } from "sonner";
 import {
   Calendar,
@@ -72,8 +72,8 @@ function HistoryForm({
   const [location, setLocation] = useState(event?.location || "");
   const [keyFigure, setKeyFigure] = useState(event?.keyFigure || "");
   const [order, setOrder] = useState<number>(event?.order || 1);
-  const [status, setStatus] = useState<"PUBLISHED" | "DRAFT">(
-    event?.status || "PUBLISHED",
+  const [status, setStatus] = useState<HistoryStatus>(
+    event?.status || "DRAFT",
   );
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -229,15 +229,23 @@ function HistoryForm({
           <Select
             value={status}
             onValueChange={(val) => {
-              if (val) setStatus(val as "PUBLISHED" | "DRAFT");
+              if (val) setStatus(val as HistoryStatus);
             }}
           >
             <SelectTrigger id="hist-status">
               <SelectValue placeholder="Pilih status" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem
+                value="DRAFT"
+                disabled={event?.status === "ARCHIVED"}
+              >
+                Draf (Draft)
+              </SelectItem>
               <SelectItem value="PUBLISHED">Tayang (Published)</SelectItem>
-              <SelectItem value="DRAFT">Draf (Draft)</SelectItem>
+              {isEditing && (
+                <SelectItem value="ARCHIVED">Arsip (Archived)</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>

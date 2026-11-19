@@ -1,4 +1,4 @@
-export type { HistoryEvent } from "@/features/sejarah/types";
+export type { HistoryEvent, HistoryStatus } from "@/features/sejarah/types";
 
 export interface HeroContent {
   eyebrow: string;

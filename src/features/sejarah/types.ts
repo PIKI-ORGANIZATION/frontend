@@ -1,8 +1,8 @@
 import { getSafeImageSrc } from "@/features/galeri/types";
 
-export type SejarahStatus = "ACTIVE" | "NON_ACTIVE";
+export type SejarahStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
-export type HistoryStatus = "PUBLISHED" | "DRAFT";
+export type HistoryStatus = "PUBLISHED" | "DRAFT" | "ARCHIVED";
 
 /**
  * Model data Sejarah sesuai schema Prisma di backend
@@ -77,6 +77,11 @@ export interface HistoryEvent {
  * Adapter dari SejarahItem (Backend) ke HistoryEvent (Frontend UI)
  */
 export function toHistoryEvent(item: SejarahItem): HistoryEvent {
+  const status: HistoryStatus =
+    item.statusSejarah === "PUBLISHED" || item.statusSejarah === "ARCHIVED"
+      ? item.statusSejarah
+      : "DRAFT";
+
   return {
     id: item.uuid,
     year: item.timeline,
@@ -84,7 +89,7 @@ export function toHistoryEvent(item: SejarahItem): HistoryEvent {
     desc: item.deskripsiTimeline,
     image: getSafeImageSrc(item.gambar, "/footage/image1.webp"),
     order: item.urutan ?? 0,
-    status: item.statusSejarah === "ACTIVE" ? "PUBLISHED" : "DRAFT",
+    status,
     createdAt: item.insert_at,
     updatedAt: item.update_at,
   };
@@ -109,7 +114,7 @@ export function toSejarahPayload(
     deskripsiTimeline: (data.desc || "").trim(),
     gambar: data.image?.trim() || "/footage/image1.webp",
     urutan: typeof data.order === "number" ? data.order : 1,
-    statusSejarah: data.status === "DRAFT" ? "NON_ACTIVE" : "ACTIVE",
+    ...(data.status && { statusSejarah: data.status }),
   };
 }
 

@@ -24,8 +24,8 @@ import {
   Clock,
   Eye,
   SlidersHorizontal,
+  Archive,
 } from "lucide-react";
-import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
 import { getSafeImageSrc } from "@/features/galeri/types";
@@ -48,6 +48,8 @@ export function HistoryTab({
     isLoading,
     addEvent,
     updateEvent,
+    toggleStatusEvent,
+    archiveEvent,
     deleteEvent,
     uploadFoto,
   } = useSejarah({ fixed: "all", fallbackIfEmpty: false, enabled });
@@ -57,7 +59,7 @@ export function HistoryTab({
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "ALL" | "PUBLISHED" | "DRAFT"
+    "ALL" | "PUBLISHED" | "DRAFT" | "ARCHIVED"
   >("ALL");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<HistoryEvent | null>(null);
@@ -113,12 +115,21 @@ export function HistoryTab({
       );
     }
     try {
-      await updateEvent(item.id, { status: newStatus });
-      toast.success(
-        `Status "${item.title}" diubah menjadi ${
-          newStatus === "PUBLISHED" ? "Tayang (Published)" : "Draf (Draft)"
-        }`,
+      await toggleStatusEvent(item.id);
+    } catch {
+      // Toast error dikelola oleh hook
+    }
+  };
+
+  const handleArchive = async (item: HistoryEvent) => {
+    if (!canManage || item.status === "ARCHIVED") return;
+    if (setEvents) {
+      setEvents((prev) =>
+        prev.map((e) => (e.id === item.id ? { ...e, status: "ARCHIVED" } : e)),
       );
+    }
+    try {
+      await archiveEvent(item.id);
     } catch {
       // Toast error dikelola oleh hook
     }
@@ -177,11 +188,14 @@ export function HistoryTab({
             />
           </div>
 
-          <div className="w-36 shrink-0">
+          <div className="w-40 shrink-0">
             <Select
               value={statusFilter}
               onValueChange={(val) => {
-                if (val) setStatusFilter(val as "ALL" | "PUBLISHED" | "DRAFT");
+                if (val)
+                  setStatusFilter(
+                    val as "ALL" | "PUBLISHED" | "DRAFT" | "ARCHIVED",
+                  );
               }}
             >
               <SelectTrigger>
@@ -192,6 +206,7 @@ export function HistoryTab({
                 <SelectItem value="ALL">Semua</SelectItem>
                 <SelectItem value="PUBLISHED">Published</SelectItem>
                 <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="ARCHIVED">Archived</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -290,12 +305,16 @@ export function HistoryTab({
                             className={`text-[10px] rounded-full px-2 py-0 font-medium ${
                               item.status === "PUBLISHED"
                                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                : item.status === "ARCHIVED"
+                                  ? "bg-slate-500/10 text-slate-600 dark:text-slate-300 border border-slate-500/20"
+                                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                             }`}
                           >
                             {item.status === "PUBLISHED"
                               ? "Published"
-                              : "Draft"}
+                              : item.status === "ARCHIVED"
+                                ? "Archived"
+                                : "Draft"}
                           </Badge>
                         </div>
                         <p className="text-muted-foreground line-clamp-1 text-xs md:text-[13px]">
@@ -342,6 +361,21 @@ export function HistoryTab({
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </Button>
+
+                        {item.status !== "ARCHIVED" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleArchive(item);
+                            }}
+                            title="Arsipkan Peristiwa"
+                          >
+                            <Archive className="w-3.5 h-3.5 text-muted-foreground" />
+                          </Button>
+                        )}
 
                         <Button
                           type="button"
@@ -392,9 +426,9 @@ export function HistoryTab({
         <ConfirmDialog
           open={Boolean(deletingTarget)}
           onOpenChange={(open) => !open && setDeletingTarget(null)}
-          title="Nonaktifkan Peristiwa Sejarah?"
-          description={`Peristiwa "${deletingTarget?.title || ""}" akan dinonaktifkan dari linimasa publik PIKI.`}
-          confirmText="Ya, Nonaktifkan"
+          title="Hapus Peristiwa Sejarah?"
+          description={`Peristiwa "${deletingTarget?.title || ""}" akan dihapus dari daftar CMS dan linimasa publik PIKI.`}
+          confirmText="Ya, Hapus"
           cancelText="Batal"
           variant="destructive"
           onConfirm={handleConfirmDelete}

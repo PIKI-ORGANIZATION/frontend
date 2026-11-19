@@ -24,10 +24,16 @@ export function HistoryPreviewCard({ event }: HistoryPreviewCardProps) {
           className={`text-[10px] rounded-full font-semibold px-2 py-0.2 ${
             event.status === "PUBLISHED"
               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-              : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+              : event.status === "ARCHIVED"
+                ? "bg-slate-500/10 text-slate-600 dark:text-slate-300 border border-slate-500/20"
+                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
           }`}
         >
-          {event.status === "PUBLISHED" ? "Published" : "Draft"}
+          {event.status === "PUBLISHED"
+            ? "Published"
+            : event.status === "ARCHIVED"
+              ? "Archived"
+              : "Draft"}
         </Badge>
       </div>
 
