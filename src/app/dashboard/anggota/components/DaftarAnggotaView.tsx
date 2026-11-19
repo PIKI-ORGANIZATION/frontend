@@ -393,7 +393,7 @@ export function DaftarAnggotaView() {
                   {headerGroup.headers.map((header) => (
                     <TableHead
                       key={header.id}
-                      className="h-10 text-xs font-semibold"
+                      className="h-12 text-xs font-semibold"
                     >
                       {header.isPlaceholder
                         ? null
