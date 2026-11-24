@@ -4,14 +4,14 @@ import { useEffect, useRef, useMemo } from "react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import Image from "next/image";
-import { usePengurus } from "@/features/pengurus/hooks/usePengurus";
+import { usePublicStruktur } from "@/features/pengurus/hooks/usePengurus";
 import { initialPengurusData } from "@/features/pengurus/data/dummyPengurusData";
 
 export function StructureSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
 
-  const { items, isLoaded } = usePengurus();
+  const { items, isLoaded } = usePublicStruktur();
 
   // Extract published Pimpinan Inti from state/storage, with fallback to initial data
   const pimpinanInti = useMemo(() => {

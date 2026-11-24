@@ -67,7 +67,7 @@ export default function WilayahDanCabangPage() {
   );
   const { data: rawCabangList = [], isLoading: isLoadingCabang } =
     useCabangList({
-      enabled: isReady && access.canManageCabangLink,
+      enabled: isReady && access.canViewCabang,
     });
   const { data: dpdResponse } = useDpdList({
     pageSize: 100,
@@ -117,10 +117,12 @@ export default function WilayahDanCabangPage() {
       });
     }
 
-    if (access.canManageCabangLink) {
+    if (access.canViewCabang) {
       tabs.push({
         id: "cabang",
-        label: "Profil Cabang & Penautan",
+        label: access.canManageCabangLink
+          ? "Profil Cabang & Penautan"
+          : "Profil Cabang",
         count: cabangList.length,
         icon: Share2,
       });
@@ -289,13 +291,15 @@ export default function WilayahDanCabangPage() {
           />
         )}
 
-        {activeTab === "cabang" && access.canManageCabangLink && (
+        {activeTab === "cabang" && access.canViewCabang && (
           <CabangTab
             cabangList={cabangList}
             dpdList={dpdList}
             dpcList={dpcList}
             masterProvinsi={masterProvinsi}
             isLoading={isLoadingCabang}
+            access={access}
+            ownCabangId={user?.cabangId ?? null}
           />
         )}
       </div>

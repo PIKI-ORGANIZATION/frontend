@@ -25,10 +25,15 @@ import {
   Eye,
   SlidersHorizontal,
   Archive,
+  AlertCircle,
+  Building2,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
 import { getSafeImageSrc } from "@/features/galeri/types";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { resolveLandingCmsAccess, canWriteCabangItem } from "@/lib/rbac";
+import { useCabangList } from "@/features/wilayah/hooks/useWilayah";
 
 interface HistoryTabProps {
   events?: HistoryEvent[];
@@ -43,6 +48,30 @@ export function HistoryTab({
   canManage = true,
   enabled = true,
 }: HistoryTabProps) {
+  const { user } = useCurrentUser();
+  const access = useMemo(() => resolveLandingCmsAccess(user), [user]);
+  const [selectedCabang, setSelectedCabang] = useState<string>("ALL");
+
+  const { data: cabangList = [] } = useCabangList({
+    pageSize: 500,
+    enabled: enabled && access.scope !== "DPC",
+  });
+
+  const cabangNameMap = useMemo(() => {
+    if (access.scope === "DPC") return undefined;
+    const map: Record<string, string> = {};
+    cabangList.forEach((c) => {
+      map[c.uuid] = c.namaCabang;
+    });
+    return map;
+  }, [access.scope, cabangList]);
+
+  const canManageItem = useMemo(
+    () => (item: HistoryEvent) =>
+      canManage && canWriteCabangItem(user, item.cabangUuid),
+    [canManage, user],
+  );
+
   const {
     events: remoteEvents,
     isLoading,
@@ -52,7 +81,14 @@ export function HistoryTab({
     archiveEvent,
     deleteEvent,
     uploadFoto,
-  } = useSejarah({ fixed: "all", fallbackIfEmpty: false, enabled });
+  } = useSejarah({
+    fixed: "all",
+    fallbackIfEmpty: false,
+    enabled,
+    ...(access.canSelectCabang && selectedCabang !== "ALL"
+      ? { cabangUuid: selectedCabang }
+      : {}),
+  });
 
   // Gunakan propEvents jika disediakan, atau gunakan remoteEvents dari API
   const effectiveEvents = propEvents && setEvents ? propEvents : remoteEvents;
@@ -95,19 +131,19 @@ export function HistoryTab({
   }, [effectiveEvents, selectedPreviewId, filteredEvents]);
 
   const handleOpenAdd = () => {
-    if (!canManage) return;
+    if (!canManage || access.isUnlinkedBranchAdmin) return;
     setEditingEvent(null);
     setEditorOpen(true);
   };
 
   const handleOpenEdit = (item: HistoryEvent) => {
-    if (!canManage) return;
+    if (!canManageItem(item)) return;
     setEditingEvent(item);
     setEditorOpen(true);
   };
 
   const handleToggleStatus = async (item: HistoryEvent) => {
-    if (!canManage) return;
+    if (!canManageItem(item)) return;
     const newStatus = item.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
     if (setEvents) {
       setEvents((prev) =>
@@ -122,7 +158,7 @@ export function HistoryTab({
   };
 
   const handleArchive = async (item: HistoryEvent) => {
-    if (!canManage || item.status === "ARCHIVED") return;
+    if (!canManageItem(item) || item.status === "ARCHIVED") return;
     if (setEvents) {
       setEvents((prev) =>
         prev.map((e) => (e.id === item.id ? { ...e, status: "ARCHIVED" } : e)),
@@ -137,6 +173,8 @@ export function HistoryTab({
 
   const handleConfirmDelete = async () => {
     if (!canManage || !deletingTarget) return;
+    const targetItem = effectiveEvents.find((e) => e.id === deletingTarget.id);
+    if (targetItem && !canManageItem(targetItem)) return;
     const { id } = deletingTarget;
     if (setEvents) {
       setEvents((prev) => prev.filter((item) => item.id !== id));
@@ -210,15 +248,58 @@ export function HistoryTab({
               </SelectContent>
             </Select>
           </div>
+
+          {access.canSelectCabang && (
+            <div className="w-48 shrink-0">
+              <Select
+                value={selectedCabang}
+                onValueChange={(val) => {
+                  if (val) setSelectedCabang(val);
+                }}
+              >
+                <SelectTrigger aria-label="Filter wilayah cabang">
+                  <Building2 className="w-3 h-3 text-muted-foreground mr-1 shrink-0" />
+                  <SelectValue placeholder="Semua Wilayah" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Semua Wilayah</SelectItem>
+                  {cabangList.map((c) => (
+                    <SelectItem key={c.uuid} value={c.uuid}>
+                      {c.namaCabang}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {canManage && (
-          <Button onClick={handleOpenAdd} size="sm">
+          <Button
+            onClick={handleOpenAdd}
+            size="sm"
+            disabled={access.isUnlinkedBranchAdmin}
+          >
             <Plus className="w-3.5 h-3.5" />
             Tambah
           </Button>
         )}
       </div>
+
+      {access.isUnlinkedBranchAdmin && (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-3 text-sm text-amber-800 dark:text-amber-200"
+        >
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">Akun admin wilayah belum ditautkan ke Cabang</p>
+            <p className="text-xs opacity-90 mt-0.5">
+              Hubungi Superadmin DPP untuk menautkan akun Anda ke profil Cabang agar dapat menambah dan mengelola tonggak sejarah.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 2. Content Layout: Data Table + Live Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
@@ -261,6 +342,10 @@ export function HistoryTab({
             <div className="divide-y divide-border/60">
               {filteredEvents.map((item) => {
                 const isSelected = item.id === (activePreviewEvent?.id || selectedPreviewId);
+                const itemCanManage = canManageItem(item);
+                const cabangLabel = item.cabangUuid
+                  ? cabangNameMap?.[item.cabangUuid] || "Wilayah Cabang"
+                  : "Pusat (DPP)";
                 return (
                   <div
                     key={item.id}
@@ -316,6 +401,11 @@ export function HistoryTab({
                                 ? "Archived"
                                 : "Draft"}
                           </Badge>
+                          {cabangNameMap && (
+                            <Badge variant="outline" className="text-[10px] font-normal">
+                              {cabangLabel}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-muted-foreground line-clamp-1 text-xs md:text-[13px]">
                           {item.desc}
@@ -324,7 +414,7 @@ export function HistoryTab({
                     </div>
 
                     {/* Aksi Baris */}
-                    {canManage && (
+                    {itemCanManage && (
                       <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
                         <Button
                           type="button"
@@ -334,6 +424,11 @@ export function HistoryTab({
                             e.stopPropagation();
                             handleToggleStatus(item);
                           }}
+                          aria-label={
+                            item.status === "PUBLISHED"
+                              ? `Jadikan draf ${item.title}`
+                              : `Tayangkan ${item.title}`
+                          }
                           title={
                             item.status === "PUBLISHED"
                               ? "Jadikan Draf"
@@ -357,6 +452,7 @@ export function HistoryTab({
                             e.stopPropagation();
                             handleOpenEdit(item);
                           }}
+                          aria-label={`Edit ${item.title}`}
                           title="Edit Peristiwa"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -371,6 +467,7 @@ export function HistoryTab({
                               e.stopPropagation();
                               handleArchive(item);
                             }}
+                            aria-label={`Arsipkan ${item.title}`}
                             title="Arsipkan Peristiwa"
                           >
                             <Archive className="w-3.5 h-3.5 text-muted-foreground" />
@@ -385,6 +482,7 @@ export function HistoryTab({
                             e.stopPropagation();
                             setDeletingTarget({ id: item.id, title: item.title });
                           }}
+                          aria-label={`Hapus ${item.title}`}
                           title="Hapus Peristiwa"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-red-500" />
@@ -417,6 +515,8 @@ export function HistoryTab({
           open={editorOpen}
           onOpenChange={setEditorOpen}
           event={editingEvent}
+          canSelectCabang={access.canSelectCabang}
+          cabangOptions={cabangList}
           onSave={handleSaveEvent}
           onUploadPhoto={uploadFoto}
         />

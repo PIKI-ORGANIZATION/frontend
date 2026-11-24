@@ -2,24 +2,40 @@
 
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
-import { usePengurus } from "@/features/pengurus/hooks/usePengurus";
+import {
+  usePeriodeList,
+  usePeriodeMutations,
+  useStrukturList,
+  useStrukturMutations,
+  useJabatanList,
+  useBidangList,
+} from "@/features/pengurus/hooks/usePengurus";
 import {
   PengurusItem,
   KategoriPengurus,
-  StatusPublikasi,
-  PengurusFormValues,
+  PeriodeKepengurusanItem,
+  PeriodeFormValues,
+  StrukturFormValues,
+  toPengurusItem,
 } from "@/features/pengurus/types";
+import { useGetDaftarAnggota } from "@/hooks/api/useAnggota";
+import { useCabangList } from "@/features/wilayah/hooks/useWilayah";
 import { PengurusEditorDialog } from "./components/PengurusEditorDialog";
+import { PeriodeEditorDialog } from "./components/PeriodeEditorDialog";
 import { PengurusDetailDrawer } from "./components/PengurusDetailDrawer";
 import { PengurusGridView } from "./components/PengurusGridView";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -30,83 +46,125 @@ import {
 } from "@/components/ui/dialog";
 import {
   Plus,
-  Filter,
-  Check,
-  ChevronDown,
-  RotateCcw,
   Edit2,
   Trash2,
   Eye,
-  EyeOff,
   Users,
   LayoutGrid,
   List,
   Loader2,
+  Calendar,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
-import { toast } from "sonner";
 import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { resolvePengurusCmsAccess } from "@/lib/rbac";
+import { resolvePengurusCmsAccess, canWriteCabangItem } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 
+type ActiveTab = "struktur" | "periode";
 type FilterKategori = "ALL" | KategoriPengurus;
-type FilterStatus = "ALL" | StatusPublikasi;
-
-const STATUS_FILTER_OPTIONS: { value: FilterStatus; label: string }[] = [
-  { value: "ALL", label: "Semua Status" },
-  { value: "PUBLISHED", label: "Tayang Publik (Published)" },
-  { value: "DRAFT", label: "Draf Internal (Draft)" },
-];
 
 export default function PengurusCMSPage() {
   const { user, isReady } = useCurrentUser();
   const access = useMemo(() => resolvePengurusCmsAccess(user), [user]);
 
-  const {
-    items,
-    isLoaded,
-    stats,
-    addPengurus,
-    updatePengurus,
-    deletePengurus,
-    toggleStatus,
-    resetToDefault,
-  } = usePengurus();
-
-  // Filter & Search states
+  const [activeTab, setActiveTab] = useState<ActiveTab>("struktur");
+  const [selectedPeriodeUuid, setSelectedPeriodeUuid] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKategori, setSelectedKategori] =
     useState<FilterKategori>("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<FilterStatus>("ALL");
-  const [openStatusFilter, setOpenStatusFilter] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "grid">("grid");
 
-  // Inspector Drawer State (Linear / Stripe style slide-over)
+  // Inspector & Dialog States
   const [inspectorItem, setInspectorItem] = useState<PengurusItem | null>(null);
-
-  // Editor Dialog State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PengurusItem | null>(null);
+  const [deletingStrukturId, setDeletingStrukturId] = useState<string | null>(
+    null,
+  );
 
-  // Delete Confirmation Dialog State
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isPeriodeDialogOpen, setIsPeriodeDialogOpen] = useState(false);
+  const [editingPeriode, setEditingPeriode] =
+    useState<PeriodeKepengurusanItem | null>(null);
+  const [deletingPeriodeTarget, setDeletingPeriodeTarget] =
+    useState<PeriodeKepengurusanItem | null>(null);
 
-  // Reset Confirmation Dialog State
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  // API Queries
+  const { data: periodeList = [], isLoading: isPeriodeLoading } =
+    usePeriodeList({
+      fixed: "all",
+      enabled: isReady && access.canView,
+    });
 
-  // Filtered List
+  const { data: strukturRaw = [], isLoading: isStrukturLoading } =
+    useStrukturList({
+      periodeUuid: selectedPeriodeUuid,
+      fixed: "all",
+      enabled: isReady && access.canView,
+    });
+
+  const { data: jabatanList = [] } = useJabatanList(
+    isReady && access.canManage,
+  );
+  const { data: bidangList = [] } = useBidangList(isReady && access.canManage);
+  const { data: anggotaRes } = useGetDaftarAnggota(
+    { pageSize: 200 },
+    { enabled: isReady && access.canManage },
+  );
+  const { data: cabangList = [] } = useCabangList({
+    pageSize: 500,
+    enabled: isReady && access.canSelectCabang,
+  });
+
+  // Mutations
+  const { createPeriode, updatePeriode, deletePeriode } = usePeriodeMutations();
+  const { createStruktur, updateStruktur, deleteStruktur } =
+    useStrukturMutations();
+
+  const anggotaList = useMemo(() => anggotaRes?.data ?? [], [anggotaRes]);
+
+  const items: PengurusItem[] = useMemo(
+    () => strukturRaw.map(toPengurusItem),
+    [strukturRaw],
+  );
+
+  const canManageItem = useMemo(
+    () => (item: PengurusItem) =>
+      access.canManage && canWriteCabangItem(user, item.cabangUuid),
+    [access.canManage, user],
+  );
+
+  const canManagePeriode = useMemo(
+    () => (periode: PeriodeKepengurusanItem) =>
+      access.canManage && canWriteCabangItem(user, periode.cabangUuid),
+    [access.canManage, user],
+  );
+
+  // Periode yang boleh dipilih saat menambah/mengedit struktur
+  const writablePeriodeList = useMemo(
+    () => periodeList.filter((p) => canManagePeriode(p)),
+    [periodeList, canManagePeriode],
+  );
+
+  const periodeFilterOptions = useMemo(
+    () => [
+      { value: "ALL", label: "Semua Periode" },
+      ...periodeList.map((p) => ({
+        value: p.uuid,
+        label: `${p.namaPeriode} `,
+        subLabel: `${p.cabang?.namaCabang || "Pusat (DPP)"}`,
+      })),
+    ],
+    [periodeList],
+  );
+
   const filteredItems = useMemo(() => {
     return items
       .filter((item) => {
-        // Kategori Filter
         if (selectedKategori !== "ALL" && item.kategori !== selectedKategori) {
           return false;
         }
-        // Status Filter
-        if (selectedStatus !== "ALL" && item.status !== selectedStatus) {
-          return false;
-        }
-        // Search Filter
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const matchNama = item.nama.toLowerCase().includes(q);
@@ -117,57 +175,66 @@ export default function PengurusCMSPage() {
         return true;
       })
       .sort((a, b) => a.urutan - b.urutan);
-  }, [items, selectedKategori, selectedStatus, searchQuery]);
+  }, [items, selectedKategori, searchQuery]);
 
-  const handleOpenAdd = () => {
-    if (!access.canManage) return;
+  const stats = useMemo(
+    () => ({
+      total: items.length,
+      inti: items.filter((i) => i.kategori === "INTI").length,
+      bidang: items.filter((i) => i.kategori === "BIDANG").length,
+      penasehat: items.filter((i) => i.kategori === "PENASEHAT").length,
+    }),
+    [items],
+  );
+
+  // Handlers Struktur
+  const handleOpenAddStruktur = () => {
+    if (!access.canManage || access.isUnlinkedBranchAdmin) return;
     setEditingItem(null);
     setIsEditorOpen(true);
   };
 
-  const handleOpenEdit = (item: PengurusItem, e?: React.MouseEvent) => {
+  const handleOpenEditStruktur = (item: PengurusItem, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!access.canManage) return;
+    if (!canManageItem(item)) return;
     setEditingItem(item);
     setIsEditorOpen(true);
   };
 
-  const handleSave = (form: PengurusFormValues) => {
-    if (!access.canManage) return;
+  const handleSaveStruktur = async (values: StrukturFormValues) => {
     if (editingItem) {
-      updatePengurus(editingItem.id, form);
-      if (inspectorItem?.id === editingItem.id) {
-        setInspectorItem((prev) => (prev ? { ...prev, ...form } : null));
-      }
-      toast.success("Data pengurus berhasil diperbarui!");
+      await updateStruktur.mutateAsync({ uuid: editingItem.id, values });
     } else {
-      const created = addPengurus(form);
-      setInspectorItem(created);
-      toast.success("Pengurus baru berhasil ditambahkan!");
+      await createStruktur.mutateAsync(values);
     }
   };
 
-  const handleDeleteConfirm = () => {
-    if (!access.canManage || !deletingId) return;
-    deletePengurus(deletingId);
-    if (inspectorItem?.id === deletingId) {
+  const handleConfirmDeleteStruktur = async () => {
+    if (!deletingStrukturId) return;
+    await deleteStruktur.mutateAsync(deletingStrukturId);
+    if (inspectorItem?.id === deletingStrukturId) {
       setInspectorItem(null);
     }
-    setDeletingId(null);
-    toast.success("Pengurus berhasil dihapus");
+    setDeletingStrukturId(null);
   };
 
-  const handleReset = () => {
-    if (!access.canManage) return;
-    resetToDefault();
-    setInspectorItem(null);
-    setIsResetConfirmOpen(false);
-    toast.info("Data pengurus telah direset ke data default organisasi.");
+  // Handlers Periode
+  const handleSavePeriode = async (values: PeriodeFormValues) => {
+    if (editingPeriode) {
+      await updatePeriode.mutateAsync({ uuid: editingPeriode.uuid, values });
+    } else {
+      await createPeriode.mutateAsync(values);
+    }
   };
 
-  const currentStatusFilterLabel =
-    STATUS_FILTER_OPTIONS.find((opt) => opt.value === selectedStatus)?.label ||
-    "Semua Status";
+  const handleConfirmDeletePeriode = async () => {
+    if (!deletingPeriodeTarget) return;
+    await deletePeriode.mutateAsync(deletingPeriodeTarget.uuid);
+    if (selectedPeriodeUuid === deletingPeriodeTarget.uuid) {
+      setSelectedPeriodeUuid("ALL");
+    }
+    setDeletingPeriodeTarget(null);
+  };
 
   if (!isReady) {
     return (
@@ -180,20 +247,20 @@ export default function PengurusCMSPage() {
   if (!access.canView) {
     return (
       <AccessDeniedState
-        title="Akses CMS Data Pengurus Ditolak"
-        description="Akun Anda tidak memiliki izin STRUKTUR_READ atau STRUKTUR_UPDATE untuk membuka halaman manajemen pengurus."
+        title="Akses CMS Pengurus Ditolak"
+        description="Akun Anda tidak memiliki izin melihat atau mengelola data periode dan struktur kepengurusan."
       />
     );
   }
 
   return (
     <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
-      {/* 1. Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 ">
+      {/* 1. Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              CMS Data Pengurus
+              CMS Kepengurusan &amp; Struktur Organisasi
             </h1>
             {!access.canManage && (
               <Badge variant="secondary" className="text-xs font-medium">
@@ -202,614 +269,598 @@ export default function PengurusCMSPage() {
             )}
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Kelola pimpinan inti DPP, dewan pengurus, dan dewan penasehat .
+            Kelola masa bakti periode kepengurusan serta susunan pengurus
+            organisasi sesuai hierarki wilayah DPP, DPD, dan DPC.
           </p>
         </div>
 
         {access.canManage && (
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Button
-              variant="outline"
-              onClick={() => setIsResetConfirmOpen(true)}
-              title="Kembalikan data ke dummy bawaan awal"
-              className="cursor-pointer"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset Data
-            </Button>
-
-            <Button onClick={handleOpenAdd} className="cursor-pointer">
-              <Plus className="w-4 h-4 mr-2" />
-              Tambah Pengurus
-            </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            {activeTab === "struktur" ? (
+              <Button
+                onClick={handleOpenAddStruktur}
+                disabled={
+                  access.isUnlinkedBranchAdmin ||
+                  writablePeriodeList.length === 0
+                }
+                className="cursor-pointer"
+              >
+                <Plus className="size-4 mr-2" />
+                <span>Tambah Pengurus</span>
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  setEditingPeriode(null);
+                  setIsPeriodeDialogOpen(true);
+                }}
+                disabled={access.isUnlinkedBranchAdmin}
+                className="cursor-pointer"
+              >
+                <Plus className="size-4 mr-2" />
+                <span>Tambah Periode</span>
+              </Button>
+            )}
           </div>
         )}
       </div>
 
-      {/* 3. Search Bar, Category Tabs & Status Filter */}
-      <div className="flex flex-col gap-3">
-        {/* Category Tabs (Segmented Control Track per StyleGuide & shadcn-admin) */}
-        <div className="flex items-center overflow-x-auto pb-1 max-w-full">
-          <div
-            role="tablist"
-            aria-label="Filter Kategori Pengurus"
-            className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
-          >
-            {[
-              {
-                id: "ALL" as const,
-                label: "Semua Pengurus",
-                count: stats.total,
-              },
-              {
-                id: "INTI" as const,
-                label: "Pimpinan Inti DPP",
-                count: stats.inti,
-              },
-              {
-                id: "BIDANG" as const,
-                label: "Dewan Pengurus & Bidang",
-                count: stats.bidang,
-              },
-              {
-                id: "PENASEHAT" as const,
-                label: "Dewan Penasehat & Pakar",
-                count: stats.penasehat,
-              },
-            ].map((tab) => {
-              const isSelected = selectedKategori === tab.id;
-
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  onClick={() => setSelectedKategori(tab.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer select-none",
-                    "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
-                    isSelected
-                      ? "bg-background text-foreground font-medium shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-normal border border-transparent",
-                  )}
-                >
-                  <span>{tab.label}</span>
-                  <span
-                    className={cn(
-                      "ml-0.5 px-1.5 py-0.5 shrink-0 rounded-full text-[10px] font-mono transition-colors",
-                      isSelected
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {tab.count}
-                  </span>
-                </button>
-              );
-            })}
+      {access.isUnlinkedBranchAdmin && (
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-3 text-sm text-amber-800 dark:text-amber-200"
+        >
+          <AlertCircle className="size-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">
+              Akun admin wilayah belum ditautkan ke Cabang
+            </p>
+            <p className="text-xs opacity-90 mt-0.5">
+              Hubungi Superadmin DPP untuk menautkan akun Anda ke profil Cabang
+              agar dapat membuat periode dan struktur kepengurusan.
+            </p>
           </div>
         </div>
+      )}
 
-        {/* Search & Popover Status Filter */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex-1 max-w-md">
-            <SearchInput
-              placeholder="Cari berdasarkan nama, jabatan, atau bidang..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onClear={() => setSearchQuery("")}
-            />
-          </div>
+      {/* 2. Primary Section Tabs (Struktur vs Periode) */}
+      <div className="flex items-center overflow-x-auto pb-1">
+        <div
+          role="tablist"
+          aria-label="Bagian Manajemen Kepengurusan"
+          className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
+        >
+          <button
+            type="button"
+            role="tab"
+            id="tab-struktur"
+            aria-selected={activeTab === "struktur"}
+            onClick={() => setActiveTab("struktur")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer",
+              activeTab === "struktur"
+                ? "bg-background text-foreground font-medium shadow-2xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Users className="size-4" />
+            <span>Struktur Organisasi</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-primary/10 text-primary">
+              {items.length}
+            </span>
+          </button>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            {/* View Mode Switcher (Tabel vs Grid) */}
-            <div
-              role="radiogroup"
-              aria-label="Mode Tampilan Data"
-              className="inline-flex items-center p-0.5 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
-            >
-              <button
-                type="button"
-                role="radio"
-                aria-checked={viewMode === "table"}
-                onClick={() => setViewMode("table")}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-sm transition-all cursor-pointer select-none",
-                  viewMode === "table"
-                    ? "bg-background text-foreground font-medium shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                title="Mode Tampilan Tabel"
-              >
-                <List className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Tabel</span>
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={viewMode === "grid"}
-                onClick={() => setViewMode("grid")}
-                className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-sm transition-all cursor-pointer select-none",
-                  viewMode === "grid"
-                    ? "bg-background text-foreground font-medium shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-                title="Mode Tampilan Grid Kartu (team-2 style)"
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Grid Kartu</span>
-              </button>
-            </div>
-
-            {/* Popover Filter Status - per StyleGuide */}
-            <Popover open={openStatusFilter} onOpenChange={setOpenStatusFilter}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={openStatusFilter}
-                    className="justify-between min-w-[160px] font-normal cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <Filter className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <span className="truncate">
-                        {currentStatusFilterLabel}
-                      </span>
-                    </div>
-                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                }
-              />
-              <PopoverContent className="w-56 p-1" align="end">
-                <div className="flex flex-col gap-0.5">
-                  {STATUS_FILTER_OPTIONS.map((option) => {
-                    const isSelected = selectedStatus === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => {
-                          setSelectedStatus(option.value);
-                          setOpenStatusFilter(false);
-                        }}
-                        className={cn(
-                          "flex items-center justify-between px-3 py-2 text-xs rounded-sm transition-colors text-left cursor-pointer",
-                          isSelected
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "hover:bg-muted text-foreground",
-                        )}
-                      >
-                        <span>{option.label}</span>
-                        {isSelected && (
-                          <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+          <button
+            type="button"
+            role="tab"
+            id="tab-periode"
+            aria-selected={activeTab === "periode"}
+            onClick={() => setActiveTab("periode")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer",
+              activeTab === "periode"
+                ? "bg-background text-foreground font-medium shadow-2xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Calendar className="size-4" />
+            <span>Periode Kepengurusan</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-primary/10 text-primary">
+              {periodeList.length}
+            </span>
+          </button>
         </div>
       </div>
 
-      {/* 4. Data View: Table or Grid with Inspector Trigger */}
-      <div className="flex flex-col gap-3">
-        {viewMode === "table" ? (
-          <div
-            tabIndex={0}
-            role="region"
-            aria-label="Tabel Data Pengurus"
-            className="w-full overflow-x-auto rounded-sm border border-border bg-card shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-primary/40"
-          >
-            <table className="w-full text-left text-xs sm:text-sm border-collapse">
-              {/* Sticky Header per modern-web-guidance */}
-              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur-xs border-b border-border/80 text-muted-foreground font-semibold text-xs uppercase tracking-wider">
-                <tr>
-                  <th className="py-3 px-3.5 w-12 text-center">#</th>
-                  <th className="py-3 px-3.5 min-w-[220px]">Pengurus & Foto</th>
-                  <th className="py-3 px-3.5 min-w-[160px]">Jabatan</th>
-                  <th className="py-3 px-3.5 min-w-[180px]">
-                    Kategori & Departemen
-                  </th>
-                  <th className="py-3 px-3.5 w-32 text-center">Periode</th>
-                  <th className="py-3 px-3.5 w-28 text-center">Status</th>
-                  <th className="py-3 px-3.5 w-32 text-right pr-4">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/60">
-                {!isLoaded ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="py-12 text-center text-muted-foreground text-xs"
-                    >
-                      Memuat data pengurus...
-                    </td>
-                  </tr>
-                ) : filteredItems.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="py-16 text-center text-muted-foreground"
-                    >
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Users className="w-8 h-8 opacity-30" />
-                        <p className="text-sm font-medium">
-                          Tidak ada data pengurus yang sesuai.
-                        </p>
-                        <p className="text-xs text-muted-foreground max-w-xs">
-                          Coba ubah kata kunci pencarian atau ganti filter
-                          kategori/status.
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredItems.map((item) => {
-                    const isInspected = inspectorItem?.id === item.id;
-                    const isBlobOrData =
-                      item.foto.startsWith("data:") ||
-                      item.foto.startsWith("blob:");
+      {/* 3. Tab Panel: Struktur Organisasi */}
+      {activeTab === "struktur" && (
+        <div
+          role="tabpanel"
+          aria-labelledby="tab-struktur"
+          className="space-y-4"
+        >
+          {access.canManage &&
+            !access.isUnlinkedBranchAdmin &&
+            !isPeriodeLoading &&
+            writablePeriodeList.length === 0 && (
+              <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm">
+                <span className="text-muted-foreground">
+                  Belum ada <strong>Periode Kepengurusan</strong> untuk cabang
+                  Anda. Buat periode terlebih dahulu sebelum menambahkan
+                  pengurus ke struktur.
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setActiveTab("periode");
+                    setEditingPeriode(null);
+                    setIsPeriodeDialogOpen(true);
+                  }}
+                >
+                  <Plus className="size-3.5 mr-1.5" />
+                  Buat Periode
+                </Button>
+              </div>
+            )}
 
-                    return (
-                      <tr
-                        key={item.id}
-                        onClick={() => setInspectorItem(item)}
-                        className={cn(
-                          "transition-colors cursor-pointer group",
-                          isInspected
-                            ? "bg-primary/10 hover:bg-primary/15"
-                            : "hover:bg-muted/50",
-                        )}
+          {/* Filter Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { id: "ALL" as const, label: "Semua", count: stats.total },
+                {
+                  id: "INTI" as const,
+                  label: "Pimpinan Inti",
+                  count: stats.inti,
+                },
+                { id: "BIDANG" as const, label: "Bidang", count: stats.bidang },
+                {
+                  id: "PENASEHAT" as const,
+                  label: "Penasehat",
+                  count: stats.penasehat,
+                },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedKategori(cat.id)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer",
+                    selectedKategori === cat.id
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-muted-foreground border-border hover:text-foreground",
+                  )}
+                >
+                  {cat.label} ({cat.count})
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="w-64">
+                <SearchableSelect
+                  value={selectedPeriodeUuid}
+                  onValueChange={setSelectedPeriodeUuid}
+                  options={periodeFilterOptions}
+                  placeholder="Semua Periode"
+                  searchPlaceholder="Cari periode..."
+                />
+              </div>
+
+              <div className="w-56">
+                <SearchInput
+                  placeholder="Cari nama, jabatan, bidang..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onClear={() => setSearchQuery("")}
+                />
+              </div>
+
+              <div className="inline-flex items-center p-0.5 rounded-md bg-muted/60 border border-border">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("table")}
+                  aria-label="Tampilan tabel"
+                  className={cn(
+                    "p-1.5 rounded-sm cursor-pointer",
+                    viewMode === "table"
+                      ? "bg-background text-foreground shadow-2xs"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  <List className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Tampilan grid"
+                  className={cn(
+                    "p-1.5 rounded-sm cursor-pointer",
+                    viewMode === "grid"
+                      ? "bg-background text-foreground shadow-2xs"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  <LayoutGrid className="size-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          {viewMode === "grid" ? (
+            <PengurusGridView
+              items={filteredItems}
+              isLoaded={!isStrukturLoading}
+              canManage={access.canManage}
+              canManageItem={canManageItem}
+              activeId={inspectorItem?.id}
+              onSelect={(item) => setInspectorItem(item)}
+              onEdit={handleOpenEditStruktur}
+              onDelete={(id, e) => {
+                e.stopPropagation();
+                const target = items.find((i) => i.id === id);
+                if (target && canManageItem(target)) setDeletingStrukturId(id);
+              }}
+            />
+          ) : (
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama &amp; Jabatan</TableHead>
+                    <TableHead>Bidang</TableHead>
+                    <TableHead>Periode &amp; Wilayah</TableHead>
+                    <TableHead className="text-center">Urutan</TableHead>
+                    <TableHead className="text-right pr-6">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isStrukturLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-40 text-center">
+                        <Loader2 className="size-6 animate-spin text-primary mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="h-40 text-center text-sm text-muted-foreground"
                       >
-                        {/* Order Badge */}
-                        <td className="py-3.5 px-3.5 text-center font-mono text-xs text-muted-foreground">
-                          <span
-                            className={cn(
-                              "inline-flex items-center justify-center w-6 h-6 rounded-sm text-[11px] font-bold",
-                              item.kategori === "INTI"
-                                ? "bg-primary/10 text-primary"
-                                : "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {item.urutan}
-                          </span>
-                        </td>
-
-                        {/* Name & Photo */}
-                        <td className="py-3.5 px-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-10 h-13 rounded-sm overflow-hidden bg-muted shrink-0 border border-border/80">
-                              {item.foto ? (
+                        Belum ada data struktur pengurus untuk filter ini.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredItems.map((item) => {
+                      const itemCanManage = canManageItem(item);
+                      return (
+                        <TableRow
+                          key={item.id}
+                          onClick={() => setInspectorItem(item)}
+                          className="cursor-pointer hover:bg-muted/40"
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="relative size-9 rounded-full overflow-hidden bg-muted shrink-0">
                                 <Image
                                   src={item.foto}
                                   alt={item.nama}
                                   fill
-                                  unoptimized={isBlobOrData}
                                   className="object-cover"
-                                  sizes="40px"
+                                  unoptimized
                                 />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                                  <Users className="w-4 h-4" />
-                                </div>
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm text-foreground">
+                                  {item.nama}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.jabatan}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {item.bidang || "Pimpinan Inti"}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            <p className="font-medium text-foreground">
+                              {item.periode}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {item.cabangNama || "Pusat (DPP)"}
+                            </p>
+                          </TableCell>
+                          <TableCell className="text-center font-mono text-xs">
+                            #{item.urutan}
+                          </TableCell>
+                          <TableCell className="text-right pr-6">
+                            <div className="inline-flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInspectorItem(item);
+                                }}
+                                aria-label={`Lihat detail ${item.nama}`}
+                              >
+                                <Eye className="size-3.5" />
+                              </Button>
+                              {itemCanManage && (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    onClick={(e) =>
+                                      handleOpenEditStruktur(item, e)
+                                    }
+                                    aria-label={`Ubah data ${item.nama}`}
+                                  >
+                                    <Edit2 className="size-3.5" />
+                                  </Button>
+                                  {access.canDelete && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeletingStrukturId(item.id);
+                                      }}
+                                      aria-label={`Hapus ${item.nama}`}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="size-3.5" />
+                                    </Button>
+                                  )}
+                                </>
                               )}
                             </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                                {item.nama}
-                              </span>
-                              <span className="text-xs text-muted-foreground truncate">
-                                {item.email || "Email belum disetel"}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      )}
 
-                        {/* Jabatan */}
-                        <td className="py-3.5 px-3.5">
-                          <span className="font-medium text-foreground text-xs block">
-                            {item.jabatan}
-                          </span>
-                        </td>
-
-                        {/* Category & Department */}
-                        <td className="py-3.5 px-3.5">
-                          <div className="flex flex-col gap-1">
-                            <div>
-                              {item.kategori === "INTI" && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] py-0 bg-primary/10 text-primary border-primary/20"
-                                >
-                                  Pimpinan Inti DPP
-                                </Badge>
-                              )}
-                              {item.kategori === "BIDANG" && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] py-0 bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-                                >
-                                  Dewan Bidang
-                                </Badge>
-                              )}
-                              {item.kategori === "PENASEHAT" && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] py-0 bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
-                                >
-                                  Dewan Penasehat
-                                </Badge>
-                              )}
-                            </div>
-                            {item.bidang && (
-                              <span className="text-[11px] text-muted-foreground truncate block">
-                                {item.bidang}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Periode */}
-                        <td className="py-3.5 px-3.5 text-center text-xs text-muted-foreground font-medium">
-                          {item.periode}
-                        </td>
-
-                        {/* Status with Quick Toggle */}
-                        <td className="py-3.5 px-3.5 text-center">
-                          <button
-                            type="button"
-                            disabled={!access.canManage}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!access.canManage) return;
-                              toggleStatus(item.id);
-                              if (inspectorItem?.id === item.id) {
-                                setInspectorItem((prev) =>
-                                  prev
-                                    ? {
-                                        ...prev,
-                                        status:
-                                          prev.status === "PUBLISHED"
-                                            ? "DRAFT"
-                                            : "PUBLISHED",
-                                      }
-                                    : null,
-                                );
-                              }
-                              toast.info(
-                                `Status ${item.nama} diubah ke ${
-                                  item.status === "PUBLISHED"
-                                    ? "Draf"
-                                    : "Tayang"
-                                }`,
-                              );
-                            }}
-                            title={
-                              access.canManage
-                                ? "Klik untuk mengubah status tayang"
-                                : "Mode baca saja"
-                            }
+      {/* 4. Tab Panel: Periode Kepengurusan */}
+      {activeTab === "periode" && (
+        <div
+          role="tabpanel"
+          aria-labelledby="tab-periode"
+          className="space-y-4"
+        >
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama Periode</TableHead>
+                  <TableHead>Masa Bakti</TableHead>
+                  <TableHead>Wilayah / Cabang</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-right pr-6">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isPeriodeLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-40 text-center">
+                      <Loader2 className="size-6 animate-spin text-primary mx-auto" />
+                    </TableCell>
+                  </TableRow>
+                ) : periodeList.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="h-40 text-center text-sm text-muted-foreground"
+                    >
+                      Belum ada periode kepengurusan.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  periodeList.map((p) => {
+                    const periodeCanManage = canManagePeriode(p);
+                    return (
+                      <TableRow key={p.uuid}>
+                        <TableCell className="font-medium text-sm">
+                          {p.namaPeriode}
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">
+                          {p.tahunMulai} – {p.tahunSelesai}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {p.cabang?.namaCabang || "Pusat / Nasional (DPP)"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge
+                            variant="outline"
                             className={cn(
-                              "inline-flex items-center gap-1 group/toggle",
-                              access.canManage
-                                ? "cursor-pointer"
-                                : "cursor-default",
+                              "text-[11px]",
+                              p.isAktif
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                : "bg-muted text-muted-foreground",
                             )}
                           >
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[11px] py-0.5 transition-colors",
-                                item.status === "PUBLISHED"
-                                  ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 group-hover/toggle:bg-emerald-500/20"
-                                  : "text-amber-600 bg-amber-500/10 border-amber-500/20 group-hover/toggle:bg-amber-500/20",
-                              )}
-                            >
-                              {item.status === "PUBLISHED" ? (
-                                <>
-                                  <Eye className="w-3 h-3 mr-1" />
-                                  Tayang
-                                </>
-                              ) : (
-                                <>
-                                  <EyeOff className="w-3 h-3 mr-1" />
-                                  Draf
-                                </>
-                              )}
-                            </Badge>
-                          </button>
-                        </td>
-
-                        {/* Actions */}
-                        <td className="py-3.5 px-3.5 text-right pr-4">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setInspectorItem(item);
-                              }}
-                              title="Buka panel pratinjau & detail"
-                              className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </Button>
-                            {access.canManage && (
-                              <>
+                            {p.isAktif ? "Aktif" : "Nonaktif"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          {periodeCanManage && (
+                            <div className="inline-flex items-center gap-1">
+                              {!p.isAktif && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={(e) => handleOpenEdit(item, e)}
-                                  title="Ubah data pengurus"
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                                  onClick={() =>
+                                    updatePeriode.mutate({
+                                      uuid: p.uuid,
+                                      values: { isAktif: true },
+                                    })
+                                  }
+                                  className="h-7 text-xs text-emerald-600"
                                 >
-                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <CheckCircle2 className="size-3.5 mr-1" />
+                                  Aktifkan
                                 </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() => {
+                                  setEditingPeriode(p);
+                                  setIsPeriodeDialogOpen(true);
+                                }}
+                                aria-label={`Edit periode ${p.namaPeriode}`}
+                              >
+                                <Edit2 className="size-3.5" />
+                              </Button>
+                              {access.canDelete && (
                                 <Button
                                   variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeletingId(item.id);
-                                  }}
-                                  title="Hapus pengurus"
-                                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                                  size="icon-sm"
+                                  onClick={() => setDeletingPeriodeTarget(p)}
+                                  aria-label={`Hapus periode ${p.namaPeriode}`}
+                                  className="text-destructive"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="size-3.5" />
                                 </Button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
                     );
                   })
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
-        ) : (
-          <PengurusGridView
-            items={filteredItems}
-            isLoaded={isLoaded}
-            canManage={access.canManage}
-            activeId={inspectorItem?.id}
-            onSelect={(item) => setInspectorItem(item)}
-            onEdit={handleOpenEdit}
-            onDelete={(id, e) => {
-              e.stopPropagation();
-              if (access.canManage) setDeletingId(id);
-            }}
-            onToggleStatus={(id, e) => {
-              e.stopPropagation();
-              if (!access.canManage) return;
-              toggleStatus(id);
-              if (inspectorItem?.id === id) {
-                setInspectorItem((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        status:
-                          prev.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
-                      }
-                    : null,
-                );
-              }
-              const item = items.find((i) => i.id === id);
-              if (item) {
-                toast.info(
-                  `Status ${item.nama} diubah ke ${
-                    item.status === "PUBLISHED" ? "Draf" : "Tayang"
-                  }`,
-                );
-              }
-            }}
-          />
-        )}
-
-        <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-          <span>
-            Menampilkan {filteredItems.length} dari {items.length} data
-            pengurus.
-          </span>
-          <span className="text-[11px] italic text-muted-foreground/80">
-            *Klik baris tabel atau kartu pengurus untuk membuka Inspector &
-            Pratinjau Publik.
-          </span>
         </div>
-      </div>
+      )}
 
-      {/* 5. Slide-Over Inspector Drawer (InformationDrawer Inspired) */}
+      {/* Inspector Drawer */}
       <PengurusDetailDrawer
         item={inspectorItem}
         allItems={filteredItems}
         canManage={access.canManage}
+        canManageItem={canManageItem}
         onClose={() => setInspectorItem(null)}
-        onEdit={(item) => handleOpenEdit(item)}
-        onDelete={(id) => access.canManage && setDeletingId(id)}
-        onToggleStatus={(id) => {
-          if (!access.canManage) return;
-          toggleStatus(id);
-          if (inspectorItem?.id === id) {
-            setInspectorItem((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    status: prev.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED",
-                  }
-                : null,
-            );
-          }
-          toast.info("Status publikasi diperbarui.");
-        }}
+        onEdit={(item) => handleOpenEditStruktur(item)}
+        onDelete={(id) => setDeletingStrukturId(id)}
         onNavigate={(nextItem) => setInspectorItem(nextItem)}
       />
 
-      {/* Editor Modal Dialog */}
+      {/* Editor Dialog Struktur */}
       {access.canManage && (
         <PengurusEditorDialog
           open={isEditorOpen}
           onOpenChange={setIsEditorOpen}
           initialData={editingItem}
-          onSave={handleSave}
+          defaultPeriodeUuid={
+            selectedPeriodeUuid !== "ALL" ? selectedPeriodeUuid : undefined
+          }
+          periodeOptions={writablePeriodeList}
+          jabatanOptions={jabatanList}
+          bidangOptions={bidangList}
+          anggotaOptions={anggotaList}
+          atasanOptions={items}
+          isSubmitting={createStruktur.isPending || updateStruktur.isPending}
+          onSave={handleSaveStruktur}
         />
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* Editor Dialog Periode */}
+      {access.canManage && (
+        <PeriodeEditorDialog
+          open={isPeriodeDialogOpen}
+          onOpenChange={setIsPeriodeDialogOpen}
+          editingPeriode={editingPeriode}
+          canSelectCabang={access.canSelectCabang}
+          cabangOptions={cabangList}
+          isSubmitting={createPeriode.isPending || updatePeriode.isPending}
+          onSave={handleSavePeriode}
+        />
+      )}
+
+      {/* Delete Struktur Confirmation */}
       <Dialog
-        open={!!deletingId}
-        onOpenChange={(open) => !open && setDeletingId(null)}
+        open={Boolean(deletingStrukturId)}
+        onOpenChange={(open) => !open && setDeletingStrukturId(null)}
       >
         <DialogContent className="sm:max-w-md rounded-sm">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
               <Trash2 className="w-5 h-5" />
-              Hapus Data Pengurus
+              Hapus Pengurus dari Struktur
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground pt-1">
-              Apakah Anda yakin ingin menghapus data pengurus ini? Data yang
-              dihapus tidak akan lagi muncul di website resmi PIKI.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="pt-3 gap-2">
-            <Button variant="outline" onClick={() => setDeletingId(null)}>
-              Batal
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteConfirm}>
-              Ya, Hapus Pengurus
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reset Confirmation Dialog */}
-      <Dialog open={isResetConfirmOpen} onOpenChange={setIsResetConfirmOpen}>
-        <DialogContent className="sm:max-w-md rounded-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <RotateCcw className="w-5 h-5 text-primary" />
-              Reset ke Data Bawaan Organisasi
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground pt-2">
-              Tindakan ini akan mengembalikan data pengurus ke data awal DPP
-              PIKI (Ketua Umum Maruarar Sirait, Sekjen Benyamin Patondok, Bendum
-              Juniver Girsang, dan ketua bidang resmi).
+              Pengurus akan dikeluarkan dari susunan periode ini. Data
+              keanggotaan anggota tetap tersimpan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="pt-3 gap-2">
             <Button
               variant="outline"
-              onClick={() => setIsResetConfirmOpen(false)}
+              onClick={() => setDeletingStrukturId(null)}
+              disabled={deleteStruktur.isPending}
             >
               Batal
             </Button>
-            <Button onClick={handleReset}>Reset Data Sekarang</Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDeleteStruktur}
+              disabled={deleteStruktur.isPending}
+            >
+              {deleteStruktur.isPending && (
+                <Loader2 className="size-4 mr-2 animate-spin" />
+              )}
+              Ya, Hapus
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Periode Confirmation */}
+      <Dialog
+        open={Boolean(deletingPeriodeTarget)}
+        onOpenChange={(open) => !open && setDeletingPeriodeTarget(null)}
+      >
+        <DialogContent className="sm:max-w-md rounded-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Hapus Periode Kepengurusan
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground pt-1">
+              Apakah Anda yakin ingin menghapus periode &ldquo;
+              {deletingPeriodeTarget?.namaPeriode}&rdquo;?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-3 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeletingPeriodeTarget(null)}
+              disabled={deletePeriode.isPending}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDeletePeriode}
+              disabled={deletePeriode.isPending}
+            >
+              {deletePeriode.isPending && (
+                <Loader2 className="size-4 mr-2 animate-spin" />
+              )}
+              Ya, Hapus Periode
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

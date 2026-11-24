@@ -168,6 +168,17 @@ export const DASHBOARD_ROUTE_POLICIES: readonly DashboardRoutePolicy[] = [
     requiredPermissions: ["GALERI_MANAGE", "GALERI_READ", "MANAGE_ALL_CABANG"],
   },
   {
+    pattern: "/dashboard/faq",
+    requiredPermissions: [
+      "FAQ_READ",
+      "FAQ_CREATE",
+      "FAQ_UPDATE",
+      "FAQ_ARCHIVE",
+      "FAQ_MANAGE",
+      "MANAGE_ALL_CABANG",
+    ],
+  },
+  {
     pattern: "/dashboard/pengurus",
     requiredPermissions: [
       "STRUKTUR_READ",
@@ -321,6 +332,8 @@ export interface LandingCmsAccess {
   canView: boolean;
   canManageSejarah: boolean;
   canManagePageSettings: boolean;
+  canSelectCabang: boolean;
+  isUnlinkedBranchAdmin: boolean;
 }
 
 /**
@@ -335,21 +348,27 @@ export function resolveLandingCmsAccess(
       canView: false,
       canManageSejarah: false,
       canManagePageSettings: false,
+      canSelectCabang: false,
+      isUnlinkedBranchAdmin: false,
     };
   }
 
   const scope = resolveAdminScope(user);
+  const superAdmin = isSuperAdmin(user);
   const canManageSejarah =
-    isSuperAdmin(user) || hasPermission(user, "SEJARAH_MANAGE");
+    superAdmin || hasPermission(user, "SEJARAH_MANAGE");
   const canManagePageSettings =
-    isSuperAdmin(user) ||
+    superAdmin ||
     hasAnyPermission(user, ["APP_SETTING_MANAGE", "MANAGE_PAGE_SETTINGS"]);
+  const isUnlinkedBranchAdmin = !superAdmin && canManageSejarah && !user.cabangId;
 
   return {
     scope,
     canView: canManageSejarah || canManagePageSettings,
     canManageSejarah,
     canManagePageSettings,
+    canSelectCabang: superAdmin,
+    isUnlinkedBranchAdmin,
   };
 }
 
@@ -357,10 +376,15 @@ export interface PengurusCmsAccess {
   scope: AdminScope;
   canView: boolean;
   canManage: boolean;
+  canDelete: boolean;
+  canManageMaster: boolean;
+  canSelectCabang: boolean;
+  isUnlinkedBranchAdmin: boolean;
 }
 
 /**
- * Matriks hak akses CMS Data Pengurus.
+ * Matriks hak akses CMS Data Pengurus (Periode Kepengurusan & Struktur Organisasi).
+ * Selaras dengan permission di periodeKepengurusan.routes.ts & strukturOrganisasi.routes.ts.
  */
 export function resolvePengurusCmsAccess(
   user: UserPayload | null | undefined,
@@ -370,18 +394,36 @@ export function resolvePengurusCmsAccess(
       scope: "UNLINKED",
       canView: false,
       canManage: false,
+      canDelete: false,
+      canManageMaster: false,
+      canSelectCabang: false,
+      isUnlinkedBranchAdmin: false,
     };
   }
 
   const scope = resolveAdminScope(user);
+  const superAdmin = isSuperAdmin(user);
   const canManage =
-    isSuperAdmin(user) || hasPermission(user, "STRUKTUR_UPDATE");
-  const canView = canManage || hasPermission(user, "STRUKTUR_READ");
+    superAdmin ||
+    hasAnyPermission(user, ["STRUKTUR_CREATE", "STRUKTUR_UPDATE", "CABANG_UPDATE"]);
+  const canView =
+    canManage ||
+    hasAnyPermission(user, ["STRUKTUR_READ", "CABANG_READ"]);
+  const canDelete =
+    superAdmin ||
+    hasAnyPermission(user, ["STRUKTUR_DELETE", "CABANG_DELETE", "CABANG_UPDATE"]);
+  const canManageMaster =
+    superAdmin || hasAnyPermission(user, ["CABANG_CREATE", "CABANG_UPDATE"]);
+  const isUnlinkedBranchAdmin = !superAdmin && canManage && !user.cabangId;
 
   return {
     scope,
     canView,
     canManage,
+    canDelete,
+    canManageMaster,
+    canSelectCabang: superAdmin,
+    isUnlinkedBranchAdmin,
   };
 }
 
@@ -397,6 +439,10 @@ export interface WilayahAccess {
   canCreateDpc: boolean;
   canEditDpc: boolean;
   canDeleteDpc: boolean;
+  canViewCabang: boolean;
+  canCreateCabang: boolean;
+  canEditSelfCabang: boolean;
+  canDeleteCabang: boolean;
   canManageCabangLink: boolean;
   canFilterProvinsi: boolean;
   isSelfEditOnly: boolean;
@@ -404,7 +450,7 @@ export interface WilayahAccess {
 
 /**
  * Menentukan matriks hak akses UI halaman Manajemen Wilayah & Cabang
- * selaras dengan aturan backend (/api/v1/dpd & /api/v1/dpd-dpc).
+ * selaras dengan aturan backend (/api/v1/dpd, /api/v1/dpd-dpc, & /api/v1/cabang).
  */
 export function resolveWilayahAccess(
   user: UserPayload | null | undefined,
@@ -420,13 +466,19 @@ export function resolveWilayahAccess(
       canCreateDpc: true,
       canEditDpc: true,
       canDeleteDpc: true,
+      canViewCabang: true,
+      canCreateCabang: true,
+      canEditSelfCabang: true,
+      canDeleteCabang: true,
       canManageCabangLink: true,
       canFilterProvinsi: true,
       isSelfEditOnly: false,
     };
   }
 
+  const canReadCabang = hasAnyPermission(user, ["CABANG_READ", "CABANG_UPDATE"]);
   const canUpdateCabang = hasPermission(user, "CABANG_UPDATE");
+  const hasLinkedCabang = Boolean(user?.cabangId);
 
   if (isDpdAdmin(user)) {
     return {
@@ -439,6 +491,10 @@ export function resolveWilayahAccess(
       canCreateDpc: false,
       canEditDpc: false, // Backend: Admin DPD hanya read-only pada data DPC
       canDeleteDpc: false,
+      canViewCabang: hasLinkedCabang && canReadCabang,
+      canCreateCabang: false,
+      canEditSelfCabang: hasLinkedCabang && canUpdateCabang,
+      canDeleteCabang: false,
       canManageCabangLink: false,
       canFilterProvinsi: false,
       isSelfEditOnly: true,
@@ -456,6 +512,10 @@ export function resolveWilayahAccess(
       canCreateDpc: false,
       canEditDpc: canUpdateCabang,
       canDeleteDpc: false,
+      canViewCabang: hasLinkedCabang && canReadCabang,
+      canCreateCabang: false,
+      canEditSelfCabang: hasLinkedCabang && canUpdateCabang,
+      canDeleteCabang: false,
       canManageCabangLink: false,
       canFilterProvinsi: false,
       isSelfEditOnly: true,
@@ -472,8 +532,62 @@ export function resolveWilayahAccess(
     canCreateDpc: false,
     canEditDpc: false,
     canDeleteDpc: false,
+    canViewCabang: false,
+    canCreateCabang: false,
+    canEditSelfCabang: false,
+    canDeleteCabang: false,
     canManageCabangLink: false,
     canFilterProvinsi: false,
     isSelfEditOnly: false,
+  };
+}
+
+export interface FaqCmsAccess {
+  scope: AdminScope;
+  canView: boolean;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canArchive: boolean;
+  canSelectCabang: boolean;
+  isUnlinkedBranchAdmin: boolean;
+}
+
+/**
+ * Matriks hak akses CMS FAQ selaras dengan backend (/api/v1/faq).
+ */
+export function resolveFaqCmsAccess(
+  user: UserPayload | null | undefined,
+): FaqCmsAccess {
+  if (!user || !hasRole(user, ROLE_GROUPS.ADMINS)) {
+    return {
+      scope: "UNLINKED",
+      canView: false,
+      canCreate: false,
+      canUpdate: false,
+      canArchive: false,
+      canSelectCabang: false,
+      isUnlinkedBranchAdmin: false,
+    };
+  }
+
+  const scope = resolveAdminScope(user);
+  const superAdmin = isSuperAdmin(user);
+  const manage = superAdmin || hasPermission(user, "FAQ_MANAGE");
+  const canCreate = manage || hasPermission(user, "FAQ_CREATE");
+  const canUpdate = manage || hasPermission(user, "FAQ_UPDATE");
+  const canArchive = manage || hasPermission(user, "FAQ_ARCHIVE");
+  const canView =
+    canCreate || canUpdate || canArchive || hasPermission(user, "FAQ_READ");
+  const isUnlinkedBranchAdmin =
+    !superAdmin && (canCreate || canUpdate || canArchive) && !user.cabangId;
+
+  return {
+    scope,
+    canView,
+    canCreate,
+    canUpdate,
+    canArchive,
+    canSelectCabang: superAdmin,
+    isUnlinkedBranchAdmin,
   };
 }

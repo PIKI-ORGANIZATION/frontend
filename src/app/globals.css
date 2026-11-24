@@ -292,3 +292,92 @@ select optgroup {
   --ck-color-focus-border: #0b59a1;
   --ck-color-shadow-drop: rgba(0, 0, 0, 0.45);
 }
+
+/* ============================================================
+   Skeleton shimmer (reusable) — sapuan cahaya kiri → kanan
+   Dipakai oleh <Skeleton /> di components/ui/skeleton.tsx.
+   Animasi hanya memakai `translate` (GPU-friendly, tanpa reflow).
+
+   Variabel yang dapat diatur per elemen:
+   --skeleton-shimmer-color     warna sapuan cahaya
+   --skeleton-shimmer-duration  durasi satu siklus (default 1.8s)
+   --skeleton-shimmer-delay     jeda awal (untuk efek bertahap)
+   ============================================================ */
+.skeleton-shimmer {
+  --skeleton-shimmer-color: rgb(255 255 255 / 0.7);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background-color: var(--muted);
+}
+
+.dark .skeleton-shimmer {
+  --skeleton-shimmer-color: rgb(255 255 255 / 0.08);
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  translate: -100% 0;
+  background-image: linear-gradient(
+    100deg,
+    transparent 15%,
+    var(--skeleton-shimmer-color) 50%,
+    transparent 85%
+  );
+  animation: skeleton-shimmer var(--skeleton-shimmer-duration, 1.8s)
+    cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: var(--skeleton-shimmer-delay, 0s);
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    translate: 100% 0;
+  }
+}
+
+/* Pengguna yang meminta gerakan minimal: tampilkan blok statis tanpa sapuan */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Forced colors: pertahankan blok agar tetap terlihat, tanpa gradient */
+@media (forced-colors: active) {
+  .skeleton-shimmer {
+    background-color: GrayText;
+    forced-color-adjust: none;
+  }
+  .skeleton-shimmer::after {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Compact expandable panel (FAQ CMS) — native intrinsic-size
+   transition dengan fallback instan di browser tanpa interpolate-size.
+   ============================================================ */
+.faq-expand-body {
+  interpolate-size: allow-keywords;
+  overflow: hidden;
+  block-size: 0;
+  opacity: 0;
+  transition:
+    block-size 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.18s ease;
+}
+
+.faq-expand-body[data-open="true"] {
+  block-size: auto;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-expand-body {
+    transition: none !important;
+  }
+}

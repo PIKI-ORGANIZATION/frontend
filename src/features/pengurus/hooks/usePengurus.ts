@@ -1,155 +1,324 @@
 "use client";
 
-import { useSyncExternalStore, useCallback, useMemo } from "react";
-import { PengurusItem, PengurusFormValues, PengurusStats } from "../types";
-import { initialPengurusData } from "../data/dummyPengurusData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
+import {
+  PeriodeKepengurusanItem,
+  PeriodeFormValues,
+  StrukturOrganisasiItem,
+  StrukturFormValues,
+  JabatanItem,
+  BidangItem,
+  PengurusItem,
+  toPengurusItem,
+} from "../types";
 
-const STORAGE_KEY = "piki_pengurus_data";
-const EVENT_NAME = "piki:pengurus_updated";
-
-function subscribe(callback: () => void) {
-  if (typeof window === "undefined") {
-    return () => {};
-  }
-  window.addEventListener(EVENT_NAME, callback);
-  window.addEventListener("storage", callback);
-  return () => {
-    window.removeEventListener(EVENT_NAME, callback);
-    window.removeEventListener("storage", callback);
+interface ApiListEnvelope<T> {
+  success?: boolean;
+  message?: string;
+  data?: {
+    result?: T[];
+    pagination?: {
+      currentPage: number;
+      pageSize: number;
+      total: number;
+    };
   };
 }
 
-let cachedSnapshot: PengurusItem[] = initialPengurusData;
-let lastRaw: string | null = null;
-
-function getSnapshot(): PengurusItem[] {
-  if (typeof window === "undefined") return initialPengurusData;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      cachedSnapshot = initialPengurusData;
-      lastRaw = null;
-      return cachedSnapshot;
-    }
-    if (raw !== lastRaw) {
-      lastRaw = raw;
-      const parsed = JSON.parse(raw);
-      cachedSnapshot =
-        Array.isArray(parsed) && parsed.length > 0
-          ? parsed
-          : initialPengurusData;
-    }
-    return cachedSnapshot;
-  } catch (e) {
-    console.error("Failed to read pengurus data from localStorage", e);
-    return initialPengurusData;
-  }
+function extractResult<T>(res: ApiListEnvelope<T> | undefined): T[] {
+  return Array.isArray(res?.data?.result) ? res.data.result : [];
 }
 
-function getServerSnapshot(): PengurusItem[] {
-  return initialPengurusData;
-}
+// =============================================================
+// 1. PERIODE KEPENGURUSAN HOOKS
+// =============================================================
 
-function persistPengurus(data: PengurusItem[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: data }));
-  } catch (e) {
-    console.error("Failed to save pengurus data to localStorage", e);
-  }
-}
+export function usePeriodeList(params?: {
+  search?: string;
+  fixed?: "all";
+  pageSize?: number;
+  enabled?: boolean;
+}) {
+  const search = params?.search;
+  const fixed = params?.fixed ?? "all";
+  const pageSize = params?.pageSize ?? 100;
+  const enabled = params?.enabled ?? true;
 
-export function usePengurus() {
-  const items = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const qs = useMemo(() => {
+    const p = new URLSearchParams();
+    if (fixed) p.append("fixed", fixed);
+    if (search?.trim()) p.append("search", search.trim());
+    p.append("pageSize", String(pageSize));
+    return p.toString();
+  }, [fixed, search, pageSize]);
 
-  // 1. Add Pengurus
-  const addPengurus = useCallback((form: PengurusFormValues) => {
-    const current = getSnapshot();
-    const now = new Date().toISOString();
-    const newItem: PengurusItem = {
-      ...form,
-      id: `pengurus-${Date.now()}`,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const next = [newItem, ...current];
-    persistPengurus(next);
-    return newItem;
-  }, []);
-
-  // 2. Update Pengurus
-  const updatePengurus = useCallback(
-    (id: string, form: Partial<PengurusFormValues>) => {
-      const current = getSnapshot();
-      const next = current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              ...form,
-              updatedAt: new Date().toISOString(),
-            }
-          : item,
+  return useQuery({
+    queryKey: ["pengurus", "periode", qs],
+    enabled,
+    queryFn: async () => {
+      const res = await apiFetch<ApiListEnvelope<PeriodeKepengurusanItem>>(
+        `/periode-kepengurusan/admin?${qs}`,
       );
-      persistPengurus(next);
+      return extractResult(res);
     },
-    [],
+    staleTime: 30 * 1000,
+  });
+}
+
+export function usePeriodeMutations() {
+  const queryClient = useQueryClient();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["pengurus"] });
+  };
+
+  const createPeriode = useMutation({
+    mutationFn: async (values: PeriodeFormValues) => {
+      return apiFetch<{ message?: string; data?: PeriodeKepengurusanItem }>(
+        "/periode-kepengurusan",
+        {
+          method: "POST",
+          body: JSON.stringify(values),
+        },
+      );
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Periode kepengurusan berhasil ditambahkan!");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal menambahkan periode kepengurusan");
+    },
+  });
+
+  const updatePeriode = useMutation({
+    mutationFn: async ({
+      uuid,
+      values,
+    }: {
+      uuid: string;
+      values: Partial<PeriodeFormValues>;
+    }) => {
+      return apiFetch<{ message?: string; data?: PeriodeKepengurusanItem }>(
+        `/periode-kepengurusan/${uuid}/update`,
+        {
+          method: "POST",
+          body: JSON.stringify(values),
+        },
+      );
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Periode kepengurusan berhasil diperbarui!");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal memperbarui periode kepengurusan");
+    },
+  });
+
+  const deletePeriode = useMutation({
+    mutationFn: async (uuid: string) => {
+      return apiFetch<{ message?: string }>(
+        `/periode-kepengurusan/${uuid}/delete`,
+        { method: "POST" },
+      );
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Periode kepengurusan berhasil dihapus.");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal menghapus periode kepengurusan");
+    },
+  });
+
+  return { createPeriode, updatePeriode, deletePeriode };
+}
+
+// =============================================================
+// 2. STRUKTUR ORGANISASI HOOKS (ADMIN)
+// =============================================================
+
+export function useStrukturList(params?: {
+  periodeUuid?: string;
+  search?: string;
+  fixed?: "all";
+  pageSize?: number;
+  enabled?: boolean;
+}) {
+  const periodeUuid = params?.periodeUuid;
+  const search = params?.search;
+  const fixed = params?.fixed ?? "all";
+  const pageSize = params?.pageSize ?? 200;
+  const enabled = params?.enabled ?? true;
+
+  const qs = useMemo(() => {
+    const p = new URLSearchParams();
+    if (fixed) p.append("fixed", fixed);
+    if (periodeUuid && periodeUuid !== "ALL") p.append("periodeUuid", periodeUuid);
+    if (search?.trim()) p.append("search", search.trim());
+    p.append("pageSize", String(pageSize));
+    return p.toString();
+  }, [fixed, periodeUuid, search, pageSize]);
+
+  return useQuery({
+    queryKey: ["pengurus", "struktur", qs],
+    enabled,
+    queryFn: async () => {
+      const res = await apiFetch<ApiListEnvelope<StrukturOrganisasiItem>>(
+        `/struktur-organisasi/admin?${qs}`,
+      );
+      return extractResult(res);
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useStrukturMutations() {
+  const queryClient = useQueryClient();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["pengurus"] });
+  };
+
+  const createStruktur = useMutation({
+    mutationFn: async (values: StrukturFormValues) => {
+      return apiFetch<{ message?: string; data?: StrukturOrganisasiItem }>(
+        "/struktur-organisasi",
+        {
+          method: "POST",
+          body: JSON.stringify(values),
+        },
+      );
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Pengurus berhasil ditambahkan ke struktur!");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal menambahkan pengurus");
+    },
+  });
+
+  const updateStruktur = useMutation({
+    mutationFn: async ({
+      uuid,
+      values,
+    }: {
+      uuid: string;
+      values: Partial<StrukturFormValues>;
+    }) => {
+      return apiFetch<{ message?: string; data?: StrukturOrganisasiItem }>(
+        `/struktur-organisasi/${uuid}/update`,
+        {
+          method: "POST",
+          body: JSON.stringify(values),
+        },
+      );
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Data struktur pengurus berhasil diperbarui!");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal memperbarui data pengurus");
+    },
+  });
+
+  const deleteStruktur = useMutation({
+    mutationFn: async (uuid: string) => {
+      return apiFetch<{ message?: string }>(
+        `/struktur-organisasi/${uuid}/delete`,
+        { method: "POST" },
+      );
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Pengurus berhasil dihapus dari struktur.");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Gagal menghapus pengurus dari struktur");
+    },
+  });
+
+  return { createStruktur, updateStruktur, deleteStruktur };
+}
+
+// =============================================================
+// 3. MASTER JABATAN & BIDANG HOOKS
+// =============================================================
+
+export function useJabatanList(enabled = true) {
+  return useQuery({
+    queryKey: ["pengurus", "jabatan"],
+    enabled,
+    queryFn: async () => {
+      const res = await apiFetch<ApiListEnvelope<JabatanItem>>(
+        "/jabatan?pageSize=100",
+      );
+      return extractResult(res);
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useBidangList(enabled = true) {
+  return useQuery({
+    queryKey: ["pengurus", "bidang"],
+    enabled,
+    queryFn: async () => {
+      const res = await apiFetch<ApiListEnvelope<BidangItem>>(
+        "/bidang?pageSize=100",
+      );
+      return extractResult(res);
+    },
+    staleTime: 60 * 1000,
+  });
+}
+
+// =============================================================
+// 4. PUBLIC STRUKTUR HOOK (STATELESS, TANPA TOKEN AUTHORIZATION)
+// =============================================================
+
+export function usePublicStruktur(params?: {
+  periodeUuid?: string;
+  pageSize?: number;
+}) {
+  const periodeUuid = params?.periodeUuid;
+  const pageSize = params?.pageSize ?? 100;
+
+  const qs = useMemo(() => {
+    const p = new URLSearchParams();
+    if (periodeUuid) p.append("periodeUuid", periodeUuid);
+    p.append("pageSize", String(pageSize));
+    return p.toString();
+  }, [periodeUuid, pageSize]);
+
+  const query = useQuery({
+    queryKey: ["pengurus", "public", qs],
+    queryFn: async () => {
+      const res = await apiFetch<ApiListEnvelope<StrukturOrganisasiItem>>(
+        `/struktur-organisasi?${qs}`,
+        { skipAuth: true },
+      );
+      return extractResult(res).map(toPengurusItem);
+    },
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+
+  const items: PengurusItem[] = useMemo(
+    () => query.data ?? [],
+    [query.data],
   );
-
-  // 3. Delete Pengurus
-  const deletePengurus = useCallback((id: string) => {
-    const current = getSnapshot();
-    const next = current.filter((item) => item.id !== id);
-    persistPengurus(next);
-  }, []);
-
-  // 4. Toggle Status (PUBLISHED <-> DRAFT)
-  const toggleStatus = useCallback((id: string) => {
-    const current = getSnapshot();
-    const next = current.map((item) =>
-      item.id === id
-        ? {
-            ...item,
-            status:
-              item.status === "PUBLISHED"
-                ? ("DRAFT" as const)
-                : ("PUBLISHED" as const),
-            updatedAt: new Date().toISOString(),
-          }
-        : item,
-    );
-    persistPengurus(next);
-  }, []);
-
-  // 5. Reset to default initial data
-  const resetToDefault = useCallback(() => {
-    persistPengurus(initialPengurusData);
-  }, []);
-
-  // Computed Stats
-  const stats: PengurusStats = useMemo(() => {
-    return {
-      total: items.length,
-      inti: items.filter((i) => i.kategori === "INTI").length,
-      bidang: items.filter((i) => i.kategori === "BIDANG").length,
-      penasehat: items.filter((i) => i.kategori === "PENASEHAT").length,
-      published: items.filter((i) => i.status === "PUBLISHED").length,
-      draft: items.filter((i) => i.status === "DRAFT").length,
-    };
-  }, [items]);
 
   return {
     items,
-    isLoaded: true,
-    stats,
-    addPengurus,
-    updatePengurus,
-    deletePengurus,
-    toggleStatus,
-    resetToDefault,
+    isLoaded: !query.isLoading,
+    isLoading: query.isLoading,
+    isError: query.isError,
   };
 }

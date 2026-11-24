@@ -15,6 +15,7 @@ export interface SejarahItem {
   gambar?: string | null;
   urutan?: number | null;
   statusSejarah: SejarahStatus;
+  cabangUuid?: string | null;
   insert_at?: string;
   insert_by?: string | null;
   update_at?: string;
@@ -31,6 +32,7 @@ export interface SejarahFormValues {
   gambar?: string | null;
   urutan?: number | null;
   statusSejarah?: SejarahStatus;
+  cabangUuid?: string | null;
 }
 
 /**
@@ -69,6 +71,7 @@ export interface HistoryEvent {
   keyFigure?: string;
   order: number;
   status: HistoryStatus;
+  cabangUuid?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -90,6 +93,7 @@ export function toHistoryEvent(item: SejarahItem): HistoryEvent {
     image: getSafeImageSrc(item.gambar, "/footage/image1.webp"),
     order: item.urutan ?? 0,
     status,
+    cabangUuid: item.cabangUuid ?? null,
     createdAt: item.insert_at,
     updatedAt: item.update_at,
   };
@@ -106,6 +110,7 @@ export function toSejarahPayload(
     image?: string;
     order?: number;
     status?: HistoryStatus;
+    cabangUuid?: string | null;
   },
 ): SejarahFormValues {
   return {
@@ -115,6 +120,7 @@ export function toSejarahPayload(
     gambar: data.image?.trim() || "/footage/image1.webp",
     urutan: typeof data.order === "number" ? data.order : 1,
     ...(data.status && { statusSejarah: data.status }),
+    ...(data.cabangUuid !== undefined && { cabangUuid: data.cabangUuid }),
   };
 }
 

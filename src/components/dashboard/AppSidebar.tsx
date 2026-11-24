@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Settings,
   KeyRound,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -185,6 +186,19 @@ const adminNavGroups: NavGroupData[] = [
             url: "/dashboard/galeri",
             icon: ImageIcon,
             requiredPermissions: ["GALERI_MANAGE", "GALERI_READ", "MANAGE_ALL_CABANG"],
+          },
+          {
+            title: "CMS FAQ",
+            url: "/dashboard/faq",
+            icon: HelpCircle,
+            requiredPermissions: [
+              "FAQ_READ",
+              "FAQ_CREATE",
+              "FAQ_UPDATE",
+              "FAQ_ARCHIVE",
+              "FAQ_MANAGE",
+              "MANAGE_ALL_CABANG",
+            ],
           },
           {
             title: "CMS Program Kerja",

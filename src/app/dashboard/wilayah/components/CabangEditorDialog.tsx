@@ -42,6 +42,7 @@ interface CabangEditorDialogProps {
   dpdList: DpdItem[];
   dpcList: DpcItem[];
   masterProvinsi: MasterProvinsi[];
+  isSuperAdmin?: boolean;
   onSave: (payload: CabangFormValues) => Promise<unknown>;
   isSubmitting: boolean;
 }
@@ -52,6 +53,7 @@ interface CabangFormInnerProps {
   dpdList: DpdItem[];
   dpcList: DpcItem[];
   masterProvinsi: MasterProvinsi[];
+  isSuperAdmin: boolean;
   onSave: (payload: CabangFormValues) => Promise<unknown>;
   onCancel: () => void;
   isSubmitting: boolean;
@@ -88,6 +90,7 @@ function CabangFormInner({
   dpdList,
   dpcList,
   masterProvinsi,
+  isSuperAdmin,
   onSave,
   onCancel,
   isSubmitting,
@@ -382,10 +385,14 @@ function CabangFormInner({
       instagram: instagram.trim(),
       facebook: facebook.trim(),
       youtube: youtube.trim(),
-      isCabang: true,
-      ...(isEditing && { statusCabang }),
-      dpdId: linkType === "DPD" ? targetId || null : null,
-      dpcId: linkType === "DPC" && targetId ? Number(targetId) : null,
+      // Field struktural (isCabang, statusCabang, dpdId, dpcId) hanya boleh dikirim oleh SuperAdmin DPP;
+      // Admin DPD/DPC akan ditolak 403 oleh backend jika mengirimkannya.
+      ...(isSuperAdmin && {
+        isCabang: true,
+        ...(isEditing && { statusCabang }),
+        dpdId: linkType === "DPD" ? targetId || null : null,
+        dpcId: linkType === "DPC" && targetId ? Number(targetId) : null,
+      }),
     };
 
     await onSave(payload);
@@ -409,71 +416,73 @@ function CabangFormInner({
           <span>1. Tautan Wilayah &amp; Identitas Cabang</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg border border-border/80 bg-muted/20 p-4">
-          <div className="space-y-2">
-            <Label htmlFor="cabang-link-type" className="text-sm font-medium text-foreground">
-              Tingkat Tautan Organisasi
-            </Label>
-            <SearchableSelect
-              id="cabang-link-type"
-              value={linkType}
-              onValueChange={(val) => {
-                setLinkType(val as "NONE" | "DPD" | "DPC");
-                setTargetId("");
-                setErrors((prev) => ({ ...prev, targetId: undefined }));
-              }}
-              options={TINGKAT_TAUTAN_OPTIONS}
-              placeholder="Pilih tingkat tautan..."
-              searchPlaceholder="Cari tingkat..."
-            />
+        {isSuperAdmin && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg border border-border/80 bg-muted/20 p-4">
+            <div className="space-y-2">
+              <Label htmlFor="cabang-link-type" className="text-sm font-medium text-foreground">
+                Tingkat Tautan Organisasi
+              </Label>
+              <SearchableSelect
+                id="cabang-link-type"
+                value={linkType}
+                onValueChange={(val) => {
+                  setLinkType(val as "NONE" | "DPD" | "DPC");
+                  setTargetId("");
+                  setErrors((prev) => ({ ...prev, targetId: undefined }));
+                }}
+                options={TINGKAT_TAUTAN_OPTIONS}
+                placeholder="Pilih tingkat tautan..."
+                searchPlaceholder="Cari tingkat..."
+              />
+            </div>
+
+            {linkType === "DPD" && (
+              <div className="space-y-2">
+                <Label htmlFor="cabang-target-dpd" className="text-sm font-medium text-foreground">
+                  Pilih DPD (Provinsi) <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  id="cabang-target-dpd"
+                  value={targetId}
+                  onValueChange={handleSelectTarget}
+                  options={availableDpdOptions}
+                  placeholder="Pilih DPD yang belum tertaut..."
+                  searchPlaceholder="Cari nama DPD..."
+                  emptyMessage="Semua DPD sudah tertaut atau tidak ditemukan"
+                />
+                {errors.targetId && (
+                  <p className="text-xs text-destructive">{errors.targetId}</p>
+                )}
+              </div>
+            )}
+
+            {linkType === "DPC" && (
+              <div className="space-y-2">
+                <Label htmlFor="cabang-target-dpc" className="text-sm font-medium text-foreground">
+                  Pilih DPC (Kabupaten/Kota) <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  id="cabang-target-dpc"
+                  value={targetId}
+                  onValueChange={handleSelectTarget}
+                  options={availableDpcOptions}
+                  placeholder="Pilih DPC yang belum tertaut..."
+                  searchPlaceholder="Cari nama DPC atau provinsi..."
+                  emptyMessage="Semua DPC sudah tertaut atau tidak ditemukan"
+                />
+                {errors.targetId && (
+                  <p className="text-xs text-destructive">{errors.targetId}</p>
+                )}
+              </div>
+            )}
+
+            {linkType === "NONE" && (
+              <div className="flex items-center text-xs text-muted-foreground leading-relaxed sm:pt-6">
+                Anda tetap dapat menautkan cabang ini ke DPD atau DPC kapan saja melalui tombol &ldquo;Atur Tautan&rdquo;.
+              </div>
+            )}
           </div>
-
-          {linkType === "DPD" && (
-            <div className="space-y-2">
-              <Label htmlFor="cabang-target-dpd" className="text-sm font-medium text-foreground">
-                Pilih DPD (Provinsi) <span className="text-destructive">*</span>
-              </Label>
-              <SearchableSelect
-                id="cabang-target-dpd"
-                value={targetId}
-                onValueChange={handleSelectTarget}
-                options={availableDpdOptions}
-                placeholder="Pilih DPD yang belum tertaut..."
-                searchPlaceholder="Cari nama DPD..."
-                emptyMessage="Semua DPD sudah tertaut atau tidak ditemukan"
-              />
-              {errors.targetId && (
-                <p className="text-xs text-destructive">{errors.targetId}</p>
-              )}
-            </div>
-          )}
-
-          {linkType === "DPC" && (
-            <div className="space-y-2">
-              <Label htmlFor="cabang-target-dpc" className="text-sm font-medium text-foreground">
-                Pilih DPC (Kabupaten/Kota) <span className="text-destructive">*</span>
-              </Label>
-              <SearchableSelect
-                id="cabang-target-dpc"
-                value={targetId}
-                onValueChange={handleSelectTarget}
-                options={availableDpcOptions}
-                placeholder="Pilih DPC yang belum tertaut..."
-                searchPlaceholder="Cari nama DPC atau provinsi..."
-                emptyMessage="Semua DPC sudah tertaut atau tidak ditemukan"
-              />
-              {errors.targetId && (
-                <p className="text-xs text-destructive">{errors.targetId}</p>
-              )}
-            </div>
-          )}
-
-          {linkType === "NONE" && (
-            <div className="flex items-center text-xs text-muted-foreground leading-relaxed sm:pt-6">
-              Anda tetap dapat menautkan cabang ini ke DPD atau DPC kapan saja melalui tombol &ldquo;Atur Tautan&rdquo;.
-            </div>
-          )}
-        </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2 sm:col-span-2">
@@ -550,7 +559,7 @@ function CabangFormInner({
             )}
           </div>
 
-          <div className={isEditing ? "space-y-2" : "space-y-2 sm:col-span-2"}>
+          <div className={isEditing && isSuperAdmin ? "space-y-2" : "space-y-2 sm:col-span-2"}>
             <Label htmlFor="cabang-alamat" className="text-sm font-medium text-foreground">
               Alamat Sekretariat
             </Label>
@@ -563,7 +572,7 @@ function CabangFormInner({
             />
           </div>
 
-          {isEditing && (
+          {isEditing && isSuperAdmin && (
             <div className="space-y-2">
               <Label htmlFor="cabang-status" className="text-sm font-medium text-foreground">
                 Status Publik
@@ -802,6 +811,7 @@ export function CabangEditorDialog({
   dpdList,
   dpcList,
   masterProvinsi,
+  isSuperAdmin = true,
   onSave,
   isSubmitting,
 }: CabangEditorDialogProps) {
@@ -832,6 +842,7 @@ export function CabangEditorDialog({
             dpdList={dpdList}
             dpcList={dpcList}
             masterProvinsi={masterProvinsi}
+            isSuperAdmin={isSuperAdmin}
             onSave={onSave}
             onCancel={() => onOpenChange(false)}
             isSubmitting={isSubmitting}

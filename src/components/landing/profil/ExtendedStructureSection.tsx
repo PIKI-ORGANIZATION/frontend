@@ -2,13 +2,13 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { usePengurus } from "@/features/pengurus/hooks/usePengurus";
+import { usePublicStruktur } from "@/features/pengurus/hooks/usePengurus";
 import { initialPengurusData } from "@/features/pengurus/data/dummyPengurusData";
 import { cn } from "@/lib/utils";
 import { Building2, GraduationCap } from "lucide-react";
 
 export function ExtendedStructureSection() {
-  const { items, isLoaded } = usePengurus();
+  const { items, isLoaded } = usePublicStruktur();
   const [activeTab, setActiveTab] = useState<"BIDANG" | "PENASEHAT">("BIDANG");
 
   const dewanBidang = useMemo(() => {

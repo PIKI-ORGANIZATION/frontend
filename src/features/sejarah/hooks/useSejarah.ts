@@ -21,6 +21,7 @@ export interface SejarahFilterParams {
   pageSize?: number;
   fixed?: "all";
   status?: HistoryStatus;
+  cabangUuid?: string;
   fallbackIfEmpty?: boolean;
   enabled?: boolean;
   /** Mode publik: tidak mengirim token Authorization dan hanya mengambil status PUBLISHED */
@@ -41,6 +42,7 @@ export function useSejarah(filters?: SejarahFilterParams) {
 
   const fixed = filters?.fixed;
   const status = filters?.status;
+  const cabangUuid = filters?.cabangUuid;
   const search = filters?.search;
   const currentPage = filters?.currentPage;
   const pageSize = filters?.pageSize;
@@ -58,6 +60,9 @@ export function useSejarah(filters?: SejarahFilterParams) {
     } else if (status) {
       p.append("status", status);
     }
+    if (cabangUuid && cabangUuid !== "ALL") {
+      p.append("cabangUuid", cabangUuid);
+    }
     if (search?.trim()) {
       p.append("search", search.trim());
     }
@@ -68,7 +73,7 @@ export function useSejarah(filters?: SejarahFilterParams) {
       p.append("pageSize", String(pageSize));
     }
     return p.toString();
-  }, [fixed, status, search, currentPage, pageSize, publicMode]);
+  }, [fixed, status, cabangUuid, search, currentPage, pageSize, publicMode]);
 
   // 1. Fetch Daftar Sejarah
   const {

@@ -39,6 +39,8 @@ interface HistoryEditorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event?: HistoryEvent | null;
+  canSelectCabang?: boolean;
+  cabangOptions?: { uuid: string; namaCabang: string }[];
   onSave: (data: HistoryEvent) => void | Promise<void>;
   onUploadPhoto?: (file: File) => Promise<string>;
 }
@@ -51,11 +53,15 @@ const FOOTAGE_PRESETS = [
 
 function HistoryForm({
   event,
+  canSelectCabang = false,
+  cabangOptions = [],
   onOpenChange,
   onSave,
   onUploadPhoto,
 }: {
   event?: HistoryEvent | null;
+  canSelectCabang?: boolean;
+  cabangOptions?: { uuid: string; namaCabang: string }[];
   onOpenChange: (open: boolean) => void;
   onSave: (data: HistoryEvent) => void | Promise<void>;
   onUploadPhoto?: (file: File) => Promise<string>;
@@ -74,6 +80,9 @@ function HistoryForm({
   const [order, setOrder] = useState<number>(event?.order || 1);
   const [status, setStatus] = useState<HistoryStatus>(
     event?.status || "DRAFT",
+  );
+  const [cabangUuid, setCabangUuid] = useState<string | null>(
+    event?.cabangUuid ?? null,
   );
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -172,6 +181,7 @@ function HistoryForm({
       keyFigure: keyFigure.trim() || undefined,
       order: Number(order) || 1,
       status,
+      ...(canSelectCabang ? { cabangUuid } : {}),
       createdAt: event?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -340,6 +350,36 @@ function HistoryForm({
         </div>
       </div>
 
+      {/* Wilayah / Cabang Pemilik (Khusus SuperAdmin DPP) */}
+      {canSelectCabang && (
+        <div>
+          <Label
+            htmlFor="hist-cabang"
+            className="text-xs md:text-sm font-medium mb-1.5 block"
+          >
+            Wilayah / Cabang Pemilik
+          </Label>
+          <Select
+            value={cabangUuid ?? "__PUSAT__"}
+            onValueChange={(val) =>
+              setCabangUuid(val === "__PUSAT__" ? null : val)
+            }
+          >
+            <SelectTrigger id="hist-cabang">
+              <SelectValue placeholder="Pilih wilayah pemilik..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__PUSAT__">Pusat / Nasional (DPP)</SelectItem>
+              {cabangOptions.map((c) => (
+                <SelectItem key={c.uuid} value={c.uuid}>
+                  {c.namaCabang}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* 6. Foto Dokumentasi / Footage (Bisa via Link & Upload, Layout Clean) */}
       <div className="space-y-2">
         <Label className="text-xs md:text-sm font-medium flex items-center gap-1.5">
@@ -458,6 +498,8 @@ export function HistoryEditorDialog({
   open,
   onOpenChange,
   event,
+  canSelectCabang = false,
+  cabangOptions = [],
   onSave,
   onUploadPhoto,
 }: HistoryEditorDialogProps) {
@@ -479,6 +521,8 @@ export function HistoryEditorDialog({
         <HistoryForm
           key={event ? event.id : "new-event"}
           event={event}
+          canSelectCabang={canSelectCabang}
+          cabangOptions={cabangOptions}
           onOpenChange={onOpenChange}
           onSave={onSave}
           onUploadPhoto={onUploadPhoto}

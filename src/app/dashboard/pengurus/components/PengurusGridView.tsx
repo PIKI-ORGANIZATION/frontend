@@ -19,17 +19,19 @@ interface PengurusGridViewProps {
   items: PengurusItem[];
   isLoaded: boolean;
   canManage?: boolean;
-  activeId?: string | null;
+  canManageItem?: (item: PengurusItem) => boolean;
   onSelect: (item: PengurusItem) => void;
   onEdit: (item: PengurusItem, e: React.MouseEvent) => void;
   onDelete: (id: string, e: React.MouseEvent) => void;
-  onToggleStatus: (id: string, e: React.MouseEvent) => void;
+  onToggleStatus?: (id: string, e: React.MouseEvent) => void;
+  activeId?: string | null;
 }
 
 export function PengurusGridView({
   items,
   isLoaded,
   canManage = true,
+  canManageItem,
   activeId,
   onSelect,
   onEdit,
@@ -82,9 +84,11 @@ export function PengurusGridView({
     <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border/50 bg-card sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => {
         const isInspected = activeId === item.id;
+        const itemCanManage =
+          canManage && (canManageItem ? canManageItem(item) : true);
         const fallbackText =
           item.deskripsi ||
-          `Pengurus resmi Dewan Pimpinan Pusat Persatuan Inteligensia Kristen Indonesia (PIKI) masa bakti ${item.periode}.`;
+          `Pengurus resmi Persatuan Inteligensia Kristen Indonesia (PIKI) masa bakti ${item.periode}.`;
 
         return (
           <div
@@ -135,43 +139,47 @@ export function PengurusGridView({
             <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
               <button
                 type="button"
-                disabled={!canManage}
+                disabled={!itemCanManage || !onToggleStatus}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (canManage) onToggleStatus(item.id, e);
+                  if (itemCanManage && onToggleStatus) onToggleStatus(item.id, e);
                 }}
                 title={
-                  canManage
-                    ? "Klik untuk mengubah status tayang"
-                    : "Mode baca saja"
+                  item.status === "PUBLISHED"
+                    ? "Periode aktif (Tayang)"
+                    : "Periode nonaktif (Draf)"
                 }
-                className={cn(
-                  "inline-flex items-center gap-1 group/status",
-                  canManage ? "cursor-pointer" : "cursor-default",
-                )}
+                className="inline-flex items-center gap-1.5 text-left group/status"
               >
                 <Badge
                   variant="outline"
                   className={cn(
                     "text-[10px] py-0.5 transition-colors",
-                    canManage ? "cursor-pointer" : "cursor-default",
+                    itemCanManage && onToggleStatus
+                      ? "cursor-pointer"
+                      : "cursor-default",
                     item.status === "PUBLISHED"
-                      ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20 group-hover/status:bg-emerald-500/20"
-                      : "text-amber-600 bg-amber-500/10 border-amber-500/20 group-hover/status:bg-amber-500/20",
+                      ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20"
+                      : "text-amber-600 bg-amber-500/10 border-amber-500/20",
                   )}
                 >
                   {item.status === "PUBLISHED" ? (
                     <>
                       <Eye className="w-3 h-3 mr-1" />
-                      Tayang
+                      Periode Aktif
                     </>
                   ) : (
                     <>
                       <EyeOff className="w-3 h-3 mr-1" />
-                      Draf
+                      Nonaktif
                     </>
                   )}
                 </Badge>
+                {item.cabangNama && (
+                  <Badge variant="secondary" className="text-[10px] font-normal max-w-[130px] truncate">
+                    {item.cabangNama}
+                  </Badge>
+                )}
               </button>
 
               <div className="flex items-center gap-1">
@@ -182,17 +190,19 @@ export function PengurusGridView({
                     e.stopPropagation();
                     onSelect(item);
                   }}
+                  aria-label={`Lihat detail ${item.nama}`}
                   title="Buka panel pratinjau & detail"
                   className="h-7 w-7 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer"
                 >
                   <Eye className="w-3.5 h-3.5" />
                 </Button>
-                {canManage && (
+                {itemCanManage && (
                   <>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={(e) => onEdit(item, e)}
+                      aria-label={`Ubah data ${item.nama}`}
                       title="Ubah data pengurus"
                       className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
                     >
@@ -202,6 +212,7 @@ export function PengurusGridView({
                       variant="ghost"
                       size="sm"
                       onClick={(e) => onDelete(item.id, e)}
+                      aria-label={`Hapus ${item.nama}`}
                       title="Hapus pengurus"
                       className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                     >

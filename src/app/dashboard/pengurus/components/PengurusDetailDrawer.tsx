@@ -25,10 +25,11 @@ interface PengurusDetailDrawerProps {
   item: PengurusItem | null;
   allItems: PengurusItem[];
   canManage?: boolean;
+  canManageItem?: (item: PengurusItem) => boolean;
   onClose: () => void;
   onEdit: (item: PengurusItem) => void;
   onDelete: (id: string) => void;
-  onToggleStatus: (id: string) => void;
+  onToggleStatus?: (id: string) => void;
   onNavigate?: (item: PengurusItem) => void;
 }
 
@@ -38,6 +39,7 @@ export function PengurusDetailDrawer({
   item,
   allItems,
   canManage = true,
+  canManageItem,
   onClose,
   onEdit,
   onDelete,
@@ -471,7 +473,7 @@ export function PengurusDetailDrawer({
         </div>
 
         {/* 3. Footer Action Bar */}
-        {canManage && (
+        {canManage && (canManageItem ? canManageItem(activeMember) : true) && (
           <div className="p-4 sm:p-5 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-between gap-2 mt-auto shrink-0">
             <Button
               variant="ghost"
@@ -487,24 +489,26 @@ export function PengurusDetailDrawer({
             </Button>
 
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onToggleStatus(activeMember.id)}
-                className="cursor-pointer"
-              >
-                {activeMember.status === "PUBLISHED" ? (
-                  <>
-                    <EyeOff className="w-3.5 h-3.5 mr-1.5" />
-                    Jadikan Draf
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-3.5 h-3.5 mr-1.5" />
-                    Tayangkan
-                  </>
-                )}
-              </Button>
+              {onToggleStatus && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onToggleStatus(activeMember.id)}
+                  className="cursor-pointer"
+                >
+                  {activeMember.status === "PUBLISHED" ? (
+                    <>
+                      <EyeOff className="w-3.5 h-3.5 mr-1.5" />
+                      Jadikan Draf
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-3.5 h-3.5 mr-1.5" />
+                      Tayangkan
+                    </>
+                  )}
+                </Button>
+              )}
 
               <Button
                 size="sm"

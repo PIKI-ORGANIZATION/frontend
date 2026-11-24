@@ -50,6 +50,7 @@ import {
   useTautkanCabang,
 } from "@/features/wilayah/hooks/useWilayah";
 import { CabangEditorDialog } from "./CabangEditorDialog";
+import { WilayahAccess } from "@/lib/rbac";
 
 interface CabangTabProps {
   cabangList: CabangItem[];
@@ -57,6 +58,8 @@ interface CabangTabProps {
   dpcList: DpcItem[];
   masterProvinsi: MasterProvinsi[];
   isLoading: boolean;
+  access?: WilayahAccess;
+  ownCabangId?: string | null;
 }
 
 const TINGKAT_ORGANISASI_OPTIONS = [
@@ -71,7 +74,13 @@ export function CabangTab({
   dpcList,
   masterProvinsi,
   isLoading,
+  access,
+  ownCabangId = null,
 }: CabangTabProps) {
+  const canCreateCabang = access?.canCreateCabang ?? true;
+  const canDeleteCabang = access?.canDeleteCabang ?? true;
+  const canManageCabangLink = access?.canManageCabangLink ?? true;
+  const canEditSelfCabang = access?.canEditSelfCabang ?? true;
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -261,13 +270,15 @@ export function CabangTab({
           />
         </div>
 
-        <Button
-          onClick={handleOpenAdd}
-          className="h-10 px-4 text-sm font-medium gap-2 shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Tambah Profil Cabang</span>
-        </Button>
+        {canCreateCabang && (
+          <Button
+            onClick={handleOpenAdd}
+            className="h-10 px-4 text-sm font-medium gap-2 shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tambah Profil Cabang</span>
+          </Button>
+        )}
       </div>
 
       {/* 2. Data Table */}
@@ -365,33 +376,41 @@ export function CabangTab({
                     </TableCell>
                     <TableCell className="py-4 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={() => handleOpenManageLink(item)}
-                          title="Atur Tautan Wilayah"
-                        >
-                          <Link2 className="w-4 h-4 text-primary" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleOpenEdit(item)}
-                          title="Edit Profil Cabang"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        {item.statusCabang === "ACTIVE" && (
+                        {canManageCabangLink && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => handleOpenManageLink(item)}
+                            aria-label={`Atur Tautan Wilayah ${item.namaCabang}`}
+                            title="Atur Tautan Wilayah"
+                          >
+                            <Link2 className="w-4 h-4 text-primary" />
+                          </Button>
+                        )}
+                        {(canManageCabangLink ||
+                          (canEditSelfCabang && item.uuid === ownCabangId)) && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleOpenEdit(item)}
+                            aria-label={`Edit Profil Cabang ${item.namaCabang}`}
+                            title="Edit Profil Cabang"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDeleteCabang && item.statusCabang === "ACTIVE" && (
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive hover:bg-destructive/10"
                             onClick={() => handleOpenDelete(item)}
+                            aria-label={`Nonaktifkan Profil Cabang ${item.namaCabang}`}
                             title="Nonaktifkan Profil Cabang"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -426,6 +445,7 @@ export function CabangTab({
         dpdList={dpdList}
         dpcList={dpcList}
         masterProvinsi={masterProvinsi}
+        isSuperAdmin={canManageCabangLink}
         onSave={handleSaveEditor}
         isSubmitting={createCabangMutation.isPending || updateCabangMutation.isPending}
       />

@@ -8,6 +8,7 @@ import { StructureSection } from "@/components/landing/profil/StructureSection";
 import { ProgramSection } from "@/components/landing/profil/ProgramSection";
 import { StatistikSection } from "@/components/landing/profil/StatistikSection";
 import { GallerySection } from "@/components/landing/profil/GallerySection";
+import { FaqSection } from "@/components/landing/profil/FaqSection";
 
 export const metadata: Metadata = {
   title: "Beranda | PIKI - Persatuan Intelegensia Kristen Indonesia",
@@ -48,6 +49,7 @@ export default function Home() {
         <ProgramSection />
         <NewsSection />
         <GallerySection />
+        <FaqSection />
       </div>
     </main>
   );
