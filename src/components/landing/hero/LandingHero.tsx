@@ -3,12 +3,14 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { HeroCardSwap } from "@/components/landing/hero/HeroCardSwap";
+import { usePublicLandingSettings } from "@/features/page-setting/hooks/usePageSettings";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function LandingHero() {
   const textRef = useRef<HTMLDivElement>(null);
+  const { hero } = usePublicLandingSettings();
 
   useEffect(() => {
     if (!textRef.current) return;
@@ -40,36 +42,35 @@ export function LandingHero() {
       >
         {/* Eyebrow */}
         <p className="hero-animate text-[10px] sm:text-[11px] font-semibold tracking-[0.22em] uppercase text-muted-foreground">
-          Persatuan Intelegensia Kristen Indonesia
+          {hero.eyebrow}
         </p>
 
         {/* Heading */}
         <h1 className="hero-animate text-4xl sm:text-5xl md:text-6xl lg:text-[4.5rem] font-bold tracking-tight leading-[1.1] lg:leading-[1.05]">
-          Sistem Informasi
+          {hero.title}
           <br />
-          <span className="text-primary">KTA Digital</span>
+          <span className="text-primary">{hero.highlight}</span>
         </h1>
 
         {/* Sub */}
         <p className="hero-animate text-sm sm:text-base text-muted-foreground max-w-xs sm:max-w-md lg:max-w-sm leading-relaxed mx-auto lg:mx-0">
-          Platform keanggotaan terpadu — pendataan, verifikasi, dan administrasi
-          organisasi secara digital.
+          {hero.subtitle}
         </p>
 
         {/* CTAs */}
         <div className="hero-animate flex items-center justify-center lg:justify-start gap-3 flex-wrap">
-          <Link href="/register">
+          <Link href={hero.primaryCtaUrl || "/register"}>
             <Button className="gap-2 px-5 py-4 sm:px-6 sm:py-5 rounded-lg text-xs sm:text-sm font-medium">
-              Daftar Sekarang
+              {hero.primaryCtaText}
               <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.5} />
             </Button>
           </Link>
-          <Link href="/organisasi">
+          <Link href={hero.secondaryCtaUrl || "/organisasi"}>
             <Button
               variant="outline"
               className="px-5 py-4 sm:px-6 sm:py-5 rounded-lg text-xs sm:text-sm font-medium"
             >
-              Pelajari Lebih Lanjut
+              {hero.secondaryCtaText}
             </Button>
           </Link>
         </div>

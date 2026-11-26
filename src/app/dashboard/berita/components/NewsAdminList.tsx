@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Archive, Eye, Loader2, Pencil, Plus } from "lucide-react";
+import { Archive, Eye, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  SkeletonArticleList,
+  SkeletonPageHeader,
+} from "@/components/ui/skeleton-presets";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -87,9 +91,10 @@ export function NewsAdminList() {
 
   if (!scope) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-      </div>
+      <section className="mx-auto flex max-w-7xl flex-col gap-6 py-4">
+        <SkeletonPageHeader />
+        <SkeletonArticleList count={5} label="Memuat ruang redaksi berita…" />
+      </section>
     );
   }
 
@@ -232,9 +237,7 @@ export function NewsAdminList() {
       </div>
 
       {query.isLoading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-7 w-7 animate-spin text-primary" />
-        </div>
+        <SkeletonArticleList count={5} label="Memuat daftar berita…" />
       ) : query.isError ? (
         <p className="rounded-xl bg-red-50 p-6 text-sm text-red-600">
           {(query.error as Error).message}

@@ -8,6 +8,7 @@ import { HistoryPreviewCard } from "./HistoryPreviewCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SkeletonTimelineList } from "@/components/ui/skeleton-presets";
 import {
   Select,
   SelectContent,
@@ -319,17 +320,7 @@ export function HistoryTab({
           </div>
 
           {isLoading && effectiveEvents.length === 0 ? (
-            <div className="p-6 space-y-4">
-              {Array.from({ length: 4 }).map((_, idx) => (
-                <div key={idx} className="flex items-center gap-4 animate-pulse">
-                  <div className="w-12 h-12 rounded bg-muted/60 shrink-0" />
-                  <div className="space-y-2 flex-1">
-                    <div className="h-4 bg-muted/60 rounded w-1/4" />
-                    <div className="h-3 bg-muted/40 rounded w-3/4" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <SkeletonTimelineList rows={4} label="Memuat peristiwa sejarah…" />
           ) : filteredEvents.length === 0 ? (
             <div className="p-12 text-center text-xs text-muted-foreground space-y-2">
               <Clock className="w-8 h-8 text-muted-foreground/40 mx-auto" />

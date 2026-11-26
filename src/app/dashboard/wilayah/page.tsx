@@ -7,10 +7,10 @@ import {
   Network,
   Share2,
   ShieldAlert,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { SkeletonTablePage } from "@/components/ui/skeleton-presets";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { resolveWilayahAccess, WilayahScope } from "@/lib/rbac";
 import {
@@ -141,10 +141,14 @@ export default function WilayahDanCabangPage() {
   // 0. Hydration Loading State
   if (!isReady) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-        <span className="text-sm">Memuat cakupan wilayah akun...</span>
-      </div>
+      <SkeletonTablePage
+        showTabs
+        tabCount={3}
+        columns={5}
+        rows={6}
+        className="px-4 sm:px-6"
+        label="Memuat cakupan wilayah akun…"
+      />
     );
   }
 

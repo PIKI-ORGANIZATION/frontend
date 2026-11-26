@@ -11,10 +11,10 @@ import {
   User,
   ShieldCheck,
   Building,
-  Loader2,
   Filter,
   Info,
 } from "lucide-react";
+import { SkeletonTableRows } from "@/components/ui/skeleton-presets";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -260,14 +260,7 @@ export function DpcTab({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={colSpan} className="h-52 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    <span className="text-sm">Memuat data DPC...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <SkeletonTableRows rows={6} columns={colSpan} />
             ) : dpcList.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={colSpan} className="h-52 text-center text-muted-foreground text-sm">

@@ -13,11 +13,14 @@ import {
   CheckCircle2,
   XCircle,
   ShieldAlert,
-  Loader2,
   UserCheck,
   Shield,
   Filter,
 } from "lucide-react";
+import {
+  SkeletonTablePage,
+  SkeletonTableRows,
+} from "@/components/ui/skeleton-presets";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,10 +179,14 @@ export default function ManajemenAkunPage() {
   // Loading hydration state
   if (!isReady) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-        <span className="text-sm">Memeriksa hak akses manajemen akun...</span>
-      </div>
+      <SkeletonTablePage
+        showTabs
+        tabCount={3}
+        columns={5}
+        rows={6}
+        className="px-4 sm:px-6"
+        label="Memeriksa hak akses manajemen akun…"
+      />
     );
   }
 
@@ -362,14 +369,7 @@ export default function ManajemenAkunPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-52 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    <span className="text-sm">Memuat daftar akun...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <SkeletonTableRows rows={6} columns={5} />
             ) : filteredAkunList.length === 0 ? (
               <TableRow>
                 <TableCell

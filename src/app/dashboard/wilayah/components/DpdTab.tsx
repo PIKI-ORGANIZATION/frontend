@@ -11,9 +11,9 @@ import {
   User,
   ShieldCheck,
   Building2,
-  Loader2,
   Info,
 } from "lucide-react";
+import { SkeletonTableRows } from "@/components/ui/skeleton-presets";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -201,14 +201,7 @@ export function DpdTab({ masterProvinsi, cabangList, access }: DpdTabProps) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={colSpan} className="h-52 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    <span className="text-sm">Memuat data DPD...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <SkeletonTableRows rows={6} columns={colSpan} />
             ) : dpdList.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={colSpan} className="h-52 text-center text-muted-foreground text-sm">

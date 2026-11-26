@@ -1,100 +1,92 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  initialHeroContent,
-  initialAboutVisionContent,
-} from "./data/dummyLandingData";
-import { HeroContent, AboutVisionContent } from "./types";
 import { HistoryTab } from "./components/HistoryTab";
 import { HeroSectionTab } from "./components/HeroSectionTab";
 import { AboutVisionTab } from "./components/AboutVisionTab";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { buttonVariants } from "@/components/ui/button";
 import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
+import {
+  SkeletonFormSections,
+  SkeletonFormWithPreview,
+  SkeletonPageHeader,
+  SkeletonTimelineList,
+} from "@/components/ui/skeleton-presets";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { resolveLandingCmsAccess } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import {
-  Globe,
   ExternalLink,
   History,
   Sparkles,
   Compass,
-  RotateCcw,
-  Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
-
 import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
+import { useAdminLandingSettings } from "@/features/page-setting/hooks/usePageSettings";
+import { LANDING_SETTING_KEYS } from "@/features/page-setting/types";
 
-const STORAGE_KEYS = {
-  HERO: "piki_cms_landing_hero_v1",
-  ABOUT_VISION: "piki_cms_landing_about_vision_v1",
-};
+type LandingTabKey = "history" | "hero" | "about";
 
 export default function CmsLandingPage() {
   const { user, isReady } = useCurrentUser();
   const access = useMemo(() => resolveLandingCmsAccess(user), [user]);
-  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<LandingTabKey>("history");
 
   const { events: historyEvents } = useSejarah({
     fixed: "all",
     enabled: isReady && access.canView,
   });
 
-  const [heroContent, setHeroContent] = useState<HeroContent>(() => {
-    if (typeof window === "undefined") return initialHeroContent;
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.HERO);
-      return saved ? JSON.parse(saved) : initialHeroContent;
-    } catch {
-      return initialHeroContent;
-    }
-  });
+  const {
+    hero: heroContent,
+    aboutVision: aboutVisionContent,
+    isLoading: isLoadingSettings,
+    upsertSetting,
+  } = useAdminLandingSettings(isReady && access.canManagePageSettings);
 
-  const [aboutVisionContent, setAboutVisionContent] =
-    useState<AboutVisionContent>(() => {
-      if (typeof window === "undefined") return initialAboutVisionContent;
-      try {
-        const saved = localStorage.getItem(STORAGE_KEYS.ABOUT_VISION);
-        return saved ? JSON.parse(saved) : initialAboutVisionContent;
-      } catch {
-        return initialAboutVisionContent;
-      }
-    });
+  const tabs = useMemo(() => {
+    const list: Array<{
+      id: LandingTabKey;
+      label: string;
+      icon: React.ElementType;
+      count?: number;
+    }> = [
+      {
+        id: "history",
+        label: "Linimasa Sejarah",
+        icon: History,
+        count: historyEvents.length,
+      },
+    ];
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.HERO, JSON.stringify(heroContent));
-    } catch {}
-  }, [heroContent]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEYS.ABOUT_VISION,
-        JSON.stringify(aboutVisionContent),
+    if (access.canManagePageSettings) {
+      list.push(
+        {
+          id: "hero",
+          label: "Hero Section & CTA",
+          icon: Sparkles,
+        },
+        {
+          id: "about",
+          label: "Tentang & Visi-Misi",
+          icon: Compass,
+        },
       );
-    } catch {}
-  }, [aboutVisionContent]);
+    }
 
-  const handleResetAll = () => {
-    setHeroContent(initialHeroContent);
-    setAboutVisionContent(initialAboutVisionContent);
-    localStorage.removeItem(STORAGE_KEYS.HERO);
-    localStorage.removeItem(STORAGE_KEYS.ABOUT_VISION);
-    setShowResetDialog(false);
-    toast.success("Data Hero dan Visi-Misi dikembalikan ke default.");
-  };
+    return list;
+  }, [access.canManagePageSettings, historyEvents.length]);
+
+  const currentTab = tabs.some((t) => t.id === activeTab) ? activeTab : "history";
 
   if (!isReady) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="size-7 animate-spin text-primary" />
+      <div className="mx-auto max-w-7xl space-y-6 py-4 sm:py-6 lg:py-8">
+        <SkeletonPageHeader showTabs tabCount={3} />
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <SkeletonTimelineList rows={4} label="Memuat CMS Landing Page…" />
+        </div>
       </div>
     );
   }
@@ -103,7 +95,7 @@ export default function CmsLandingPage() {
     return (
       <AccessDeniedState
         title="Akses CMS Landing Page Ditolak"
-        description="Akun Anda tidak memiliki izin SEJARAH_MANAGE atau APP_SETTING_MANAGE untuk mengakses halaman manajemen konten beranda."
+        description="Akun Anda tidak memiliki izin SEJARAH_MANAGE atau MANAGE_PAGE_SETTINGS untuk mengakses halaman manajemen konten beranda."
       />
     );
   }
@@ -113,35 +105,16 @@ export default function CmsLandingPage() {
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/70 pb-5">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Globe className="h-4 w-4" />
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              CMS Landing Page
-            </h1>
-          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            CMS Landing Page
+          </h1>
           <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
             Kelola teks hero banner, profil pengantar, visi misi, dan linimasa
             sejarah yang tampil pada beranda publik PIKI.
           </p>
         </div>
 
-        {/* Header Action Buttons */}
         <div className="flex items-center gap-2 self-end sm:self-center">
-          {(access.canManagePageSettings || access.canManageSejarah) && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowResetDialog(true)}
-              title="Kembalikan semua form & linimasa ke data awal"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset Default
-            </Button>
-          )}
-
           <Link
             href="/"
             target="_blank"
@@ -154,81 +127,104 @@ export default function CmsLandingPage() {
         </div>
       </div>
 
-      {/* 2. Navigation Tabs */}
-      <Tabs defaultValue="history" className="space-y-6">
-        <TabsList className="bg-muted/50 p-1 rounded-lg border border-border/70 h-auto flex flex-wrap gap-1">
-          <TabsTrigger
-            value="history"
-            className="rounded-md text-xs font-medium px-3.5 py-1.5 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Linimasa Sejarah</span>
-            <Badge
-              variant="secondary"
-              className="text-[10px] rounded-full px-1.5 py-0 font-mono font-semibold ml-1 bg-muted"
-            >
-              {historyEvents.length}
-            </Badge>
-          </TabsTrigger>
-
-          <TabsTrigger
-            value="hero"
-            className="rounded-md text-xs font-medium px-3.5 py-1.5 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Hero Section & CTA</span>
-          </TabsTrigger>
-
-          <TabsTrigger
-            value="about"
-            className="rounded-md text-xs font-medium px-3.5 py-1.5 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs"
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span>Tentang & Visi-Misi</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Tab 1: Linimasa Sejarah */}
-        <TabsContent
-          value="history"
-          className="focus-visible:outline-none space-y-4"
+      {/* 2. Navigation Tabs (Segmented Control Track selaras dengan CMS Galeri & Wilayah) */}
+      <div className="flex items-center overflow-x-auto pb-1 max-w-full">
+        <div
+          role="tablist"
+          aria-label="Bagian CMS Landing Page"
+          className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
         >
+          {tabs.map((tab) => {
+            const isSelected = currentTab === tab.id;
+            const Icon = tab.icon;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer select-none",
+                  "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
+                  isSelected
+                    ? "bg-background text-foreground font-medium shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-normal border border-transparent",
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "size-3.5 shrink-0",
+                    isSelected ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
+                <span>{tab.label}</span>
+                {typeof tab.count === "number" && (
+                  <span
+                    className={cn(
+                      "ml-0.5 px-1.5 py-0.5 shrink-0 rounded-full text-[10px] font-mono transition-colors",
+                      isSelected
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Active Tab Content */}
+      {currentTab === "history" && (
+        <div role="tabpanel" className="space-y-4">
           <HistoryTab
             canManage={access.canManageSejarah}
             enabled={isReady && access.canView}
           />
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Tab 2: Hero Section */}
-        <TabsContent
-          value="hero"
-          className="focus-visible:outline-none space-y-4"
-        >
-          <HeroSectionTab hero={heroContent} setHero={setHeroContent} />
-        </TabsContent>
+      {currentTab === "hero" && access.canManagePageSettings && (
+        <div role="tabpanel" className="space-y-4">
+          {isLoadingSettings ? (
+            <SkeletonFormWithPreview label="Memuat pengaturan Hero Section…" />
+          ) : (
+            <HeroSectionTab
+              hero={heroContent}
+              isSaving={upsertSetting.isPending}
+              onSave={async (updated) => {
+                await upsertSetting.mutateAsync({
+                  key: LANDING_SETTING_KEYS.HERO,
+                  valueObj: updated,
+                });
+              }}
+            />
+          )}
+        </div>
+      )}
 
-        {/* Tab 3: Tentang & Visi-Misi */}
-        <TabsContent
-          value="about"
-          className="focus-visible:outline-none space-y-4"
-        >
-          <AboutVisionTab
-            data={aboutVisionContent}
-            setData={setAboutVisionContent}
-          />
-        </TabsContent>
-      </Tabs>
-
-      <ConfirmDialog
-        open={showResetDialog}
-        onOpenChange={setShowResetDialog}
-        title="Kembalikan Pengaturan Default?"
-        description="Form Hero Section dan Visi-Misi akan dikembalikan ke konten bawaan default. Data Linimasa Sejarah di server tidak akan terhapus."
-        confirmText="Ya, Reset Default"
-        cancelText="Batal"
-        variant="destructive"
-        onConfirm={handleResetAll}
-      />
+      {currentTab === "about" && access.canManagePageSettings && (
+        <div role="tabpanel" className="space-y-4">
+          {isLoadingSettings ? (
+            <SkeletonFormSections label="Memuat pengaturan Tentang & Visi-Misi…" />
+          ) : (
+            <AboutVisionTab
+              data={aboutVisionContent}
+              isSaving={upsertSetting.isPending}
+              onSave={async (updated) => {
+                await upsertSetting.mutateAsync({
+                  key: LANDING_SETTING_KEYS.ABOUT_VISION,
+                  valueObj: updated,
+                });
+              }}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

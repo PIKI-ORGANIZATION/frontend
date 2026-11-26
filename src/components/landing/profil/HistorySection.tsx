@@ -7,10 +7,13 @@ import Image from "next/image";
 import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
 import { getSafeImageSrc } from "@/features/galeri/types";
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
 export function HistorySection() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef<HTMLSpanElement>(null);
 
   // Ambil data sejarah aktif dari API backend dengan fallback otomatis
   const { events } = useSejarah({ fallbackIfEmpty: true, publicMode: true });
@@ -18,121 +21,127 @@ export function HistorySection() {
   useEffect(() => {
     if (events.length === 0) return;
     gsap.registerPlugin(ScrollTrigger);
-    if (!containerRef.current || !wrapperRef.current) return;
+    const container = containerRef.current;
+    const wrapper = wrapperRef.current;
+    if (!container || !wrapper) return;
 
     const mm = gsap.matchMedia();
 
-    mm.add("(min-width: 768px)", () => {
-      const wrapper = wrapperRef.current;
-      if (!wrapper) return;
+    // Desktop: horizontal scroll ter-pin. Hanya properti compositor (transform & opacity).
+    // Pengguna dengan prefers-reduced-motion mendapat scroller horizontal native tanpa pin.
+    mm.add(
+      "(min-width: 768px) and (prefers-reduced-motion: no-preference)",
+      () => {
+        const getDistance = () =>
+          Math.max(0, wrapper.scrollWidth - window.innerWidth);
 
-      const totalWidth = wrapper.scrollWidth - window.innerWidth;
+        const setProgress = progressRef.current
+          ? (gsap.quickSetter(progressRef.current, "scaleX") as (
+              v: number,
+            ) => void)
+          : null;
 
-      // Horizontal Scroll Tween
-      const scrollTween = gsap.to(wrapper, {
-        x: -totalWidth,
-        ease: "none",
-        scrollTrigger: {
-          trigger: containerRef.current,
-          pin: true,
-          scrub: 1,
-          end: () => "+=" + totalWidth,
-        },
-      });
+        let lastIndex = -1;
+        const total = events.length;
 
-      // Progress Bar Tween
-      if (progressRef.current) {
-        gsap.fromTo(
-          progressRef.current,
-          { scaleX: 0 },
-          {
-            scaleX: 1,
-            ease: "none",
-            transformOrigin: "left center",
-            scrollTrigger: {
-              trigger: containerRef.current,
-              start: "top top",
-              end: () => "+=" + totalWidth,
-              scrub: 1,
-            },
-          },
-        );
-      }
-
-      // Grayscale/Monochrome Effect for Images
-      const cards = gsap.utils.toArray(".history-card") as HTMLElement[];
-      cards.forEach((card) => {
-        const img = card.querySelector(".history-img");
-
-        // Starts grayscale, turns color smoothly as it approaches center
-        gsap.fromTo(
-          img,
-          { filter: "grayscale(100%)" },
-          {
-            filter: "grayscale(0%)",
-            ease: "none",
-            scrollTrigger: {
-              trigger: card,
-              containerAnimation: scrollTween,
-              start: "left 85%",
-              end: "center 55%",
-              scrub: true,
-            },
-          },
-        );
-
-        // Stays color in the middle, then turns back to grayscale smoothly as it leaves
-        gsap.to(img, {
-          filter: "grayscale(100%)",
+        const scrollTween = gsap.to(wrapper, {
+          x: () => -getDistance(),
           ease: "none",
+          force3D: true,
           scrollTrigger: {
-            trigger: card,
-            containerAnimation: scrollTween,
-            start: "center 45%",
-            end: "right 15%",
-            scrub: true,
+            trigger: container,
+            pin: true,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+            scrub: 0.8,
+            start: "top top",
+            end: () => "+=" + getDistance(),
+            onUpdate: () => {
+              // Ikuti tween yang sudah di-smooth agar bar & kartu selalu sinkron
+              const p = scrollTween.progress();
+              setProgress?.(p);
+
+              const index = Math.min(total - 1, Math.round(p * (total - 1)));
+              if (index !== lastIndex && counterRef.current) {
+                lastIndex = index;
+                counterRef.current.textContent = `${pad(index + 1)} / ${pad(total)}`;
+              }
+            },
           },
         });
-      });
-    });
 
-    // Fallback for mobile (Native horizontal scroll)
-    mm.add("(max-width: 767px)", () => {
-      const cards = gsap.utils.toArray(".history-card") as HTMLElement[];
-      cards.forEach((card) => {
-        const img = card.querySelector(".history-img");
+        const cards = gsap.utils.toArray<HTMLElement>(".history-card");
+        cards.forEach((card) => {
+          const media = card.querySelector<HTMLElement>(".history-media");
+          const year = card.querySelector<HTMLElement>(".history-year");
 
-        gsap.fromTo(
-          img,
-          { filter: "grayscale(100%)" },
-          {
-            filter: "grayscale(0%)",
-            ease: "none",
-            scrollTrigger: {
-              trigger: card,
-              scroller: ".no-scrollbar",
-              horizontal: true,
-              start: "left 85%",
-              end: "center 55%",
-              scrub: true,
-            },
-          },
-        );
+          // Fokus kartu: membesar & menyala saat di tengah, meredup saat menjauh
+          gsap
+            .timeline({
+              defaults: { ease: "none" },
+              scrollTrigger: {
+                trigger: card,
+                containerAnimation: scrollTween,
+                start: "left right",
+                end: "right left",
+                scrub: true,
+              },
+            })
+            .fromTo(
+              card,
+              { opacity: 0.35, scale: 0.94 },
+              { opacity: 1, scale: 1, ease: "power1.out", duration: 0.4 },
+            )
+            .to(card, { opacity: 1, scale: 1, duration: 0.2 })
+            .to(card, {
+              opacity: 0.35,
+              scale: 0.94,
+              ease: "power1.in",
+              duration: 0.4,
+            });
 
-        gsap.to(img, {
-          filter: "grayscale(100%)",
-          ease: "none",
-          scrollTrigger: {
-            trigger: card,
-            scroller: ".no-scrollbar",
-            horizontal: true,
-            start: "center 45%",
-            end: "right 15%",
-            scrub: true,
-          },
+          // Parallax foto: bergerak lebih lambat dari kartu (kedalaman)
+          if (media) {
+            gsap.fromTo(
+              media,
+              { xPercent: -8 },
+              {
+                xPercent: 8,
+                ease: "none",
+                force3D: true,
+                scrollTrigger: {
+                  trigger: card,
+                  containerAnimation: scrollTween,
+                  start: "left right",
+                  end: "right left",
+                  scrub: true,
+                },
+              },
+            );
+          }
+
+          // Parallax tahun: bergerak sedikit lebih cepat dari kartu
+          if (year) {
+            gsap.fromTo(
+              year,
+              { x: 60 },
+              {
+                x: -60,
+                ease: "none",
+                force3D: true,
+                scrollTrigger: {
+                  trigger: card,
+                  containerAnimation: scrollTween,
+                  start: "left right",
+                  end: "right left",
+                  scrub: true,
+                },
+              },
+            );
+          }
         });
-      });
-    });
+      },
+    );
 
     return () => mm.revert();
   }, [events]);
@@ -140,71 +149,84 @@ export function HistorySection() {
   return (
     <section
       ref={containerRef}
-      className="relative w-full h-screen bg-card border-y border-border/50 shadow-inner flex flex-col justify-start overflow-hidden"
+      aria-label="Sejarah PIKI"
+      className="relative flex h-screen w-full flex-col overflow-hidden border-y border-border/50 bg-background"
     >
-      {/* Absolute Header */}
-      <div className="absolute top-12 md:top-16 left-6 md:left-16 z-20 pointer-events-none">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-primary">
+      {/* Header */}
+      <div className="pointer-events-none absolute left-6 top-10 z-20 md:left-16 md:top-14">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary md:text-sm">
+          Perjalanan Organisasi
+        </p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-5xl">
           Sejarah PIKI
         </h2>
       </div>
 
-      {/* The scrolling container */}
-      <div className="w-full h-full overflow-x-auto md:overflow-hidden no-scrollbar snap-x snap-mandatory">
+      {/* Scroller */}
+      <div className="no-scrollbar h-full w-full snap-x snap-mandatory overflow-x-auto md:snap-none md:overflow-hidden md:motion-reduce:snap-x md:motion-reduce:overflow-x-auto">
         <div
           ref={wrapperRef}
-          className="flex gap-6 md:gap-24 w-max h-full items-start px-6 md:px-[10vw] pt-28 md:pt-48 pb-12 md:pb-0"
+          className="flex h-full w-max items-center gap-6 px-6 pb-16 pt-32 will-change-transform md:gap-20 md:px-[10vw] md:pb-24 md:pt-40"
         >
           {events.map((item, i) => (
-            <div
+            <article
               key={item.id || i}
-              className="history-card w-[85vw] md:w-[60vw] lg:w-[45vw] flex flex-col justify-start snap-center shrink-0 group"
+              className="history-card group flex w-[85vw] shrink-0 snap-center flex-col will-change-transform md:w-[52vw] lg:w-[40vw]"
             >
-              <div className="relative w-full aspect-[16/10] md:aspect-video rounded-2xl md:rounded-3xl overflow-hidden mb-6 md:mb-8 shadow-2xl">
-                <Image
-                  src={getSafeImageSrc(item.image, "/footage/image1.webp")}
-                  alt={item.title}
-                  fill
-                  className="history-img object-cover transition-transform duration-700 group-hover:scale-105 grayscale"
-                  sizes="(max-width: 768px) 85vw, (max-width: 1024px) 60vw, 45vw"
-                />
-
-                {/* Gradient overlay for text readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80" />
-
-                {/* Overlay Year Text */}
-                <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full flex items-end justify-between">
-                  <span className="text-5xl sm:text-6xl md:text-8xl font-black text-white/90 tracking-tighter drop-shadow-lg leading-none">
-                    {item.year}
-                  </span>
-
-                  {/* Decorative dot line */}
-                  <div className="hidden md:flex items-center gap-2 mb-4">
-                    <div className="w-16 h-px bg-white/50" />
-                    <div className="w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.8)]" />
-                  </div>
+              {/* Foto */}
+              <div className="relative mb-6 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-muted ring-1 ring-border/60 md:mb-8 md:rounded-3xl">
+                <div className="history-media absolute inset-y-0 -left-[10%] w-[120%] will-change-transform">
+                  <Image
+                    src={getSafeImageSrc(item.image, "/footage/image1.webp")}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 62vw, 48vw"
+                  />
                 </div>
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
               </div>
 
-              <div className="flex flex-col gap-2 md:gap-4 max-w-2xl px-2">
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
+              {/* Teks */}
+              <div className="flex flex-col gap-3 px-1 md:gap-4">
+                <div className="flex items-center gap-4">
+                  <span className="history-year text-5xl font-black leading-none tracking-tighter text-primary will-change-transform md:text-7xl">
+                    {item.year}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="h-px flex-1 bg-gradient-to-r from-border to-transparent"
+                  />
+                </div>
+                <h3 className="text-xl font-bold leading-snug text-foreground md:text-3xl">
                   {item.title}
                 </h3>
-                <p className="text-base md:text-xl text-muted-foreground leading-relaxed font-light">
+                <p className="line-clamp-4 max-w-xl text-sm font-light leading-relaxed text-muted-foreground md:text-lg">
                   {item.desc}
                 </p>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </div>
 
-      {/* Progress Indicator for Desktop */}
-      <div className="hidden md:block absolute bottom-12 left-16 right-16 h-[2.3px] bg-border z-10 overflow-hidden rounded-full">
-        <div
-          ref={progressRef}
-          className="w-full h-full bg-primary rounded-full scale-x-0"
-        />
+      {/* Progress (desktop) */}
+      <div
+        aria-hidden="true"
+        className="absolute bottom-10 left-16 right-16 z-10 hidden items-center gap-4 md:flex"
+      >
+        <span
+          ref={counterRef}
+          className="font-mono text-xs tabular-nums text-muted-foreground"
+        >
+          {`01 / ${pad(events.length)}`}
+        </span>
+        <div className="h-0.5 flex-1 overflow-hidden rounded-full bg-border">
+          <div
+            ref={progressRef}
+            className="h-full w-full origin-left scale-x-0 rounded-full bg-primary will-change-transform"
+          />
+        </div>
       </div>
     </section>
   );

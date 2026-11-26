@@ -15,40 +15,48 @@ import {
   Trash2,
   Save,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 
 interface AboutVisionTabProps {
   data: AboutVisionContent;
-  setData: React.Dispatch<React.SetStateAction<AboutVisionContent>>;
+  onSave: (updated: AboutVisionContent) => Promise<void>;
+  isSaving?: boolean;
 }
 
-export function AboutVisionTab({ data, setData }: AboutVisionTabProps) {
-  const [draft, setDraft] = useState<AboutVisionContent>({ ...data });
-  const [isDirty, setIsDirty] = useState(false);
+export function AboutVisionTab({
+  data,
+  onSave,
+  isSaving = false,
+}: AboutVisionTabProps) {
+  const [localDraft, setLocalDraft] = useState<AboutVisionContent | null>(null);
+  const isDirty = localDraft !== null;
+  const draft = localDraft ?? data;
 
   const handleChange = <K extends keyof AboutVisionContent>(
     key: K,
     value: AboutVisionContent[K]
   ) => {
-    setDraft((prev) => ({ ...prev, [key]: value }));
-    setIsDirty(true);
+    setLocalDraft((prev) => ({ ...(prev ?? data), [key]: value }));
   };
 
   const handleMissionChange = (index: number, text: string) => {
-    setDraft((prev) => {
-      const nextMissions = [...prev.missionPoints];
+    setLocalDraft((prev) => {
+      const base = prev ?? data;
+      const nextMissions = [...base.missionPoints];
       nextMissions[index] = text;
-      return { ...prev, missionPoints: nextMissions };
+      return { ...base, missionPoints: nextMissions };
     });
-    setIsDirty(true);
   };
 
   const handleAddMission = () => {
-    setDraft((prev) => ({
-      ...prev,
-      missionPoints: [...prev.missionPoints, ""],
-    }));
-    setIsDirty(true);
+    setLocalDraft((prev) => {
+      const base = prev ?? data;
+      return {
+        ...base,
+        missionPoints: [...base.missionPoints, ""],
+      };
+    });
   };
 
   const handleRemoveMission = (index: number) => {
@@ -56,14 +64,16 @@ export function AboutVisionTab({ data, setData }: AboutVisionTabProps) {
       toast.error("Minimal harus ada satu butir misi organisasi.");
       return;
     }
-    setDraft((prev) => ({
-      ...prev,
-      missionPoints: prev.missionPoints.filter((_, i) => i !== index),
-    }));
-    setIsDirty(true);
+    setLocalDraft((prev) => {
+      const base = prev ?? data;
+      return {
+        ...base,
+        missionPoints: base.missionPoints.filter((_, i) => i !== index),
+      };
+    });
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!draft.aboutDescription.trim() || !draft.visionText.trim()) {
@@ -86,15 +96,13 @@ export function AboutVisionTab({ data, setData }: AboutVisionTabProps) {
       updatedAt: new Date().toISOString(),
     };
 
-    setData(updated);
-    setDraft(updated);
-    setIsDirty(false);
-    toast.success("Konten Profil, Visi, dan Misi berhasil disimpan!");
+    await onSave(updated);
+    setLocalDraft(null);
+    toast.success("Konten Profil, Visi, dan Misi berhasil disimpan ke server!");
   };
 
   const handleReset = () => {
-    setDraft({ ...data });
-    setIsDirty(false);
+    setLocalDraft(null);
     toast.info("Perubahan draf dibatalkan.");
   };
 
@@ -286,17 +294,19 @@ export function AboutVisionTab({ data, setData }: AboutVisionTabProps) {
               variant="outline"
               size="sm"
               onClick={handleReset}
+              disabled={isSaving}
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Batal
             </Button>
           )}
-          <Button
-            type="submit"
-            size="sm"
-          >
-            <Save className="w-3.5 h-3.5" />
-            Simpan Profil & Visi Misi
+          <Button type="submit" size="sm" disabled={isSaving}>
+            {isSaving ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Save className="w-3.5 h-3.5" />
+            )}
+            {isSaving ? "Menyimpan..." : "Simpan Profil & Visi Misi"}
           </Button>
         </div>
       </div>

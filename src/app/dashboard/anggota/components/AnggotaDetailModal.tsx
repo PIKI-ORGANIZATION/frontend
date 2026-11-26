@@ -10,7 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { useGetAnggotaDetail } from "@/hooks/api/useAnggota";
 import {
-  Loader2,
+  SkeletonFormSections,
+} from "@/components/ui/skeleton-presets";
+import {
   Mail,
   Phone,
   MapPin,
@@ -90,11 +92,8 @@ export function AnggotaDetailModal({ uuid, onClose }: AnggotaDetailModalProps) {
   if (isLoading) {
     return (
       <Dialog open={!!uuid} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-[90vw] lg:max-w-6xl p-0 overflow-hidden bg-background/95 backdrop-blur-xl border border-border/50 shadow-2xl gap-0 min-h-[50vh] flex items-center justify-center">
-          <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-base font-medium">Memuat detail anggota...</p>
-          </div>
+        <DialogContent className="sm:max-w-[90vw] lg:max-w-6xl p-6 overflow-hidden bg-background/95 backdrop-blur-xl border border-border/50 shadow-2xl min-h-[50vh]">
+          <SkeletonFormSections sections={2} label="Memuat detail anggota…" />
         </DialogContent>
       </Dialog>
     );

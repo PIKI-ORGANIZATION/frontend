@@ -11,13 +11,17 @@ import {
   Film,
   Check,
   ChevronDown,
-  Loader2,
   AlertCircle,
   Building2,
 } from "lucide-react";
 import { FaInstagram } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { SearchInput } from "@/components/ui/search-input";
+import {
+  SkeletonArticleList,
+  SkeletonMediaGrid,
+  SkeletonPageHeader,
+} from "@/components/ui/skeleton-presets";
 import {
   Popover,
   PopoverContent,
@@ -237,8 +241,9 @@ export default function GaleriCMSPage() {
 
   if (!isReady) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="size-7 animate-spin text-primary" />
+      <div className="mx-auto max-w-7xl space-y-6 py-4 sm:py-6 lg:py-8">
+        <SkeletonPageHeader showTabs tabCount={4} />
+        <SkeletonMediaGrid count={8} label="Memuat halaman CMS Galeri…" />
       </div>
     );
   }
@@ -291,9 +296,12 @@ export default function GaleriCMSPage() {
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-3 text-sm text-amber-800 dark:text-amber-200">
           <AlertCircle className="size-4 mt-0.5 shrink-0" />
           <div>
-            <p className="font-medium">Akun admin wilayah belum ditautkan ke Cabang</p>
+            <p className="font-medium">
+              Akun admin wilayah belum ditautkan ke Cabang
+            </p>
             <p className="text-xs opacity-90 mt-0.5">
-              Hubungi Superadmin DPP untuk menautkan akun Anda ke profil Cabang agar dapat menambah dan mengelola dokumentasi galeri.
+              Hubungi Superadmin DPP untuk menautkan akun Anda ke profil Cabang
+              agar dapat menambah dan mengelola dokumentasi galeri.
             </p>
           </div>
         </div>
@@ -644,12 +652,14 @@ export default function GaleriCMSPage() {
       {/* 4. Main Display: Loading Skeleton, Empty State, Grid View vs Table View */}
       <div className="min-h-[40vh]">
         {isLoading && items.length === 0 ? (
-          <div className="min-h-[40vh] flex flex-col items-center justify-center p-12 border border-border/80 rounded-2xl bg-card">
-            <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="mt-3 text-sm text-muted-foreground">
-              Menghubungkan ke server dan memuat data dokumentasi...
-            </p>
-          </div>
+          viewMode === "grid" ? (
+            <SkeletonMediaGrid count={8} label="Memuat dokumentasi galeri…" />
+          ) : (
+            <SkeletonArticleList
+              count={6}
+              label="Memuat tabel dokumentasi galeri…"
+            />
+          )
         ) : filteredItems.length === 0 ? (
           <div className="min-h-[40vh] flex flex-col items-center justify-center p-12 border border-dashed border-border rounded-2xl bg-card/60 text-center">
             <div className="size-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground mb-3">

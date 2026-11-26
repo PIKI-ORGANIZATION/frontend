@@ -4,11 +4,13 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import { Target, Compass } from "lucide-react";
+import { usePublicLandingSettings } from "@/features/page-setting/hooks/usePageSettings";
 
 export function VisionMissionSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const visionRef = useRef<HTMLDivElement>(null);
   const missionRef = useRef<HTMLDivElement>(null);
+  const { aboutVision } = usePublicLandingSettings();
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -57,9 +59,11 @@ export function VisionMissionSection() {
             <Compass className="w-10 h-10 md:w-24 md:h-24 text-primary relative z-10" />
           </div>
           <div className="flex flex-col gap-4 md:gap-6 text-center md:text-left">
-            <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">Visi PIKI</h2>
+            <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
+              {aboutVision.visionTitle}
+            </h2>
             <p className="text-lg sm:text-xl md:text-3xl text-muted-foreground leading-snug font-light">
-              Mewujudkan komunitas intelektual Kristen yang <span className="font-semibold text-foreground">kritis</span>, <span className="font-semibold text-foreground">kreatif</span>, dan <span className="font-semibold text-foreground">transformatif</span> dalam rangka membangun masyarakat, bangsa, dan negara yang berkeadilan, damai, dan sejahtera.
+              {aboutVision.visionText}
             </p>
           </div>
         </div>
@@ -83,15 +87,10 @@ export function VisionMissionSection() {
           </div>
           
           <div className="flex flex-col gap-8 md:gap-12 lg:gap-16 pt-2 md:pt-4">
-            {[
-              "Meningkatkan kualitas sumber daya manusia (SDM) anggota melalui kajian, riset, dan pelatihan yang berkesinambungan.",
-              "Mengadvokasi kebijakan publik yang berpihak pada keadilan, hak asasi manusia, dan kelestarian lingkungan hidup.",
-              "Menjalin kemitraan strategis dengan gereja, pemerintah, lembaga swadaya masyarakat, dan institusi pendidikan nasional maupun internasional.",
-              "Memperteguh panggilan etis intelektual Kristen dalam pencegahan korupsi dan pembangunan karakter bangsa yang berintegritas.",
-            ].map((text, i) => (
-               <div key={i} className="flex gap-4 md:gap-6 group">
+            {aboutVision.missionPoints.map((text, i) => (
+              <div key={i} className="flex gap-4 md:gap-6 group">
                 <span className="text-4xl sm:text-5xl md:text-7xl font-bold text-border group-hover:text-primary transition-colors duration-500 font-mono">
-                  0{i + 1}
+                  {String(i + 1).padStart(2, "0")}
                 </span>
                 <p className="text-base sm:text-lg md:text-2xl text-foreground font-medium leading-relaxed pt-1 md:pt-4">
                   {text}

@@ -29,6 +29,10 @@ import { SearchInput } from "@/components/ui/search-input";
 import { Badge } from "@/components/ui/badge";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
+  SkeletonTablePage,
+  SkeletonTableRows,
+} from "@/components/ui/skeleton-presets";
+import {
   Table,
   TableBody,
   TableCell,
@@ -238,9 +242,13 @@ export default function PengurusCMSPage() {
 
   if (!isReady) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="size-7 animate-spin text-primary" />
-      </div>
+      <SkeletonTablePage
+        showTabs
+        tabCount={2}
+        columns={5}
+        rows={6}
+        label="Memuat CMS Data Pengurus…"
+      />
     );
   }
 
@@ -518,11 +526,7 @@ export default function PengurusCMSPage() {
                 </TableHeader>
                 <TableBody>
                   {isStrukturLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-40 text-center">
-                        <Loader2 className="size-6 animate-spin text-primary mx-auto" />
-                      </TableCell>
-                    </TableRow>
+                    <SkeletonTableRows rows={6} columns={5} />
                   ) : filteredItems.length === 0 ? (
                     <TableRow>
                       <TableCell
@@ -650,11 +654,7 @@ export default function PengurusCMSPage() {
               </TableHeader>
               <TableBody>
                 {isPeriodeLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-40 text-center">
-                      <Loader2 className="size-6 animate-spin text-primary mx-auto" />
-                    </TableCell>
-                  </TableRow>
+                  <SkeletonTableRows rows={5} columns={5} />
                 ) : periodeList.length === 0 ? (
                   <TableRow>
                     <TableCell

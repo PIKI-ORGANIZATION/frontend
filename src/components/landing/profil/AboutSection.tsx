@@ -4,10 +4,12 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import Image from "next/image";
+import { usePublicLandingSettings } from "@/features/page-setting/hooks/usePageSettings";
 
 export function AboutSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  const { aboutVision } = usePublicLandingSettings();
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -97,17 +99,17 @@ export function AboutSection() {
       {/* Content */}
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 flex flex-col items-center text-center">
         <p className="text-sm font-semibold tracking-widest uppercase text-primary mb-8 about-desc opacity-0">
-          Tentang Organisasi
+          {aboutVision.aboutTagline}
         </p>
 
         <div className="perspective-[1000px] mb-10 w-full">
           <h2 className="text-5xl md:text-6xl lg:text-8xl font-bold tracking-tighter leading-[1.1]">
             <div className="overflow-hidden pb-2">
-              <div className="about-text block">Wadah Perhimpunan</div>
+              <div className="about-text block">{aboutVision.aboutTitle}</div>
             </div>
             <div className="overflow-hidden pb-2">
               <div className="about-text block text-primary">
-                Intelektual Kristen
+                {aboutVision.aboutHighlight}
               </div>
             </div>
           </h2>
@@ -119,10 +121,7 @@ export function AboutSection() {
         />
 
         <p className="about-desc max-w-3xl text-lg md:text-2xl text-muted-foreground leading-relaxed opacity-0 font-light">
-          Persatuan Intelegensia Kristen Indonesia (PIKI) terpanggil untuk
-          mengaktualisasikan pelayanan di tengah dinamika masyarakat, bangsa,
-          dan negara berdasarkan nilai-nilai Kristiani demi terwujudnya keadilan
-          dan kesejahteraan.
+          {aboutVision.aboutDescription}
         </p>
       </div>
     </section>

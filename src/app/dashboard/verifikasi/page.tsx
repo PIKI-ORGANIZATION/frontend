@@ -46,6 +46,10 @@ import {
 } from "lucide-react";
 import { ReviewModal } from "./components/ReviewModal";
 import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
+import {
+  SkeletonTablePage,
+  SkeletonTableRows,
+} from "@/components/ui/skeleton-presets";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { canAccessDashboardPath } from "@/lib/rbac";
 import { format } from "date-fns";
@@ -434,9 +438,14 @@ export default function VerifikasiPage() {
 
   if (!isReady) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-      </div>
+      <SkeletonTablePage
+        showTabs
+        tabCount={4}
+        columns={6}
+        rows={6}
+        className="px-4 sm:px-6"
+        label="Memuat verifikasi keanggotaan…"
+      />
     );
   }
 
@@ -565,17 +574,7 @@ export default function VerifikasiPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-48 text-center"
-                  >
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <span className="text-sm">Memuat data verifikasi...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <SkeletonTableRows rows={6} columns={columns.length} />
               ) : registrasiList.length === 0 ? (
                 <TableRow>
                   <TableCell

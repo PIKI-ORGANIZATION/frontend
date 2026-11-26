@@ -14,26 +14,32 @@ import {
   RotateCcw,
   Eye,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 
 interface HeroSectionTabProps {
   hero: HeroContent;
-  setHero: React.Dispatch<React.SetStateAction<HeroContent>>;
+  onSave: (updated: HeroContent) => Promise<void>;
+  isSaving?: boolean;
 }
 
-export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
-  const [draft, setDraft] = useState<HeroContent>({ ...hero });
-  const [isDirty, setIsDirty] = useState(false);
+export function HeroSectionTab({
+  hero,
+  onSave,
+  isSaving = false,
+}: HeroSectionTabProps) {
+  const [localDraft, setLocalDraft] = useState<HeroContent | null>(null);
+  const isDirty = localDraft !== null;
+  const draft = localDraft ?? hero;
 
   const handleChange = <K extends keyof HeroContent>(
     key: K,
     value: HeroContent[K],
   ) => {
-    setDraft((prev) => ({ ...prev, [key]: value }));
-    setIsDirty(true);
+    setLocalDraft((prev) => ({ ...(prev ?? hero), [key]: value }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!draft.title.trim() || !draft.highlight.trim()) {
       toast.error("Judul utama dan sorotan tidak boleh kosong.");
@@ -41,14 +47,13 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
     }
 
     const updated = { ...draft, updatedAt: new Date().toISOString() };
-    setHero(updated);
-    setIsDirty(false);
-    toast.success("Pengaturan Hero Section berhasil disimpan!");
+    await onSave(updated);
+    setLocalDraft(null);
+    toast.success("Pengaturan Hero Section berhasil disimpan ke server!");
   };
 
   const handleReset = () => {
-    setDraft({ ...hero });
-    setIsDirty(false);
+    setLocalDraft(null);
     toast.info("Perubahan draf dibatalkan.");
   };
 
@@ -249,14 +254,19 @@ export function HeroSectionTab({ hero, setHero }: HeroSectionTabProps) {
                   variant="outline"
                   size="sm"
                   onClick={handleReset}
+                  disabled={isSaving}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Batal
                 </Button>
               )}
-              <Button type="submit" size="sm">
-                <Save className="w-3.5 h-3.5" />
-                Simpan Pengaturan Hero
+              <Button type="submit" size="sm" disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                {isSaving ? "Menyimpan..." : "Simpan Pengaturan Hero"}
               </Button>
             </div>
           </div>

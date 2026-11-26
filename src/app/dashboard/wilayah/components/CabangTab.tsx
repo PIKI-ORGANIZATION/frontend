@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { SkeletonTableRows } from "@/components/ui/skeleton-presets";
 import {
   Table,
   TableBody,
@@ -295,14 +296,7 @@ export function CabangTab({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-52 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    <span className="text-sm">Memuat profil cabang...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <SkeletonTableRows rows={6} columns={5} />
             ) : filteredCabang.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-52 text-center text-muted-foreground text-sm">

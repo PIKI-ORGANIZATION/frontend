@@ -149,7 +149,11 @@ const adminNavGroups: NavGroupData[] = [
         title: "Wilayah & Cabang",
         icon: Network,
         url: "/dashboard/wilayah",
-        requiredPermissions: ["MANAGE_ALL_CABANG", "CABANG_READ", "CABANG_UPDATE"],
+        requiredPermissions: [
+          "MANAGE_ALL_CABANG",
+          "CABANG_READ",
+          "CABANG_UPDATE",
+        ],
       },
       {
         id: "manajemen-akun",
@@ -167,25 +171,41 @@ const adminNavGroups: NavGroupData[] = [
             title: "CMS Landing Page",
             url: "/dashboard/konten/landing",
             icon: Globe,
-            requiredPermissions: ["SEJARAH_MANAGE", "APP_SETTING_MANAGE", "MANAGE_ALL_CABANG"],
+            requiredPermissions: [
+              "SEJARAH_MANAGE",
+              "APP_SETTING_MANAGE",
+              "MANAGE_ALL_CABANG",
+            ],
           },
           {
             title: "CMS Berita",
             url: "/dashboard/berita",
             icon: FileText,
-            requiredPermissions: ["NEWS_UTAMA_READ", "NEWS_UTAMA_CREATE", "NEWS_UTAMA_UPDATE"],
+            requiredPermissions: [
+              "NEWS_UTAMA_READ",
+              "NEWS_UTAMA_CREATE",
+              "NEWS_UTAMA_UPDATE",
+            ],
           },
           {
             title: "CMS Data Pengurus",
             url: "/dashboard/pengurus",
             icon: UserCog,
-            requiredPermissions: ["STRUKTUR_READ", "STRUKTUR_UPDATE", "MANAGE_ALL_CABANG"],
+            requiredPermissions: [
+              "STRUKTUR_READ",
+              "STRUKTUR_UPDATE",
+              "MANAGE_ALL_CABANG",
+            ],
           },
           {
             title: "CMS Galeri",
             url: "/dashboard/galeri",
             icon: ImageIcon,
-            requiredPermissions: ["GALERI_MANAGE", "GALERI_READ", "MANAGE_ALL_CABANG"],
+            requiredPermissions: [
+              "GALERI_MANAGE",
+              "GALERI_READ",
+              "MANAGE_ALL_CABANG",
+            ],
           },
           {
             title: "CMS FAQ",
@@ -206,14 +226,8 @@ const adminNavGroups: NavGroupData[] = [
             isUnderDevelopment: true,
           },
           {
-            title: "CMS Jurnal",
+            title: "CMS Agenda",
             icon: BookOpen,
-            isUnderDevelopment: true,
-          },
-
-          {
-            title: "CMS Struktur Organisasi",
-            icon: Network,
             isUnderDevelopment: true,
           },
         ],

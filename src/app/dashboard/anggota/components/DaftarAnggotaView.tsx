@@ -32,13 +32,10 @@ import { canAccessDashboardPath } from "@/lib/rbac";
 import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
 import { AnggotaDetailModal } from "./AnggotaDetailModal";
 import {
-  Loader2,
-  Eye,
-  Mail,
-  Phone,
-  CreditCard,
-  ShieldCheck,
-} from "lucide-react";
+  SkeletonTablePage,
+  SkeletonTableRows,
+} from "@/components/ui/skeleton-presets";
+import { Eye, Mail, Phone, CreditCard, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
@@ -72,7 +69,7 @@ export function DaftarAnggotaView() {
     return undefined;
   }, [statusFilter]);
 
-  const { data, isLoading, error, isFetching } = useGetDaftarAnggota(
+  const { data, isLoading, error } = useGetDaftarAnggota(
     {
       search: debouncedSearch,
       statusKta: statusKtaParam,
@@ -315,9 +312,13 @@ export function DaftarAnggotaView() {
 
   if (!isReady) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-      </div>
+      <SkeletonTablePage
+        showAction={false}
+        columns={6}
+        rows={6}
+        className="px-4"
+        label="Memuat daftar anggota…"
+      />
     );
   }
 
@@ -407,18 +408,8 @@ export function DaftarAnggotaView() {
               ))}
             </TableHeader>
             <TableBody>
-              {isLoading && !isFetching ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-48 text-center"
-                  >
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <span className="text-sm">Memuat data anggota...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
+              {isLoading ? (
+                <SkeletonTableRows rows={6} columns={columns.length} />
               ) : anggotaList.length === 0 ? (
                 <TableRow>
                   <TableCell

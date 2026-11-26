@@ -67,7 +67,7 @@ const defaultNavItems: iNavItem[] = [
     subheading: "Kabar, jurnal, dan galeri PIKI",
     subItems: [
       { heading: "Berita", href: "/berita" },
-      { heading: "Jurnal Ilmiah", href: "/jurnal" },
+      { heading: "Program", href: "/program-kerja" },
       { heading: "Galeri", href: "/galeri" },
       { heading: "Agenda", href: "/agenda" },
     ],
