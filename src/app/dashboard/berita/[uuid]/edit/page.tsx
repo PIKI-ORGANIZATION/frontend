@@ -1,9 +1,12 @@
 "use client";
 
 import { use } from "react";
-import { Loader2 } from "lucide-react";
 import { NewsForm } from "../../components/NewsForm";
 import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
+import {
+  SkeletonFormWithPreview,
+  SkeletonPageHeader,
+} from "@/components/ui/skeleton-presets";
 import { useAdminNewsById, useNewsScope } from "@/hooks/api/useNews";
 import { canManageNewsItem, tingkatLabel } from "@/lib/news";
 
@@ -22,8 +25,9 @@ export default function EditBeritaPage({
 
   if (!scope) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+      <div className="mx-auto max-w-7xl space-y-6 py-4 sm:py-6">
+        <SkeletonPageHeader />
+        <SkeletonFormWithPreview label="Memeriksa hak akses redaksi…" />
       </div>
     );
   }
@@ -54,8 +58,9 @@ export default function EditBeritaPage({
 
   if (query.isLoading) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+      <div className="mx-auto max-w-7xl space-y-6 py-4 sm:py-6">
+        <SkeletonPageHeader />
+        <SkeletonFormWithPreview label="Memuat detail artikel berita…" />
       </div>
     );
   }
@@ -75,7 +80,6 @@ export default function EditBeritaPage({
     );
   }
 
-  // Resource / Cabang-level authorization check (Deny-by-Default)
   if (!canManageNewsItem(scope, query.data)) {
     return (
       <AccessDeniedState

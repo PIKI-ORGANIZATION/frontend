@@ -258,11 +258,19 @@ select optgroup {
 }
 .news-editor .ck.ck-editor__main > .ck-editor__editable {
   min-height: 320px;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 .news-editor .ck.ck-toolbar {
-  border-radius: 12px 12px 0 0;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: var(--card) !important;
+}
+.news-editor .ck.ck-editor__top .ck-sticky-panel .ck-sticky-panel__content {
+  border: none !important;
 }
 .dark .ck.ck-reset_all,
 .dark .ck.ck-body .ck.ck-reset_all {

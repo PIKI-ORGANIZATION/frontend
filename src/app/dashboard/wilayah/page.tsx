@@ -159,9 +159,6 @@ export default function WilayahDanCabangPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/70 pb-5">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Network className="h-4 w-4" />
-              </div>
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 Manajemen Wilayah &amp; Cabang
               </h1>
@@ -203,9 +200,6 @@ export default function WilayahDanCabangPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/70 pb-5">
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Network className="h-4 w-4" />
-            </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Manajemen Wilayah &amp; Cabang
             </h1>

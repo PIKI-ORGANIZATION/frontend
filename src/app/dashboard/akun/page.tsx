@@ -116,7 +116,8 @@ export default function ManajemenAkunPage() {
     enabled: shouldFetch,
   });
 
-  const { data: roleList = [], isLoading: isLoadingRoles } = useRolesList(shouldFetch);
+  const { data: roleList = [], isLoading: isLoadingRoles } =
+    useRolesList(shouldFetch);
 
   const createMutation = useCreateAkun();
   const updateMutation = useUpdateAkun();
@@ -196,9 +197,6 @@ export default function ManajemenAkunPage() {
       <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto px-4 sm:px-6">
         <div className="border-b border-border/70 pb-5">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <KeyRound className="h-4 w-4" />
-            </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Manajemen Akun &amp; Akses
             </h1>
@@ -215,8 +213,8 @@ export default function ManajemenAkunPage() {
                 Akses Terbatas — Khusus Super Admin (DPP)
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Pengelolaan pembuatan akun admin, penugasan role, dan penautan cabang
-                hanya tersedia bagi akun yang memiliki izin{" "}
+                Pengelolaan pembuatan akun admin, penugasan role, dan penautan
+                cabang hanya tersedia bagi akun yang memiliki izin{" "}
                 <span className="font-mono text-xs font-semibold text-foreground">
                   AKUN_CREATE
                 </span>{" "}
@@ -249,16 +247,13 @@ export default function ManajemenAkunPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/70 pb-5">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <KeyRound className="h-4 w-4" />
-            </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
               Manajemen Akun &amp; Akses
             </h1>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Buat akun admin DPD/DPC (termasuk admin non-anggota), kelola role akses,
-            tautan cabang wilayah, serta status aktif akun.
+            Buat akun admin DPD/DPC (termasuk admin non-anggota), kelola role
+            akses, tautan cabang wilayah, serta status aktif akun.
           </p>
         </div>
 
@@ -381,7 +376,9 @@ export default function ManajemenAkunPage() {
                     Tidak ada akun ditemukan.
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {searchTerm || statusTab !== "ALL" || accountTypeFilter !== "ALL"
+                    {searchTerm ||
+                    statusTab !== "ALL" ||
+                    accountTypeFilter !== "ALL"
                       ? "Coba sesuaikan kata kunci pencarian atau filter status."
                       : "Klik tombol Buat Akun Admin untuk menambahkan akun pertama."}
                   </p>
@@ -475,8 +472,8 @@ export default function ManajemenAkunPage() {
                             {cabangObj.dpdId
                               ? `Tingkat DPD · ${cabangObj.provinsi}`
                               : cabangObj.dpcId
-                              ? `Tingkat DPC · ${cabangObj.kabupatenKota}`
-                              : `${cabangObj.kabupatenKota}, ${cabangObj.provinsi}`}
+                                ? `Tingkat DPC · ${cabangObj.kabupatenKota}`
+                                : `${cabangObj.kabupatenKota}, ${cabangObj.provinsi}`}
                           </div>
                         </div>
                       ) : (
@@ -514,18 +511,20 @@ export default function ManajemenAkunPage() {
                             <Edit2 className="w-4 h-4" />
                           </Button>
                         )}
-                        {canDelete && item.statusAkun === "ACTIVE" && !isSelf && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => handleOpenDelete(item)}
-                            title="Nonaktifkan Akun"
-                          >
-                            <UserX className="w-4 h-4" />
-                          </Button>
-                        )}
+                        {canDelete &&
+                          item.statusAkun === "ACTIVE" &&
+                          !isSelf && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleOpenDelete(item)}
+                              title="Nonaktifkan Akun"
+                            >
+                              <UserX className="w-4 h-4" />
+                            </Button>
+                          )}
                       </div>
                     </TableCell>
                   </TableRow>

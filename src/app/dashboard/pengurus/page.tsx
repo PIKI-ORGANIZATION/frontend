@@ -60,6 +60,9 @@ import {
   Calendar,
   AlertCircle,
   CheckCircle2,
+  UserCog,
+  MapPin,
+  RotateCcw,
 } from "lucide-react";
 import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -156,8 +159,8 @@ export default function PengurusCMSPage() {
       { value: "ALL", label: "Semua Periode" },
       ...periodeList.map((p) => ({
         value: p.uuid,
-        label: `${p.namaPeriode} `,
-        subLabel: `${p.cabang?.namaCabang || "Pusat (DPP)"}`,
+        label: p.namaPeriode,
+        subLabel: p.cabang?.namaCabang || "Pusat (DPP)",
       })),
     ],
     [periodeList],
@@ -187,9 +190,21 @@ export default function PengurusCMSPage() {
       inti: items.filter((i) => i.kategori === "INTI").length,
       bidang: items.filter((i) => i.kategori === "BIDANG").length,
       penasehat: items.filter((i) => i.kategori === "PENASEHAT").length,
+      activePeriode: periodeList.filter((p) => p.isAktif).length,
     }),
-    [items],
+    [items, periodeList],
   );
+
+  const hasActiveStrukturFilters =
+    selectedKategori !== "ALL" ||
+    selectedPeriodeUuid !== "ALL" ||
+    searchQuery.trim() !== "";
+
+  const handleResetStrukturFilters = () => {
+    setSelectedKategori("ALL");
+    setSelectedPeriodeUuid("ALL");
+    setSearchQuery("");
+  };
 
   // Handlers Struktur
   const handleOpenAddStruktur = () => {
@@ -262,30 +277,42 @@ export default function PengurusCMSPage() {
   }
 
   return (
-    <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
-      {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              CMS Kepengurusan &amp; Struktur Organisasi
-            </h1>
-            {!access.canManage && (
-              <Badge variant="secondary" className="text-xs font-medium">
-                Mode Baca Saja
-              </Badge>
-            )}
+    <div className="mx-auto max-w-7xl space-y-5 py-4 sm:py-6 lg:py-8">
+      {/* 1. Organization Dashboard Header */}
+      <div className="flex flex-col gap-4 border-b border-border/70 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+            <UserCog className="size-4" aria-hidden="true" />
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Kelola masa bakti periode kepengurusan serta susunan pengurus
-            organisasi sesuai hierarki wilayah DPP, DPD, dan DPC.
-          </p>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                CMS Kepengurusan &amp; Struktur Organisasi
+              </h1>
+              <Badge
+                variant="outline"
+                className="h-5 rounded-md border-primary/25 bg-primary/10 px-2 text-[11px] font-medium text-primary"
+              >
+                Cakupan {access.scope}
+              </Badge>
+              {!access.canManage && (
+                <Badge variant="secondary" className="h-5 text-[11px] font-medium">
+                  Mode Baca Saja
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+              Kelola masa bakti periode kepengurusan serta susunan pengurus
+              organisasi sesuai hierarki wilayah DPP, DPD, dan DPC.
+            </p>
+          </div>
         </div>
 
         {access.canManage && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
             {activeTab === "struktur" ? (
               <Button
+                size="sm"
                 onClick={handleOpenAddStruktur}
                 disabled={
                   access.isUnlinkedBranchAdmin ||
@@ -293,11 +320,12 @@ export default function PengurusCMSPage() {
                 }
                 className="cursor-pointer"
               >
-                <Plus className="size-4 mr-2" />
+                <Plus className="mr-1.5 size-4" />
                 <span>Tambah Pengurus</span>
               </Button>
             ) : (
               <Button
+                size="sm"
                 onClick={() => {
                   setEditingPeriode(null);
                   setIsPeriodeDialogOpen(true);
@@ -305,7 +333,7 @@ export default function PengurusCMSPage() {
                 disabled={access.isUnlinkedBranchAdmin}
                 className="cursor-pointer"
               >
-                <Plus className="size-4 mr-2" />
+                <Plus className="mr-1.5 size-4" />
                 <span>Tambah Periode</span>
               </Button>
             )}
@@ -316,14 +344,14 @@ export default function PengurusCMSPage() {
       {access.isUnlinkedBranchAdmin && (
         <div
           role="alert"
-          className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-3 text-sm text-amber-800 dark:text-amber-200"
+          className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200"
         >
-          <AlertCircle className="size-4 mt-0.5 shrink-0" />
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <div>
             <p className="font-medium">
               Akun admin wilayah belum ditautkan ke Cabang
             </p>
-            <p className="text-xs opacity-90 mt-0.5">
+            <p className="mt-0.5 text-xs opacity-90">
               Hubungi Superadmin DPP untuk menautkan akun Anda ke profil Cabang
               agar dapat membuat periode dan struktur kepengurusan.
             </p>
@@ -331,52 +359,118 @@ export default function PengurusCMSPage() {
         </div>
       )}
 
-      {/* 2. Primary Section Tabs (Struktur vs Periode) */}
-      <div className="flex items-center overflow-x-auto pb-1">
-        <div
-          role="tablist"
-          aria-label="Bagian Manajemen Kepengurusan"
-          className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
-        >
-          <button
-            type="button"
-            role="tab"
-            id="tab-struktur"
-            aria-selected={activeTab === "struktur"}
-            onClick={() => setActiveTab("struktur")}
-            className={cn(
-              "flex items-center gap-2 px-3.5 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer",
-              activeTab === "struktur"
-                ? "bg-background text-foreground font-medium shadow-2xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+      {/* 2. Primary Section Tabs + Mini Stats Strip */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex max-w-full items-center overflow-x-auto pb-1 lg:pb-0">
+          <div
+            role="tablist"
+            aria-label="Bagian Manajemen Kepengurusan"
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 p-1 dark:bg-muted/40"
           >
-            <Users className="size-4" />
-            <span>Struktur Organisasi</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-primary/10 text-primary">
-              {items.length}
-            </span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-struktur"
+              aria-selected={activeTab === "struktur"}
+              onClick={() => setActiveTab("struktur")}
+              className={cn(
+                "flex cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-sm px-3.5 py-2 text-sm transition-all",
+                "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
+                activeTab === "struktur"
+                  ? "bg-background font-medium text-foreground shadow-2xs"
+                  : "border border-transparent font-normal text-muted-foreground hover:bg-background/40 hover:text-foreground",
+              )}
+            >
+              <Users
+                className={cn(
+                  "size-3.5 shrink-0",
+                  activeTab === "struktur"
+                    ? "text-primary"
+                    : "text-muted-foreground",
+                )}
+                aria-hidden="true"
+              />
+              <span>Struktur Organisasi</span>
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 font-mono text-[10px] tabular-nums transition-colors",
+                  activeTab === "struktur"
+                    ? "bg-primary/10 font-semibold text-primary"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {items.length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            role="tab"
-            id="tab-periode"
-            aria-selected={activeTab === "periode"}
-            onClick={() => setActiveTab("periode")}
-            className={cn(
-              "flex items-center gap-2 px-3.5 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer",
-              activeTab === "periode"
-                ? "bg-background text-foreground font-medium shadow-2xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Calendar className="size-4" />
-            <span>Periode Kepengurusan</span>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-primary/10 text-primary">
-              {periodeList.length}
-            </span>
-          </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-periode"
+              aria-selected={activeTab === "periode"}
+              onClick={() => setActiveTab("periode")}
+              className={cn(
+                "flex cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-sm px-3.5 py-2 text-sm transition-all",
+                "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
+                activeTab === "periode"
+                  ? "bg-background font-medium text-foreground shadow-2xs"
+                  : "border border-transparent font-normal text-muted-foreground hover:bg-background/40 hover:text-foreground",
+              )}
+            >
+              <Calendar
+                className={cn(
+                  "size-3.5 shrink-0",
+                  activeTab === "periode"
+                    ? "text-primary"
+                    : "text-muted-foreground",
+                )}
+                aria-hidden="true"
+              />
+              <span>Periode Kepengurusan</span>
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 font-mono text-[10px] tabular-nums transition-colors",
+                  activeTab === "periode"
+                    ? "bg-primary/10 font-semibold text-primary"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {periodeList.length}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mini Stats Strip */}
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card/85 px-2.5 py-1.5">
+            <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+            <span>Periode Aktif</span>
+            <strong className="font-mono tabular-nums text-foreground">
+              {stats.activePeriode}
+            </strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card/85 px-2.5 py-1.5">
+            <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+            <span>Inti</span>
+            <strong className="font-mono tabular-nums text-foreground">
+              {stats.inti}
+            </strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card/85 px-2.5 py-1.5">
+            <span className="size-1.5 rounded-full bg-sky-500" aria-hidden="true" />
+            <span>Bidang</span>
+            <strong className="font-mono tabular-nums text-foreground">
+              {stats.bidang}
+            </strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card/85 px-2.5 py-1.5">
+            <span className="size-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+            <span>Penasehat</span>
+            <strong className="font-mono tabular-nums text-foreground">
+              {stats.penasehat}
+            </strong>
+          </span>
         </div>
       </div>
 
@@ -391,7 +485,7 @@ export default function PengurusCMSPage() {
             !access.isUnlinkedBranchAdmin &&
             !isPeriodeLoading &&
             writablePeriodeList.length === 0 && (
-              <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm">
+              <div className="flex flex-col justify-between gap-3 rounded-xl border border-border/80 bg-card/80 px-4 py-3.5 text-xs shadow-2xs sm:flex-row sm:items-center sm:text-sm">
                 <span className="text-muted-foreground">
                   Belum ada <strong>Periode Kepengurusan</strong> untuk cabang
                   Anda. Buat periode terlebih dahulu sebelum menambahkan
@@ -400,98 +494,139 @@ export default function PengurusCMSPage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  className="shrink-0 cursor-pointer self-start sm:self-center"
                   onClick={() => {
                     setActiveTab("periode");
                     setEditingPeriode(null);
                     setIsPeriodeDialogOpen(true);
                   }}
                 >
-                  <Plus className="size-3.5 mr-1.5" />
+                  <Plus className="mr-1.5 size-3.5" />
                   Buat Periode
                 </Button>
               </div>
             )}
 
-          {/* Filter Bar */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                { id: "ALL" as const, label: "Semua", count: stats.total },
-                {
-                  id: "INTI" as const,
-                  label: "Pimpinan Inti",
-                  count: stats.inti,
-                },
-                { id: "BIDANG" as const, label: "Bidang", count: stats.bidang },
-                {
-                  id: "PENASEHAT" as const,
-                  label: "Penasehat",
-                  count: stats.penasehat,
-                },
-              ].map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setSelectedKategori(cat.id)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer",
-                    selectedKategori === cat.id
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-muted-foreground border-border hover:text-foreground",
-                  )}
-                >
-                  {cat.label} ({cat.count})
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="w-64">
-                <SearchableSelect
-                  value={selectedPeriodeUuid}
-                  onValueChange={setSelectedPeriodeUuid}
-                  options={periodeFilterOptions}
-                  placeholder="Semua Periode"
-                  searchPlaceholder="Cari periode..."
-                />
+          {/* Elevated Filter Surface */}
+          <div className="space-y-3 rounded-xl border border-border/80 bg-card/75 p-3.5 shadow-xs sm:p-4">
+            <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+              <div
+                role="group"
+                aria-label="Filter kategori kepengurusan"
+                className="flex flex-wrap items-center gap-1.5"
+              >
+                {[
+                  { id: "ALL" as const, label: "Semua", count: stats.total },
+                  {
+                    id: "INTI" as const,
+                    label: "Pimpinan Inti",
+                    count: stats.inti,
+                  },
+                  { id: "BIDANG" as const, label: "Bidang", count: stats.bidang },
+                  {
+                    id: "PENASEHAT" as const,
+                    label: "Penasehat",
+                    count: stats.penasehat,
+                  },
+                ].map((cat) => {
+                  const isActive = selectedKategori === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => setSelectedKategori(cat.id)}
+                      className={cn(
+                        "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                        isActive
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border/70 bg-background/60 text-muted-foreground hover:border-border hover:text-foreground",
+                      )}
+                    >
+                      <span>{cat.label}</span>
+                      <span
+                        className={cn(
+                          "font-mono text-[11px] tabular-nums",
+                          isActive ? "opacity-90" : "opacity-70",
+                        )}
+                      >
+                        {cat.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="w-56">
-                <SearchInput
-                  placeholder="Cari nama, jabatan, bidang..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onClear={() => setSearchQuery("")}
-                />
-              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="w-full sm:w-60">
+                  <SearchableSelect
+                    value={selectedPeriodeUuid}
+                    onValueChange={setSelectedPeriodeUuid}
+                    options={periodeFilterOptions}
+                    placeholder="Semua Periode"
+                    searchPlaceholder="Cari periode..."
+                    triggerClassName="h-9 rounded-sm px-3 dark:bg-input/30 dark:hover:bg-input/50"
+                  />
+                </div>
 
-              <div className="inline-flex items-center p-0.5 rounded-md bg-muted/60 border border-border">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("table")}
-                  aria-label="Tampilan tabel"
-                  className={cn(
-                    "p-1.5 rounded-sm cursor-pointer",
-                    viewMode === "table"
-                      ? "bg-background text-foreground shadow-2xs"
-                      : "text-muted-foreground",
-                  )}
+                <div className="min-w-0 flex-1 sm:w-56 sm:flex-initial">
+                  <SearchInput
+                    placeholder="Cari nama, jabatan, bidang..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onClear={() => setSearchQuery("")}
+                  />
+                </div>
+
+                {hasActiveStrukturFilters && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetStrukturFilters}
+                    className="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <RotateCcw className="mr-1.5 size-3.5" />
+                    Reset
+                  </Button>
+                )}
+
+                <div
+                  role="group"
+                  aria-label="Mode tampilan struktur"
+                  className="inline-flex items-center rounded-md border border-border bg-muted/60 p-0.5"
                 >
-                  <List className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("grid")}
-                  aria-label="Tampilan grid"
-                  className={cn(
-                    "p-1.5 rounded-sm cursor-pointer",
-                    viewMode === "grid"
-                      ? "bg-background text-foreground shadow-2xs"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  <LayoutGrid className="size-4" />
-                </button>
+                  <button
+                    type="button"
+                    aria-pressed={viewMode === "table"}
+                    onClick={() => setViewMode("table")}
+                    aria-label="Tampilan tabel"
+                    title="Tampilan tabel"
+                    className={cn(
+                      "cursor-pointer rounded-sm p-1.5 transition-colors",
+                      viewMode === "table"
+                        ? "bg-background text-foreground shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <List className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={viewMode === "grid"}
+                    onClick={() => setViewMode("grid")}
+                    aria-label="Tampilan grid"
+                    title="Tampilan grid"
+                    className={cn(
+                      "cursor-pointer rounded-sm p-1.5 transition-colors",
+                      viewMode === "grid"
+                        ? "bg-background text-foreground shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <LayoutGrid className="size-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -513,27 +648,60 @@ export default function PengurusCMSPage() {
               }}
             />
           ) : (
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/40">
                   <TableRow>
-                    <TableHead>Nama &amp; Jabatan</TableHead>
-                    <TableHead>Bidang</TableHead>
-                    <TableHead>Periode &amp; Wilayah</TableHead>
-                    <TableHead className="text-center">Urutan</TableHead>
-                    <TableHead className="text-right pr-6">Aksi</TableHead>
+                    <TableHead className="py-3.5 pl-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Nama &amp; Jabatan
+                    </TableHead>
+                    <TableHead className="py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Bidang
+                    </TableHead>
+                    <TableHead className="py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Periode &amp; Wilayah
+                    </TableHead>
+                    <TableHead className="py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Urutan
+                    </TableHead>
+                    <TableHead className="py-3.5 pr-6 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Aksi
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isStrukturLoading ? (
                     <SkeletonTableRows rows={6} columns={5} />
                   ) : filteredItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="h-40 text-center text-sm text-muted-foreground"
-                      >
-                        Belum ada data struktur pengurus untuk filter ini.
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={5} className="py-14 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                          <Users
+                            className="size-8 text-muted-foreground/40"
+                            aria-hidden="true"
+                          />
+                          <p className="text-sm font-semibold text-foreground">
+                            {hasActiveStrukturFilters
+                              ? "Tidak ada pengurus yang cocok"
+                              : "Belum ada data struktur pengurus"}
+                          </p>
+                          <p className="max-w-sm text-xs">
+                            {hasActiveStrukturFilters
+                              ? "Coba ubah kategori, periode, atau kata kunci pencarian."
+                              : "Klik tombol Tambah Pengurus untuk mulai menyusun struktur."}
+                          </p>
+                          {hasActiveStrukturFilters && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleResetStrukturFilters}
+                              className="mt-1 cursor-pointer"
+                            >
+                              Reset Filter
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -543,53 +711,61 @@ export default function PengurusCMSPage() {
                         <TableRow
                           key={item.id}
                           onClick={() => setInspectorItem(item)}
-                          className="cursor-pointer hover:bg-muted/40"
+                          className="cursor-pointer transition-colors hover:bg-muted/40"
                         >
-                          <TableCell>
+                          <TableCell className="py-3.5 pl-4">
                             <div className="flex items-center gap-3">
-                              <div className="relative size-9 rounded-full overflow-hidden bg-muted shrink-0">
+                              <div className="relative size-9 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border/70">
                                 <Image
                                   src={item.foto}
                                   alt={item.nama}
                                   fill
-                                  className="object-cover"
+                                  className="object-cover object-top"
                                   unoptimized
                                 />
                               </div>
-                              <div>
-                                <p className="font-medium text-sm text-foreground">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-foreground">
                                   {item.nama}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="truncate text-xs text-muted-foreground">
                                   {item.jabatan}
                                 </p>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">
-                            {item.bidang || "Pimpinan Inti"}
+                            <Badge
+                              variant="outline"
+                              className="h-5 rounded-md border-border/60 bg-muted/40 px-2 text-[11px] font-normal text-muted-foreground"
+                            >
+                              {item.bidang || "Pimpinan Inti"}
+                            </Badge>
                           </TableCell>
                           <TableCell className="text-xs">
                             <p className="font-medium text-foreground">
                               {item.periode}
                             </p>
-                            <p className="text-[11px] text-muted-foreground">
+                            <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <MapPin className="size-3 opacity-70" aria-hidden="true" />
                               {item.cabangNama || "Pusat (DPP)"}
                             </p>
                           </TableCell>
-                          <TableCell className="text-center font-mono text-xs">
+                          <TableCell className="text-center font-mono text-xs tabular-nums text-muted-foreground">
                             #{item.urutan}
                           </TableCell>
-                          <TableCell className="text-right pr-6">
+                          <TableCell className="pr-6 text-right">
                             <div className="inline-flex items-center gap-1">
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
+                                className="cursor-pointer text-muted-foreground hover:text-foreground"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setInspectorItem(item);
                                 }}
                                 aria-label={`Lihat detail ${item.nama}`}
+                                title="Lihat detail"
                               >
                                 <Eye className="size-3.5" />
                               </Button>
@@ -598,10 +774,12 @@ export default function PengurusCMSPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon-sm"
+                                    className="cursor-pointer text-muted-foreground hover:text-foreground"
                                     onClick={(e) =>
                                       handleOpenEditStruktur(item, e)
                                     }
                                     aria-label={`Ubah data ${item.nama}`}
+                                    title="Ubah data"
                                   >
                                     <Edit2 className="size-3.5" />
                                   </Button>
@@ -614,7 +792,8 @@ export default function PengurusCMSPage() {
                                         setDeletingStrukturId(item.id);
                                       }}
                                       aria-label={`Hapus ${item.nama}`}
-                                      className="text-destructive"
+                                      title="Hapus"
+                                      className="cursor-pointer text-destructive hover:bg-destructive/10"
                                     >
                                       <Trash2 className="size-3.5" />
                                     </Button>
@@ -641,57 +820,91 @@ export default function PengurusCMSPage() {
           aria-labelledby="tab-periode"
           className="space-y-4"
         >
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead>Nama Periode</TableHead>
-                  <TableHead>Masa Bakti</TableHead>
-                  <TableHead>Wilayah / Cabang</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-right pr-6">Aksi</TableHead>
+                  <TableHead className="py-3.5 pl-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Nama Periode
+                  </TableHead>
+                  <TableHead className="py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Masa Bakti
+                  </TableHead>
+                  <TableHead className="py-3.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Wilayah / Cabang
+                  </TableHead>
+                  <TableHead className="py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Status
+                  </TableHead>
+                  <TableHead className="py-3.5 pr-6 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Aksi
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isPeriodeLoading ? (
                   <SkeletonTableRows rows={5} columns={5} />
                 ) : periodeList.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="h-40 text-center text-sm text-muted-foreground"
-                    >
-                      Belum ada periode kepengurusan.
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={5} className="py-14 text-center">
+                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                        <Calendar
+                          className="size-8 text-muted-foreground/40"
+                          aria-hidden="true"
+                        />
+                        <p className="text-sm font-semibold text-foreground">
+                          Belum ada periode kepengurusan
+                        </p>
+                        <p className="max-w-sm text-xs">
+                          Tambahkan periode kepengurusan terlebih dahulu untuk
+                          mengelola susunan pengurus.
+                        </p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
                   periodeList.map((p) => {
                     const periodeCanManage = canManagePeriode(p);
                     return (
-                      <TableRow key={p.uuid}>
-                        <TableCell className="font-medium text-sm">
+                      <TableRow
+                        key={p.uuid}
+                        className="transition-colors hover:bg-muted/30"
+                      >
+                        <TableCell className="py-3.5 pl-4 text-sm font-medium text-foreground">
                           {p.namaPeriode}
                         </TableCell>
-                        <TableCell className="text-xs font-mono">
+                        <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
                           {p.tahunMulai} – {p.tahunSelesai}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {p.cabang?.namaCabang || "Pusat / Nasional (DPP)"}
+                          <span className="inline-flex items-center gap-1.5">
+                            <MapPin className="size-3 opacity-70" aria-hidden="true" />
+                            {p.cabang?.namaCabang || "Pusat / Nasional (DPP)"}
+                          </span>
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge
                             variant="outline"
                             className={cn(
-                              "text-[11px]",
+                              "h-5 gap-1.5 rounded-md px-2 text-[11px] font-medium",
                               p.isAktif
-                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                : "bg-muted text-muted-foreground",
+                                ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                : "border-border bg-muted/60 text-muted-foreground",
                             )}
                           >
+                            <span
+                              className={cn(
+                                "size-1.5 rounded-full",
+                                p.isAktif
+                                  ? "bg-emerald-500"
+                                  : "bg-muted-foreground",
+                              )}
+                              aria-hidden="true"
+                            />
                             {p.isAktif ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right pr-6">
+                        <TableCell className="pr-6 text-right">
                           {periodeCanManage && (
                             <div className="inline-flex items-center gap-1">
                               {!p.isAktif && (
@@ -704,20 +917,22 @@ export default function PengurusCMSPage() {
                                       values: { isAktif: true },
                                     })
                                   }
-                                  className="h-7 text-xs text-emerald-600"
+                                  className="h-7 cursor-pointer text-xs text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
                                 >
-                                  <CheckCircle2 className="size-3.5 mr-1" />
+                                  <CheckCircle2 className="mr-1 size-3.5" />
                                   Aktifkan
                                 </Button>
                               )}
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
+                                className="cursor-pointer text-muted-foreground hover:text-foreground"
                                 onClick={() => {
                                   setEditingPeriode(p);
                                   setIsPeriodeDialogOpen(true);
                                 }}
                                 aria-label={`Edit periode ${p.namaPeriode}`}
+                                title="Edit periode"
                               >
                                 <Edit2 className="size-3.5" />
                               </Button>
@@ -727,7 +942,8 @@ export default function PengurusCMSPage() {
                                   size="icon-sm"
                                   onClick={() => setDeletingPeriodeTarget(p)}
                                   aria-label={`Hapus periode ${p.namaPeriode}`}
-                                  className="text-destructive"
+                                  title="Hapus periode"
+                                  className="cursor-pointer text-destructive hover:bg-destructive/10"
                                 >
                                   <Trash2 className="size-3.5" />
                                 </Button>
@@ -794,20 +1010,24 @@ export default function PengurusCMSPage() {
         open={Boolean(deletingStrukturId)}
         onOpenChange={(open) => !open && setDeletingStrukturId(null)}
       >
-        <DialogContent className="sm:max-w-md rounded-sm">
+        <DialogContent className="rounded-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
-              <Trash2 className="w-5 h-5" />
-              Hapus Pengurus dari Struktur
+            <DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                <Trash2 className="size-4" aria-hidden="true" />
+              </span>
+              <span>Hapus Pengurus dari Struktur</span>
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground pt-1">
+            <DialogDescription className="pt-1 text-xs leading-relaxed text-muted-foreground">
               Pengurus akan dikeluarkan dari susunan periode ini. Data
               keanggotaan anggota tetap tersimpan.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="pt-3 gap-2">
+          <DialogFooter className="gap-2 pt-3">
             <Button
               variant="outline"
+              size="sm"
+              className="cursor-pointer"
               onClick={() => setDeletingStrukturId(null)}
               disabled={deleteStruktur.isPending}
             >
@@ -815,11 +1035,13 @@ export default function PengurusCMSPage() {
             </Button>
             <Button
               variant="destructive"
+              size="sm"
+              className="cursor-pointer"
               onClick={handleConfirmDeleteStruktur}
               disabled={deleteStruktur.isPending}
             >
               {deleteStruktur.isPending && (
-                <Loader2 className="size-4 mr-2 animate-spin" />
+                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
               )}
               Ya, Hapus
             </Button>
@@ -832,20 +1054,24 @@ export default function PengurusCMSPage() {
         open={Boolean(deletingPeriodeTarget)}
         onOpenChange={(open) => !open && setDeletingPeriodeTarget(null)}
       >
-        <DialogContent className="sm:max-w-md rounded-sm">
+        <DialogContent className="rounded-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
-              <Trash2 className="w-5 h-5" />
-              Hapus Periode Kepengurusan
+            <DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                <Trash2 className="size-4" aria-hidden="true" />
+              </span>
+              <span>Hapus Periode Kepengurusan</span>
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground pt-1">
+            <DialogDescription className="pt-1 text-xs leading-relaxed text-muted-foreground">
               Apakah Anda yakin ingin menghapus periode &ldquo;
               {deletingPeriodeTarget?.namaPeriode}&rdquo;?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="pt-3 gap-2">
+          <DialogFooter className="gap-2 pt-3">
             <Button
               variant="outline"
+              size="sm"
+              className="cursor-pointer"
               onClick={() => setDeletingPeriodeTarget(null)}
               disabled={deletePeriode.isPending}
             >
@@ -853,11 +1079,13 @@ export default function PengurusCMSPage() {
             </Button>
             <Button
               variant="destructive"
+              size="sm"
+              className="cursor-pointer"
               onClick={handleConfirmDeletePeriode}
               disabled={deletePeriode.isPending}
             >
               {deletePeriode.isPending && (
-                <Loader2 className="size-4 mr-2 animate-spin" />
+                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
               )}
               Ya, Hapus Periode
             </Button>

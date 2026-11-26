@@ -168,8 +168,8 @@ export function NewsCoverField({
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-[16rem_1fr] md:items-start">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-muted ring-1 ring-border">
+    <div className="flex flex-col gap-3.5">
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-muted ring-1 ring-border">
         <NewsCover src={value} alt="Pratinjau sampul berita" />
         {busy && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/60">
@@ -177,7 +177,7 @@ export function NewsCoverField({
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5">
         <Input
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
@@ -188,27 +188,36 @@ export function NewsCoverField({
           disabled={busy}
         />
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>
-            <ImagePlus className="mr-1 h-4 w-4" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => inputRef.current?.click()}
+            className="cursor-pointer"
+          >
+            <ImagePlus className="mr-1.5 h-4 w-4" />
             Unggah foto
           </Button>
           {value && (
             <Button
               type="button"
               variant="ghost"
+              size="sm"
               disabled={busy}
               onClick={() => {
                 onChange("");
                 setDraft("");
               }}
+              className="cursor-pointer text-destructive hover:bg-destructive/10"
             >
               Hapus sampul
             </Button>
           )}
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Pratinjau memakai rasio 4:3 seperti berita utama di beranda. Foto lanskap 4:3
-          (1600×1200) atau 16:9 (1600×900), lebar minimal 1200 px, maksimal 5 MB.
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Rasio lanskap 4:3 (1600×1200) atau 16:9 (1600×900), lebar minimal
+          1200 px, maksimal 5 MB.
         </p>
         <input
           ref={inputRef}

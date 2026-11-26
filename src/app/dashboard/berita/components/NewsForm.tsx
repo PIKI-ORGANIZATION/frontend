@@ -5,29 +5,34 @@ import dynamic from "next/dynamic";
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Plus, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Clock,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Plus,
+  Save,
+  Settings2,
+  Tags,
+  X,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { NewsCoverField } from "@/components/news/NewsCoverField";
-
-const NewsEditor = dynamic(
-  () => import("@/components/news/NewsEditor").then((mod) => mod.NewsEditor),
-  {
-    ssr: false,
-    loading: () => <div className="h-80 animate-pulse rounded-xl bg-muted" />,
-  },
-);
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useCreateNews,
   useCreateNewsKategori,
@@ -42,10 +47,18 @@ import {
   NewsItem,
   plainNewsText,
   slugifyJudul,
-  tingkatFromCabangName,
   tingkatLabel,
   toNewsDatetimeLocal,
 } from "@/lib/news";
+import { cn } from "@/lib/utils";
+
+const NewsEditor = dynamic(
+  () => import("@/components/news/NewsEditor").then((mod) => mod.NewsEditor),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-80 w-full rounded-xl" />,
+  },
+);
 
 export function NewsForm({
   mode,
@@ -90,43 +103,26 @@ export function NewsForm({
     initial?.tags.map((item) => item.uuid) || [],
   );
 
-  const cabangItems = useMemo(() => {
-    const labels: Record<string, string> = {
-      __akun__: "Ikuti cabang akun DPP",
-    };
-    if (scope?.cabangId)
-      labels[scope.cabangId] = scope.cabangName || "DPP Pusat";
-    if (initial?.cabangUuid && initial.cabang?.namaCabang) {
-      const place = initial.cabang.provinsi
-        ? ` · ${initial.cabang.provinsi}`
-        : "";
-      labels[initial.cabangUuid] = `${initial.cabang.namaCabang}${place}`;
-    }
-    for (const cabang of cabangQuery.data ?? []) {
-      labels[cabang.uuid] = cabang.provinsi
-        ? `${cabang.namaCabang} · ${cabang.provinsi}`
-        : cabang.namaCabang;
-    }
-    return labels;
-  }, [cabangQuery.data, initial, scope]);
+  const cabangSelectOptions = useMemo(
+    () => [
+      { value: "__akun__", label: "Ikuti cabang akun DPP" },
+      ...(cabangQuery.data ?? []).map((cabang) => ({
+        value: cabang.uuid,
+        label: cabang.namaCabang,
+        subLabel: cabang.provinsi || undefined,
+      })),
+    ],
+    [cabangQuery.data],
+  );
 
-  const groupedCabang = useMemo(() => {
-    const items = cabangQuery.data ?? [];
+  const { wordCount, readMinutes } = useMemo(() => {
+    const plain = plainNewsText(konten);
+    const words = plain ? plain.split(/\s+/).filter(Boolean).length : 0;
     return {
-      DPP: items.filter(
-        (item) =>
-          tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPP",
-      ),
-      DPD: items.filter(
-        (item) =>
-          tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPD",
-      ),
-      DPC: items.filter(
-        (item) =>
-          tingkatFromCabangName(item.namaCabang, item.isCabang) === "DPC",
-      ),
+      wordCount: words,
+      readMinutes: Math.max(1, Math.ceil(words / 200)),
     };
-  }, [cabangQuery.data]);
+  }, [konten]);
 
   const pending = createNews.isPending || updateNews.isPending;
 
@@ -266,269 +262,355 @@ export function NewsForm({
   };
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto flex max-w-6xl flex-col gap-8">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-            {scope ? tingkatLabel(scope.tingkat) : "Redaksi"}
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-            {mode === "create" ? "Tulis berita" : "Sunting berita"}
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+    <form
+      onSubmit={onSubmit}
+      className="mx-auto flex max-w-7xl flex-col gap-6 py-4 sm:py-6"
+    >
+      {/* 1. Sticky-style Editorial Header */}
+      <div className="flex flex-col gap-4 border-b border-border/70 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {mode === "create" ? "Tulis Berita Baru" : "Sunting Berita"}
+            </h1>
+            {scope && (
+              <Badge
+                variant="outline"
+                className="h-5 rounded-md border-primary/25 bg-primary/10 px-2 text-[11px] font-medium text-primary"
+              >
+                Redaksi {tingkatLabel(scope.tingkat)}
+              </Badge>
+            )}
+          </div>
+          <p className="max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
             {!scope
               ? "Menyiapkan ruang redaksi sesuai cabang akun."
               : scope.isManageAll
-                ? "Sebagai admin DPP Anda dapat menaruh berita di pusat, DPD provinsi, atau DPC kabupaten/kota."
-                : `Berita ini terkunci pada cabang ${scope.cabangName || tingkatLabel(scope.tingkat)}. Pilihan cabang lain diabaikan server.`}
+                ? "Anda dapat menerbitkan berita untuk Pusat (DPP), DPD provinsi, maupun DPC kabupaten/kota."
+                : `Berita terkunci pada cabang ${scope.cabangName || tingkatLabel(scope.tingkat)}.`}
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          nativeButton={false}
-          render={<Link href="/dashboard/berita" />}
-        >
-          Kembali
-        </Button>
-      </div>
 
-      <div className="grid gap-6 rounded-xl bg-card p-6 ring-1 ring-border md:grid-cols-2">
-        <Field label="Judul" className="md:col-span-2">
-          <Input
-            value={judul}
-            onChange={(event) => {
-              const nextJudul = event.target.value;
-              setJudul(nextJudul);
-              if (!slugTouched) setSlug(slugifyJudul(nextJudul));
-            }}
-            placeholder="Judul berita"
-          />
-        </Field>
-        <Field label="Slug">
-          <Input
-            value={slug}
-            onChange={(event) => {
-              setSlugTouched(true);
-              setSlug(slugifyJudul(event.target.value));
-            }}
-          />
-        </Field>
-        <Field label="Status">
-          <Select
-            items={{ DRAFT: "Draf", PUBLISHED: "Terbit", ARCHIVED: "Arsip" }}
-            value={status}
-            onValueChange={(value) => {
-              if (!value) return;
-              setStatus(value);
-              if (value === "PUBLISHED" && !publishedAt) {
-                setPublishedAt(toNewsDatetimeLocal(new Date().toISOString()));
-              }
-            }}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 px-2.5 py-1.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+            <Clock className="size-3 text-primary" aria-hidden="true" />
+            {wordCount} kata · ~{readMinutes} mnt
+          </span>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            nativeButton={false}
+            render={<Link href="/dashboard/berita" />}
           >
-            <SelectTrigger size="lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="DRAFT">Draf</SelectItem>
-              <SelectItem value="PUBLISHED">Terbit</SelectItem>
-              {mode === "edit" ? (
-                <SelectItem value="ARCHIVED">Arsip</SelectItem>
-              ) : null}
-            </SelectContent>
-          </Select>
-        </Field>
-        {status === "PUBLISHED" && (
-          <Field label="Tanggal terbit" className="md:col-span-2">
-            <Input
-              type="datetime-local"
-              value={publishedAt}
-              onChange={(event) => setPublishedAt(event.target.value)}
-              className="dark:[color-scheme:dark]"
-            />
-            <p className="text-xs text-muted-foreground">
-              Tanggal ini yang tampil di halaman publik. Kosongkan untuk memakai
-              waktu saat berita disimpan.
-            </p>
-          </Field>
-        )}
-        <Field label="Ringkasan" className="md:col-span-2">
-          <Textarea
-            value={ringkasan}
-            onChange={(event) => setRingkasan(event.target.value)}
-            className="min-h-24"
-          />
-        </Field>
-        <Field label="Gambar sampul" className="md:col-span-2">
-          <NewsCoverField value={thumbnail} onChange={setThumbnail} />
-        </Field>
-        {scope?.isManageAll && (
-          <Field label="Pemilik berita" className="md:col-span-2">
-            <Select
-              items={cabangItems}
-              value={effectiveCabangUuid || "__akun__"}
-              onValueChange={(value) =>
-                setSelectedCabangUuid(!value || value === "__akun__" ? "" : value)
-              }
-            >
-              <SelectTrigger size="lg">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="max-h-80">
-                <SelectItem value="__akun__">Ikuti cabang akun DPP</SelectItem>
-                {(["DPP", "DPD", "DPC"] as const).map((tingkat) => (
-                  <SelectGroup key={tingkat}>
-                    <SelectLabel>{tingkatLabel(tingkat)}</SelectLabel>
-                    {groupedCabang[tingkat].map((cabang) => (
-                      <SelectItem key={cabang.uuid} value={cabang.uuid}>
-                        {cabang.namaCabang}
-                        {cabang.provinsi ? ` · ${cabang.provinsi}` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-        )}
-        <Field label="Kategori" className="md:col-span-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {(taxonomy.data?.kategori ?? []).map((item) => (
-              <ToggleChip
-                key={item.uuid}
-                active={kategori.includes(item.uuid)}
-                onClick={() => toggle(kategori, item.uuid, setKategori)}
-              >
-                {item.nama_kategori}
-              </ToggleChip>
-            ))}
-            {scope?.canCreateKategori && !showNewKategori && (
-              <button
-                type="button"
-                onClick={() => setShowNewKategori(true)}
-                className="inline-flex items-center gap-1 rounded-full border border-dashed border-primary/50 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Kategori baru
-              </button>
+            <ArrowLeft className="mr-1.5 size-3.5" />
+            Kembali
+          </Button>
+
+          <Button
+            type="submit"
+            size="sm"
+            disabled={pending}
+            className="cursor-pointer"
+          >
+            {pending ? (
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+            ) : (
+              <Save className="mr-1.5 size-3.5" />
             )}
-          </div>
-          {scope?.canCreateKategori && showNewKategori && (
-            <div className="mt-1 flex max-w-md items-center gap-2">
-              <Input
-                value={newKategoriName}
-                onChange={(e) => setNewKategoriName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddKategori();
-                  }
-                }}
-                placeholder="Nama kategori baru (mis. Kajian Strategis)"
-                className="h-9 text-xs"
-              />
-              <Button
-                type="button"
-                size="sm"
-                disabled={createKategori.isPending}
-                onClick={handleAddKategori}
-                className="h-9 px-3 text-xs"
-              >
-                {createKategori.isPending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  "Simpan"
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowNewKategori(false);
-                  setNewKategoriName("");
-                }}
-                className="h-9 px-2 text-muted-foreground"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </Field>
-        <Field label="Tag" className="md:col-span-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {(taxonomy.data?.tags ?? []).map((item) => (
-              <ToggleChip
-                key={item.uuid}
-                active={tags.includes(item.uuid)}
-                onClick={() => toggle(tags, item.uuid, setTags)}
-              >
-                {item.nama_tag}
-              </ToggleChip>
-            ))}
-            {scope?.canCreateTag && !showNewTag && (
-              <button
-                type="button"
-                onClick={() => setShowNewTag(true)}
-                className="inline-flex items-center gap-1 rounded-full border border-dashed border-primary/50 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Tag baru
-              </button>
-            )}
-          </div>
-          {scope?.canCreateTag && showNewTag && (
-            <div className="mt-1 flex max-w-md items-center gap-2">
-              <Input
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddTag();
-                  }
-                }}
-                placeholder="Nama tag baru (mis. Sumatera Utara)"
-                className="h-9 text-xs"
-              />
-              <Button
-                type="button"
-                size="sm"
-                disabled={createTag.isPending}
-                onClick={handleAddTag}
-                className="h-9 px-3 text-xs"
-              >
-                {createTag.isPending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  "Simpan"
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowNewTag(false);
-                  setNewTagName("");
-                }}
-                className="h-9 px-2 text-muted-foreground"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </Field>
-        <Field label="Isi berita" className="md:col-span-2">
-          <NewsEditor value={konten} onChange={setKonten} />
-        </Field>
+            {pending
+              ? "Menyimpan..."
+              : mode === "create"
+                ? "Simpan Berita"
+                : "Simpan Perubahan"}
+          </Button>
+        </div>
       </div>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={pending} className="h-11 px-6">
-          {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Simpan berita
-        </Button>
+      {/* 2. 2-Column SaaS Editorial Layout */}
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        {/* Kolom Kiri (8 col): Ruang Penulisan */}
+        <div className="space-y-5 lg:col-span-8">
+          <div className="space-y-5 rounded-xl border border-border/80 bg-card p-5 shadow-xs sm:p-6">
+            <div className="flex items-center gap-2 border-b border-border/70 pb-3">
+              <FileText className="size-4 text-primary" aria-hidden="true" />
+              <h2 className="text-sm font-semibold text-foreground">
+                Konten Artikel
+              </h2>
+            </div>
+
+            <Field label="Judul Berita">
+              <Input
+                value={judul}
+                onChange={(event) => {
+                  const nextJudul = event.target.value;
+                  setJudul(nextJudul);
+                  if (!slugTouched) setSlug(slugifyJudul(nextJudul));
+                }}
+                placeholder="Tuliskan judul berita yang jelas dan informatif..."
+                className="h-11 text-base font-medium"
+              />
+            </Field>
+
+            <Field label="Slug URL">
+              <div className="flex items-center overflow-hidden rounded-md border border-input bg-background focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50">
+                <span className="border-r border-border bg-muted/50 px-3 py-2 font-mono text-xs text-muted-foreground select-none">
+                  /berita/
+                </span>
+                <input
+                  value={slug}
+                  onChange={(event) => {
+                    setSlugTouched(true);
+                    setSlug(slugifyJudul(event.target.value));
+                  }}
+                  placeholder="judul-berita-anda"
+                  className="h-9 flex-1 bg-transparent px-3 font-mono text-xs text-foreground outline-none"
+                />
+              </div>
+            </Field>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium">Ringkasan</Label>
+                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                  {ringkasan.length} karakter
+                </span>
+              </div>
+              <Textarea
+                value={ringkasan}
+                onChange={(event) => setRingkasan(event.target.value)}
+                placeholder="Ringkasan singkat 1–2 kalimat yang tampil pada daftar berita..."
+                className="min-h-24 leading-relaxed"
+              />
+            </div>
+
+            <Field label="Isi Berita">
+              <NewsEditor value={konten} onChange={setKonten} />
+            </Field>
+          </div>
+        </div>
+
+        {/* Kolom Kanan (4 col): Sidebar Metadata Sticky */}
+        <aside className="space-y-5 lg:sticky lg:top-20 lg:col-span-4">
+          {/* Publikasi & Wilayah */}
+          <div className="space-y-4 rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+            <div className="flex items-center gap-2 border-b border-border/70 pb-3">
+              <Settings2 className="size-4 text-primary" aria-hidden="true" />
+              <h2 className="text-sm font-semibold text-foreground">
+                Publikasi &amp; Wilayah
+              </h2>
+            </div>
+
+            <Field label="Status Publikasi">
+              <Select
+                items={{ DRAFT: "Draf", PUBLISHED: "Terbit", ARCHIVED: "Arsip" }}
+                value={status}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  setStatus(value);
+                  if (value === "PUBLISHED" && !publishedAt) {
+                    setPublishedAt(toNewsDatetimeLocal(new Date().toISOString()));
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DRAFT">Draf</SelectItem>
+                  <SelectItem value="PUBLISHED">Terbit</SelectItem>
+                  {mode === "edit" ? (
+                    <SelectItem value="ARCHIVED">Arsip</SelectItem>
+                  ) : null}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            {status === "PUBLISHED" && (
+              <Field label="Tanggal Terbit">
+                <Input
+                  type="datetime-local"
+                  value={publishedAt}
+                  onChange={(event) => setPublishedAt(event.target.value)}
+                  className="dark:[color-scheme:dark]"
+                />
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Kosongkan untuk memakai waktu saat berita disimpan.
+                </p>
+              </Field>
+            )}
+
+            {scope?.isManageAll && (
+              <Field label="Pemilik Berita (Wilayah / Cabang)">
+                <SearchableSelect
+                  value={effectiveCabangUuid || "__akun__"}
+                  onValueChange={(value) =>
+                    setSelectedCabangUuid(value === "__akun__" ? "" : value)
+                  }
+                  options={cabangSelectOptions}
+                  placeholder="Pilih wilayah pemilik..."
+                  searchPlaceholder="Cari wilayah / cabang..."
+                  emptyMessage="Wilayah tidak ditemukan."
+                  icon={<Building2 className="size-3.5 text-muted-foreground" />}
+                  triggerClassName="h-9 rounded-sm px-3 dark:bg-input/30 dark:hover:bg-input/50"
+                />
+              </Field>
+            )}
+          </div>
+
+          {/* Gambar Sampul */}
+          <div className="space-y-4 rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+            <div className="flex items-center gap-2 border-b border-border/70 pb-3">
+              <ImageIcon className="size-4 text-primary" aria-hidden="true" />
+              <h2 className="text-sm font-semibold text-foreground">
+                Gambar Sampul
+              </h2>
+            </div>
+            <NewsCoverField value={thumbnail} onChange={setThumbnail} />
+          </div>
+
+          {/* Taksonomi: Kategori & Tag */}
+          <div className="space-y-5 rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+            <div className="flex items-center gap-2 border-b border-border/70 pb-3">
+              <Tags className="size-4 text-primary" aria-hidden="true" />
+              <h2 className="text-sm font-semibold text-foreground">
+                Kategori &amp; Tag
+              </h2>
+            </div>
+
+            <Field label={`Kategori (${kategori.length} dipilih)`}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(taxonomy.data?.kategori ?? []).map((item) => (
+                  <ToggleChip
+                    key={item.uuid}
+                    active={kategori.includes(item.uuid)}
+                    onClick={() => toggle(kategori, item.uuid, setKategori)}
+                  >
+                    {item.nama_kategori}
+                  </ToggleChip>
+                ))}
+                {scope?.canCreateKategori && !showNewKategori && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewKategori(true)}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed border-primary/50 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                  >
+                    <Plus className="size-3" />
+                    Kategori baru
+                  </button>
+                )}
+              </div>
+              {scope?.canCreateKategori && showNewKategori && (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <Input
+                    value={newKategoriName}
+                    onChange={(e) => setNewKategoriName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddKategori();
+                      }
+                    }}
+                    placeholder="Nama kategori baru..."
+                    className="h-8 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={createKategori.isPending}
+                    onClick={handleAddKategori}
+                    className="h-8 cursor-pointer px-2.5 text-xs"
+                  >
+                    {createKategori.isPending ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      "Simpan"
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => {
+                      setShowNewKategori(false);
+                      setNewKategoriName("");
+                    }}
+                    className="size-8 cursor-pointer text-muted-foreground"
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                </div>
+              )}
+            </Field>
+
+            <Field label={`Tag (${tags.length} dipilih)`}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(taxonomy.data?.tags ?? []).map((item) => (
+                  <ToggleChip
+                    key={item.uuid}
+                    active={tags.includes(item.uuid)}
+                    onClick={() => toggle(tags, item.uuid, setTags)}
+                  >
+                    {item.nama_tag}
+                  </ToggleChip>
+                ))}
+                {scope?.canCreateTag && !showNewTag && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewTag(true)}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed border-primary/50 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                  >
+                    <Plus className="size-3" />
+                    Tag baru
+                  </button>
+                )}
+              </div>
+              {scope?.canCreateTag && showNewTag && (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <Input
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddTag();
+                      }
+                    }}
+                    placeholder="Nama tag baru..."
+                    className="h-8 text-xs"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={createTag.isPending}
+                    onClick={handleAddTag}
+                    className="h-8 cursor-pointer px-2.5 text-xs"
+                  >
+                    {createTag.isPending ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      "Simpan"
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => {
+                      setShowNewTag(false);
+                      setNewTagName("");
+                    }}
+                    className="size-8 cursor-pointer text-muted-foreground"
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                </div>
+              )}
+            </Field>
+          </div>
+        </aside>
       </div>
     </form>
   );
@@ -544,8 +626,8 @@ function Field({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col gap-2 ${className || ""}`}>
-      <Label>{label}</Label>
+    <div className={cn("flex flex-col gap-2", className)}>
+      <Label className="text-xs font-medium">{label}</Label>
       {children}
     </div>
   );
@@ -563,12 +645,14 @@ function ToggleChip({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+      className={cn(
+        "cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
         active
-          ? "bg-primary text-primary-foreground"
-          : "bg-muted text-foreground"
-      }`}
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-muted/50 text-muted-foreground hover:border-border hover:text-foreground",
+      )}
     >
       {children}
     </button>

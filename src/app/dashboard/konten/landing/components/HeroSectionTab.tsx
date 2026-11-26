@@ -62,7 +62,7 @@ export function HeroSectionTab({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Kolom Kiri: Form Pengaturan Hero (lg:col-span-7) */}
         <div className="lg:col-span-7 space-y-5">
-          <div className="rounded-lg ring-1 ring-border bg-card p-5 space-y-4">
+          <div className="rounded-xl border border-border/80 bg-card p-5 space-y-4 shadow-xs">
             <div className="flex items-center gap-2 border-b border-border/70 pb-3">
               <Sparkles className="w-4 h-4 text-primary" />
               <div>
@@ -148,7 +148,7 @@ export function HeroSectionTab({
           </div>
 
           {/* Form CTA Buttons */}
-          <div className="rounded-lg ring-1 ring-border bg-card p-5 space-y-4">
+          <div className="rounded-xl border border-border/80 bg-card p-5 space-y-4 shadow-xs">
             <div className="flex items-center gap-2 border-b border-border/70 pb-3">
               <LinkIcon className="w-4 h-4 text-primary" />
               <div>
@@ -255,12 +255,18 @@ export function HeroSectionTab({
                   size="sm"
                   onClick={handleReset}
                   disabled={isSaving}
+                  className="cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Batal
                 </Button>
               )}
-              <Button type="submit" size="sm" disabled={isSaving}>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isSaving}
+                className="cursor-pointer"
+              >
                 {isSaving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (

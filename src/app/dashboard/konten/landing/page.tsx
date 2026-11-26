@@ -21,6 +21,8 @@ import {
   History,
   Sparkles,
   Compass,
+  Globe,
+  CheckCircle2,
 } from "lucide-react";
 import { useSejarah } from "@/features/sejarah/hooks/useSejarah";
 import { useAdminLandingSettings } from "@/features/page-setting/hooks/usePageSettings";
@@ -44,6 +46,16 @@ export default function CmsLandingPage() {
     isLoading: isLoadingSettings,
     upsertSetting,
   } = useAdminLandingSettings(isReady && access.canManagePageSettings);
+
+  const historyStats = useMemo(() => {
+    let published = 0;
+    let draft = 0;
+    for (const item of historyEvents) {
+      if (item.status === "PUBLISHED") published++;
+      else if (item.status === "DRAFT") draft++;
+    }
+    return { total: historyEvents.length, published, draft };
+  }, [historyEvents]);
 
   const tabs = useMemo(() => {
     const list: Array<{
@@ -84,7 +96,7 @@ export default function CmsLandingPage() {
     return (
       <div className="mx-auto max-w-7xl space-y-6 py-4 sm:py-6 lg:py-8">
         <SkeletonPageHeader showTabs tabCount={3} />
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           <SkeletonTimelineList rows={4} label="Memuat CMS Landing Page…" />
         </div>
       </div>
@@ -101,80 +113,122 @@ export default function CmsLandingPage() {
   }
 
   return (
-    <div className="space-y-6 py-4 sm:py-6 lg:py-8 max-w-7xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-6 py-4 sm:py-6 lg:py-8">
       {/* 1. Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/70 pb-5">
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            CMS Landing Page
-          </h1>
-          <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            Kelola teks hero banner, profil pengantar, visi misi, dan linimasa
-            sejarah yang tampil pada beranda publik PIKI.
-          </p>
+      <div className="flex flex-col gap-4 border-b border-border/70 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+            <Globe className="size-4" aria-hidden="true" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                CMS Landing Page
+              </h1>
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="size-3" aria-hidden="true" />
+                Terhubung Server
+              </span>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground md:text-sm">
+              Kelola teks hero banner, profil pengantar, visi misi, dan linimasa
+              sejarah yang tampil pada beranda publik PIKI.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-center">
+        <div className="flex items-center gap-2 self-start sm:self-center">
           <Link
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(buttonVariants({ size: "sm" }), "font-semibold")}
+            className={cn(
+              buttonVariants({ size: "sm", variant: "outline" }),
+              "cursor-pointer gap-1.5 font-medium",
+            )}
           >
             <span>Buka Halaman Publik</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="size-3.5" aria-hidden="true" />
           </Link>
         </div>
       </div>
 
-      {/* 2. Navigation Tabs (Segmented Control Track selaras dengan CMS Galeri & Wilayah) */}
-      <div className="flex items-center overflow-x-auto pb-1 max-w-full">
-        <div
-          role="tablist"
-          aria-label="Bagian CMS Landing Page"
-          className="inline-flex items-center gap-1 p-1 rounded-md bg-muted/60 dark:bg-muted/40 border border-border"
-        >
-          {tabs.map((tab) => {
-            const isSelected = currentTab === tab.id;
-            const Icon = tab.icon;
+      {/* 2. Mini Stats & Tab Navigation Row */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex max-w-full items-center overflow-x-auto pb-1 lg:pb-0">
+          <div
+            role="tablist"
+            aria-label="Bagian CMS Landing Page"
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 p-1 dark:bg-muted/40"
+          >
+            {tabs.map((tab) => {
+              const isSelected = currentTab === tab.id;
+              const Icon = tab.icon;
 
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 text-sm rounded-sm transition-all whitespace-nowrap cursor-pointer select-none",
-                  "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
-                  isSelected
-                    ? "bg-background text-foreground font-medium shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/40 font-normal border border-transparent",
-                )}
-              >
-                <Icon
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "size-3.5 shrink-0",
-                    isSelected ? "text-primary" : "text-muted-foreground",
+                    "flex cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-sm transition-all",
+                    "focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary",
+                    isSelected
+                      ? "bg-background font-medium text-foreground shadow-2xs"
+                      : "border border-transparent font-normal text-muted-foreground hover:bg-background/40 hover:text-foreground",
                   )}
-                />
-                <span>{tab.label}</span>
-                {typeof tab.count === "number" && (
-                  <span
+                >
+                  <Icon
                     className={cn(
-                      "ml-0.5 px-1.5 py-0.5 shrink-0 rounded-full text-[10px] font-mono transition-colors",
-                      isSelected
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "bg-muted text-muted-foreground",
+                      "size-3.5 shrink-0",
+                      isSelected ? "text-primary" : "text-muted-foreground",
                     )}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                    aria-hidden="true"
+                  />
+                  <span>{tab.label}</span>
+                  {typeof tab.count === "number" && (
+                    <span
+                      className={cn(
+                        "ml-0.5 shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] tabular-nums transition-colors",
+                        isSelected
+                          ? "bg-primary/10 font-semibold text-primary"
+                          : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Ringkasan Cepat Sejarah */}
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card px-2.5 py-1.5">
+            <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+            <span>Total</span>
+            <strong className="font-mono tabular-nums text-foreground">
+              {historyStats.total}
+            </strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card px-2.5 py-1.5">
+            <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+            <span>Tayang</span>
+            <strong className="font-mono tabular-nums text-foreground">
+              {historyStats.published}
+            </strong>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card px-2.5 py-1.5">
+            <span className="size-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+            <span>Draf</span>
+            <strong className="font-mono tabular-nums text-foreground">
+              {historyStats.draft}
+            </strong>
+          </span>
         </div>
       </div>
 

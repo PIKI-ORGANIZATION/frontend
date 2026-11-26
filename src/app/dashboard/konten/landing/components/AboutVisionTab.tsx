@@ -16,6 +16,7 @@ import {
   Save,
   RotateCcw,
   Loader2,
+  Eye,
 } from "lucide-react";
 
 interface AboutVisionTabProps {
@@ -107,9 +108,12 @@ export function AboutVisionTab({
   };
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
-      {/* 1. Profil / Tentang PIKI */}
-      <div className="rounded-lg ring-1 ring-border bg-card p-5 space-y-4">
+    <form onSubmit={handleSave} className="space-y-6">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        {/* Kolom Kiri: Form Tentang, Visi & Misi (7 col) */}
+        <div className="space-y-5 lg:col-span-7">
+          {/* 1. Profil / Tentang PIKI */}
+          <div className="space-y-4 rounded-xl border border-border/80 bg-card p-5 shadow-xs">
         <div className="flex items-center gap-2 border-b border-border/70 pb-3">
           <Info className="w-4 h-4 text-primary" />
           <div>
@@ -177,7 +181,7 @@ export function AboutVisionTab({
       </div>
 
       {/* 2. Visi Organisasi */}
-      <div className="rounded-lg ring-1 ring-border bg-card p-5 space-y-4">
+      <div className="space-y-4 rounded-xl border border-border/80 bg-card p-5 shadow-xs">
         <div className="flex items-center gap-2 border-b border-border/70 pb-3">
           <Compass className="w-4 h-4 text-primary" />
           <div>
@@ -217,7 +221,7 @@ export function AboutVisionTab({
       </div>
 
       {/* 3. Misi Organisasi (Dinamis) */}
-      <div className="rounded-lg ring-1 ring-border bg-card p-5 space-y-4">
+      <div className="space-y-4 rounded-xl border border-border/80 bg-card p-5 shadow-xs">
         <div className="flex items-center justify-between border-b border-border/70 pb-3">
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-primary" />
@@ -300,7 +304,12 @@ export function AboutVisionTab({
               Batal
             </Button>
           )}
-          <Button type="submit" size="sm" disabled={isSaving}>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isSaving}
+            className="cursor-pointer"
+          >
             {isSaving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
@@ -308,6 +317,69 @@ export function AboutVisionTab({
             )}
             {isSaving ? "Menyimpan..." : "Simpan Profil & Visi Misi"}
           </Button>
+        </div>
+      </div>
+        </div>
+
+        {/* Kolom Kanan: Live Preview Tentang & Visi-Misi (5 col) */}
+        <div className="space-y-2 lg:sticky lg:top-20 lg:col-span-5">
+          <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Eye className="size-3.5 text-primary" aria-hidden="true" />
+              Simulasi Tampilan Tentang &amp; Visi-Misi
+            </span>
+            <span className="text-[11px] text-muted-foreground/75">
+              Live Preview
+            </span>
+          </div>
+
+          <div className="space-y-5 rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">
+                {draft.aboutTagline || "Tentang Organisasi"}
+              </p>
+              <h4 className="text-xl font-bold leading-tight tracking-tight text-foreground">
+                {draft.aboutTitle || "Wadah Perhimpunan"}{" "}
+                <span className="text-primary">
+                  {draft.aboutHighlight || "Intelektual Kristen"}
+                </span>
+              </h4>
+              <p className="line-clamp-4 text-xs leading-relaxed text-muted-foreground">
+                {draft.aboutDescription}
+              </p>
+            </div>
+
+            <div className="space-y-1.5 border-t border-border/60 pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                {draft.visionTitle || "Visi PIKI"}
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {draft.visionText}
+              </p>
+            </div>
+
+            <div className="space-y-2 border-t border-border/60 pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                Butir Misi ({draft.missionPoints.filter((m) => m.trim()).length})
+              </p>
+              <ul className="space-y-1.5">
+                {draft.missionPoints
+                  .filter((m) => m.trim())
+                  .slice(0, 4)
+                  .map((point, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground"
+                    >
+                      <span className="font-mono text-[11px] font-semibold text-primary">
+                        {String(idx + 1).padStart(2, "0")}
+                      </span>
+                      <span className="line-clamp-2">{point}</span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </form>

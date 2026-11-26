@@ -8,6 +8,7 @@ import { HistoryPreviewCard } from "./HistoryPreviewCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { SkeletonTimelineList } from "@/components/ui/skeleton-presets";
 import {
   Select,
@@ -66,6 +67,17 @@ export function HistoryTab({
     });
     return map;
   }, [access.scope, cabangList]);
+
+  const cabangSelectOptions = useMemo(
+    () => [
+      { value: "ALL", label: "Semua Wilayah" },
+      ...cabangList.map((c) => ({
+        value: c.uuid,
+        label: c.namaCabang,
+      })),
+    ],
+    [cabangList],
+  );
 
   const canManageItem = useMemo(
     () => (item: HistoryEvent) =>
@@ -201,7 +213,9 @@ export function HistoryTab({
         setEvents((prev) => {
           const exists = prev.some((item) => item.id === savedEvent.id);
           return exists
-            ? prev.map((item) => (item.id === savedEvent.id ? savedEvent : item))
+            ? prev.map((item) =>
+                item.id === savedEvent.id ? savedEvent : item,
+              )
             : [...prev, savedEvent];
         });
       }
@@ -251,26 +265,17 @@ export function HistoryTab({
           </div>
 
           {access.canSelectCabang && (
-            <div className="w-48 shrink-0">
-              <Select
+            <div className="w-52 shrink-0">
+              <SearchableSelect
                 value={selectedCabang}
-                onValueChange={(val) => {
-                  if (val) setSelectedCabang(val);
-                }}
-              >
-                <SelectTrigger aria-label="Filter wilayah cabang">
-                  <Building2 className="w-3 h-3 text-muted-foreground mr-1 shrink-0" />
-                  <SelectValue placeholder="Semua Wilayah" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Semua Wilayah</SelectItem>
-                  {cabangList.map((c) => (
-                    <SelectItem key={c.uuid} value={c.uuid}>
-                      {c.namaCabang}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onValueChange={setSelectedCabang}
+                options={cabangSelectOptions}
+                placeholder="Semua Wilayah"
+                searchPlaceholder="Cari wilayah / cabang..."
+                emptyMessage="Wilayah tidak ditemukan."
+                icon={<Building2 className="size-3.5 text-muted-foreground" />}
+                triggerClassName="h-9 rounded-sm px-3 dark:bg-input/30 dark:hover:bg-input/50"
+              />
             </div>
           )}
         </div>
@@ -280,9 +285,10 @@ export function HistoryTab({
             onClick={handleOpenAdd}
             size="sm"
             disabled={access.isUnlinkedBranchAdmin}
+            className="cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            Tambah
+            Tambah Sejarah
           </Button>
         )}
       </div>
@@ -294,9 +300,12 @@ export function HistoryTab({
         >
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <div>
-            <p className="font-medium">Akun admin wilayah belum ditautkan ke Cabang</p>
+            <p className="font-medium">
+              Akun admin wilayah belum ditautkan ke Cabang
+            </p>
             <p className="text-xs opacity-90 mt-0.5">
-              Hubungi Superadmin DPP untuk menautkan akun Anda ke profil Cabang agar dapat menambah dan mengelola tonggak sejarah.
+              Hubungi Superadmin DPP untuk menautkan akun Anda ke profil Cabang
+              agar dapat menambah dan mengelola tonggak sejarah.
             </p>
           </div>
         </div>
@@ -305,7 +314,7 @@ export function HistoryTab({
       {/* 2. Content Layout: Data Table + Live Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Kolom Kiri: Tabel Peristiwa (lg:col-span-8) */}
-        <div className="lg:col-span-8 rounded-lg ring-1 ring-border bg-card overflow-hidden">
+        <div className="lg:col-span-8 rounded-xl border border-border/80 bg-card overflow-hidden shadow-xs">
           <div className="p-4 border-b border-border/70 flex items-center justify-between text-xs md:text-sm font-medium text-muted-foreground bg-muted/20">
             <span>
               Menampilkan{" "}
@@ -332,7 +341,8 @@ export function HistoryTab({
           ) : (
             <div className="divide-y divide-border/60">
               {filteredEvents.map((item) => {
-                const isSelected = item.id === (activePreviewEvent?.id || selectedPreviewId);
+                const isSelected =
+                  item.id === (activePreviewEvent?.id || selectedPreviewId);
                 const itemCanManage = canManageItem(item);
                 const cabangLabel = item.cabangUuid
                   ? cabangNameMap?.[item.cabangUuid] || "Wilayah Cabang"
@@ -351,7 +361,10 @@ export function HistoryTab({
                       {/* Thumbnail Footage */}
                       <div className="w-12 h-12 rounded-sm bg-muted overflow-hidden shrink-0 border border-border/70 relative">
                         <Image
-                          src={getSafeImageSrc(item.image, "/footage/image1.webp")}
+                          src={getSafeImageSrc(
+                            item.image,
+                            "/footage/image1.webp",
+                          )}
                           alt={item.title}
                           fill
                           sizes="48px"
@@ -393,7 +406,10 @@ export function HistoryTab({
                                 : "Draft"}
                           </Badge>
                           {cabangNameMap && (
-                            <Badge variant="outline" className="text-[10px] font-normal">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-normal"
+                            >
                               {cabangLabel}
                             </Badge>
                           )}
@@ -471,7 +487,10 @@ export function HistoryTab({
                           size="icon-sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setDeletingTarget({ id: item.id, title: item.title });
+                            setDeletingTarget({
+                              id: item.id,
+                              title: item.title,
+                            });
                           }}
                           aria-label={`Hapus ${item.title}`}
                           title="Hapus Peristiwa"

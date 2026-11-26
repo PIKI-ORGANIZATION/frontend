@@ -1,8 +1,11 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { NewsForm } from "../components/NewsForm";
 import { AccessDeniedState } from "@/components/dashboard/AccessDeniedState";
+import {
+  SkeletonFormWithPreview,
+  SkeletonPageHeader,
+} from "@/components/ui/skeleton-presets";
 import { useNewsScope } from "@/hooks/api/useNews";
 import { tingkatLabel } from "@/lib/news";
 
@@ -11,8 +14,9 @@ export default function BeritaBaruPage() {
 
   if (!scope) {
     return (
-      <div className="flex justify-center py-24">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+      <div className="mx-auto max-w-7xl space-y-6 py-4 sm:py-6">
+        <SkeletonPageHeader />
+        <SkeletonFormWithPreview label="Menyiapkan editor berita baru…" />
       </div>
     );
   }
