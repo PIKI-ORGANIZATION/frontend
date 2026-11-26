@@ -5,11 +5,13 @@ import { FlutedGlass } from "@paper-design/shaders-react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn, decodeToken } from "@/lib/utils";
+import { notifyAuthChange } from "@/hooks/useCurrentUser";
 import { hasRole, ROLE_GROUPS } from "@/lib/rbac";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -53,6 +55,7 @@ function ExpiredSessionBanner() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -110,6 +113,9 @@ export default function LoginPage() {
           sameSite: "lax",
           secure: process.env.NODE_ENV === "production",
         });
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        notifyAuthChange();
 
         toast.success("Login berhasil!");
 

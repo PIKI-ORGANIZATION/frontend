@@ -2,6 +2,7 @@
 
 import React, { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   User,
@@ -75,6 +76,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const getRoleDisplay = () => {
@@ -99,6 +101,8 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
   };
 
   const handleLogout = async () => {
+    await queryClient.cancelQueries();
+    queryClient.clear();
     await logoutSession();
     toast.success("Anda berhasil keluar dari sistem");
     router.push("/login");

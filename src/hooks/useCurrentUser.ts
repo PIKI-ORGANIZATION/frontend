@@ -4,7 +4,25 @@ import { useMemo, useSyncExternalStore } from "react";
 import Cookies from "js-cookie";
 import { decodeToken, UserPayload } from "@/lib/utils";
 
-const subscribeNoop = () => () => {};
+const AUTH_CHANGE_EVENT = "piki:auth-change";
+
+/** Beri tahu seluruh subscriber `useCurrentUser` bahwa token sesi berubah. */
+export function notifyAuthChange() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+  }
+}
+
+const subscribeAuth = (callback: () => void) => {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(AUTH_CHANGE_EVENT, callback);
+  window.addEventListener("focus", callback);
+  return () => {
+    window.removeEventListener(AUTH_CHANGE_EVENT, callback);
+    window.removeEventListener("focus", callback);
+  };
+};
+
 const getClientToken = (): string | null => Cookies.get("token") ?? null;
 const getServerToken = (): undefined => undefined;
 
@@ -20,7 +38,7 @@ export interface CurrentUserState {
  */
 export function useCurrentUser(): CurrentUserState {
   const rawToken = useSyncExternalStore(
-    subscribeNoop,
+    subscribeAuth,
     getClientToken,
     getServerToken,
   );

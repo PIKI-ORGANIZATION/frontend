@@ -1,4 +1,5 @@
 import Cookies from "js-cookie";
+import { notifyAuthChange } from "@/hooks/useCurrentUser";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
@@ -58,6 +59,7 @@ export async function apiFetch<T>(
   // 1. Tangani 401 Unauthorized (Token expired atau tidak valid)
   if (res.status === 401) {
     Cookies.remove("token");
+    notifyAuthChange();
     if (typeof window !== "undefined") {
       // Cegah infinite redirect loop jika sudah di halaman login
       if (!window.location.pathname.startsWith("/login")) {
@@ -113,5 +115,6 @@ export async function logoutSession(): Promise<void> {
     // Abaikan kegagalan jaringan saat logout agar pencabutan sesi lokal tetap berjalan
   } finally {
     Cookies.remove("token");
+    notifyAuthChange();
   }
 }
